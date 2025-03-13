@@ -8,15 +8,19 @@ import urllib.parse  # Import for URL encoding
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
-
 from zenpy import Zenpy
 from zenpy.lib.api_objects import Ticket
-import openai
 
 # SQLAlchemy imports
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
+# Import security module
+from security import ip_whitelist, webhook_auth
+
+# Import AI service
+from ai_service import analyze_ticket_content
 
 #############################################################################
 # 1. LOAD ENVIRONMENT VARIABLES & CONFIGURE LOGGING
@@ -42,9 +46,6 @@ zenpy_client = Zenpy(
     token=ZENDESK_API_TOKEN,
     subdomain=ZENDESK_SUBDOMAIN
 )
-
-# OpenAI credentials
-openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY", "YOUR_OPENAI_API_KEY"))
 
 # Database credentials (PostgreSQL example)
 DB_USER = os.getenv("DB_USER", "postgres")
@@ -80,35 +81,7 @@ class TicketAnalysis(Base):
 Base.metadata.create_all(bind=engine)
 
 #############################################################################
-# 3. AI LOGIC
-#############################################################################
-
-def call_openai_api(content: str) -> dict:
-    try:
-        prompt = f"""
-        Analyze the following customer message and:
-        1) Provide sentiment: Positive, Negative, or Neutral.
-        2) Provide category label (e.g., billing issue, technical issue, general inquiry).
-        Message: {content}
-        Format your response as JSON with keys: sentiment, category.
-        """
-
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0
-        )
-        assistant_reply = response.choices[0].message.content
-        
-        import json
-        parsed = json.loads(assistant_reply)
-        return parsed
-    except Exception as e:
-        logger.exception("Error calling OpenAI API")
-        return {"sentiment": "unknown", "category": "uncategorized"}
-
-#############################################################################
-# 4. CORE FUNCTIONS
+# 3. CORE FUNCTIONS
 #############################################################################
 
 def exponential_backoff_retry(func, *args, **kwargs):
@@ -140,10 +113,13 @@ def analyze_and_update_ticket(ticket: Ticket):
     session = SessionLocal()
     try:
         description = ticket.description or ""
-        ai_result = call_openai_api(description)
+        
+        # Use the enhanced AI service
+        ai_result = analyze_ticket_content(description)
 
-        sentiment = ai_result.get("sentiment", "unknown").lower().replace(" ", "_")
-        category = ai_result.get("category", "general_inquiry").lower().replace(" ", "_")
+        sentiment = ai_result.get("sentiment", "unknown")
+        category = ai_result.get("category", "general_inquiry")
+        confidence = ai_result.get("confidence", 0.0)
 
         if category not in ticket.tags:
             ticket.tags.append(category)
@@ -151,7 +127,7 @@ def analyze_and_update_ticket(ticket: Ticket):
             ticket.tags.append(f"sentiment_{sentiment}")
 
         ticket.comment = {
-            "body": f"AI Classification:\n- Category: {category}\n- Sentiment: {sentiment}",
+            "body": f"AI Classification:\n- Category: {category}\n- Sentiment: {sentiment}\n- Confidence: {confidence:.2f}",
             "public": False
         }
 
@@ -163,7 +139,7 @@ def analyze_and_update_ticket(ticket: Ticket):
             subject=ticket.subject,
             category=category,
             sentiment=sentiment,
-            confidence=1.0,
+            confidence=confidence,
             description=description
         )
         session.add(db_record)
@@ -337,6 +313,8 @@ def schedule_tasks():
 app = Flask(__name__)
 
 @app.route("/webhook", methods=["POST"])
+@ip_whitelist
+@webhook_auth
 def zendesk_webhook():
     data = request.json
     if not data or "ticket" not in data:
@@ -352,6 +330,16 @@ def zendesk_webhook():
     except Exception as e:
         logger.exception(f"Error processing ticket via webhook: {ticket_id}")
         return jsonify({"error": str(e)}), 500
+
+# Add a health check endpoint
+@app.route("/health", methods=["GET"])
+def health_check():
+    """Simple health check endpoint that doesn't require authentication"""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0"
+    })
 
 #############################################################################
 # 7. MAIN
@@ -375,7 +363,10 @@ if __name__ == "__main__":
         logger.info("Done processing.")
     elif args.mode == "webhook":
         logger.info("Starting Flask webhook server on port 5000...")
-        app.run(port=5000, debug=True)
+        logger.info("Security features enabled:")
+        logger.info(f"- IP Whitelist: {'Enabled' if os.getenv('ALLOWED_IPS') else 'Disabled'}")
+        logger.info(f"- Webhook Signature Verification: {'Enabled' if os.getenv('WEBHOOK_SECRET_KEY') else 'Disabled'}")
+        app.run(host='0.0.0.0', port=5000, debug=False)
     elif args.mode == "schedule":
         logger.info("Starting scheduled tasks for daily/weekly summaries...")
         schedule_tasks()
