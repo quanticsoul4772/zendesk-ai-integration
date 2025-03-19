@@ -1,0 +1,6 @@
+{
+  "venvPath": ".",
+  "reportMissingImports": false,
+  "reportMissingTypeStubs": false,
+  "extraPaths": ["./venv/Lib/site-packages"]
+}
