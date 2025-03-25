@@ -1,12 +1,13 @@
 # Zendesk AI Integration
 
-This application integrates Zendesk support tickets with OpenAI to provide automatic categorization and sentiment analysis.
+This application integrates Zendesk support tickets with OpenAI to provide automatic categorization and sentiment analysis. It also includes reporting functionality for Zendesk views.
 
 ## Features
 
 - Automatic ticket categorization using AI
 - Sentiment analysis for customer communications
-- PostgreSQL database for analytics and reporting
+- Hardware component detection in tickets
+- MongoDB database for analytics and reporting
 - Enhanced security features:
   - IP whitelisting for webhook endpoints
   - HMAC signature verification
@@ -15,6 +16,7 @@ This application integrates Zendesk support tickets with OpenAI to provide autom
   - One-time batch processing
   - Real-time webhook processing
   - Scheduled daily/weekly analysis
+  - View-based reporting and analytics
 
 ## Installation
 
@@ -22,7 +24,7 @@ This application integrates Zendesk support tickets with OpenAI to provide autom
 2. Create a virtual environment: `python -m venv venv`
 3. Activate it: `.\venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Unix)
 4. Install dependencies: `pip install -r requirements.txt`
-5. Set up PostgreSQL database
+5. Set up MongoDB database
 6. Configure environment variables in `.env` file
 
 ## Configuration
@@ -38,12 +40,10 @@ ZENDESK_SUBDOMAIN=your_zendesk_subdomain
 # OpenAI API key
 OPENAI_API_KEY=your_openai_api_key
 
-# Database configuration
-DB_USER=postgres
-DB_PASSWORD=your_db_password
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=zendesk_analytics
+# MongoDB configuration
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DB_NAME=zendesk_analytics
+MONGODB_COLLECTION_NAME=ticket_analysis
 
 # Slack integration (optional)
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
@@ -97,15 +97,50 @@ Create a summary of ticket data:
 python src/zendesk_ai_app.py --mode summary --status solved --days 7
 ```
 
-## Webhook Configuration
+### View-Based Reporting
 
-See [WEBHOOK_SETUP.md](WEBHOOK_SETUP.md) for detailed instructions on setting up Zendesk webhooks.
+Generate a report for a specific Zendesk view:
+
+```bash
+python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support"
+```
+
+This will generate a comprehensive report of all tickets in the specified view, including status distribution, hardware component analysis, and detailed ticket information.
+
+If you want to limit the number of tickets in the report:
+
+```bash
+python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support" --limit 10
+```
+
+### List Available Views
+
+To see all available Zendesk views:
+
+```bash
+python src/zendesk_ai_app.py --mode list-views
+```
+
+### Hardware Component Reports
+
+Generate a hardware-focused report for a specific view:
+
+```bash
+python src/zendesk_ai_app.py --mode run --view [VIEW_ID] --component-report
+```
+
+## Documentation
+
+- [README.md](README.md) - Main documentation
+- [WEBHOOK_SETUP.md](WEBHOOK_SETUP.md) - Webhook configuration instructions
+- [REPORTING.md](REPORTING.md) - Detailed reporting documentation
 
 ## Project Structure
 
 - `src/zendesk_ai_app.py` - Main application file
-- `src/security.py` - Security-related functions and decorators
 - `src/ai_service.py` - OpenAI integration with error handling
+- `src/mongodb_helper.py` - MongoDB database connection and queries
+- `src/security.py` - Security-related functions and decorators
 
 ## License
 

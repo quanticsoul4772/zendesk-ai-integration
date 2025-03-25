@@ -226,19 +226,20 @@ def call_openai_with_retries(
 
 def analyze_ticket_content(content: str) -> Dict[str, Any]:
     """
-    Analyze ticket content to determine sentiment and category
+    Analyze ticket content to determine sentiment and category based on Exxact's actual categories
     
     Args:
         content: The ticket content to analyze
         
     Returns:
-        Dict with sentiment, category, confidence, and optional error
+        Dict with sentiment, category, component, confidence, and optional error
     """
     if not content or not content.strip():
         logger.warning("Empty content provided for analysis")
         return {
             "sentiment": "unknown",
             "category": "uncategorized",
+            "component": "none",
             "confidence": 0.0,
             "error": "Empty content provided"
         }
@@ -247,13 +248,39 @@ def analyze_ticket_content(content: str) -> Dict[str, Any]:
         logger.info(f"Analyzing ticket content (length: {len(content)} chars)")
         
         prompt = f"""
-        Analyze the following customer message and:
-        1) Provide sentiment: Positive, Negative, or Neutral.
-        2) Provide category label (e.g., billing issue, technical issue, general inquiry).
+        Analyze the following customer message from Exxact Corporation (a hardware systems manufacturer) and:
         
-        Message: {content}
+        1) Identify the sentiment: Positive, Negative, Neutral, or Unknown.
         
-        Format your response as JSON with keys: sentiment, category.
+        2) Categorize the message into ONE of these business categories:
+        
+           - system: Issues related to complete computer systems
+           - resale_component: Issues with components being resold
+           - hardware_issue: Problems with physical hardware components
+           - system_component: Issues specific to system components
+           - so_released_to_warehouse: Sales order released to warehouse status
+           - wo_released_to_warehouse: Work order released to warehouse status
+           - technical_support: General technical assistance requests
+           - rma: Return merchandise authorization requests
+           - software_issue: Problems with software, OS or drivers
+           - general_inquiry: Information seeking that doesn't fit other categories
+           
+        3) If relevant, identify the specific component type mentioned:
+           - gpu: Graphics processing unit issues
+           - cpu: Central processing unit issues
+           - drive: Hard drive or storage issues
+           - memory: RAM or memory issues
+           - power_supply: Power supply issues
+           - motherboard: Motherboard issues
+           - cooling: Cooling system issues
+           - display: Monitor or display issues
+           - network: Network card or connectivity issues
+           - none: No specific component mentioned
+        
+        Customer message: {content}
+        
+        Format your response as JSON with these keys: sentiment, category, component, confidence.
+        Keep your analysis focused on Exxact's business of computer hardware systems.
         """
         
         result = call_openai_with_retries(
@@ -262,20 +289,19 @@ def analyze_ticket_content(content: str) -> Dict[str, Any]:
             max_retries=3
         )
         
-        # Ensure we have the expected fields
-        sentiment = result.get("sentiment", "unknown")
-        category = result.get("category", "general_inquiry")
+        # Extract and normalize values
+        sentiment = result.get("sentiment", "unknown").lower().replace(" ", "_")
+        category = result.get("category", "general_inquiry").lower().replace(" ", "_")
+        component = result.get("component", "none").lower().replace(" ", "_")
+        confidence = float(result.get("confidence", 0.9))
         
-        # Normalize values
-        normalized_sentiment = sentiment.lower().replace(" ", "_")
-        normalized_category = category.lower().replace(" ", "_")
-        
-        logger.info(f"Analysis complete: sentiment={normalized_sentiment}, category={normalized_category}")
+        logger.info(f"Analysis complete: sentiment={sentiment}, category={category}, component={component}")
         
         return {
-            "sentiment": normalized_sentiment,
-            "category": normalized_category,
-            "confidence": 0.9,  # Could be dynamic based on model output in future
+            "sentiment": sentiment,
+            "category": category,
+            "component": component,
+            "confidence": confidence,
             "raw_result": result  # Include raw result for debugging
         }
         
@@ -285,6 +311,7 @@ def analyze_ticket_content(content: str) -> Dict[str, Any]:
         return {
             "sentiment": "unknown",
             "category": "uncategorized",
+            "component": "none",
             "confidence": 0.0,
             "error": str(e),
             "error_type": type(e).__name__
@@ -295,6 +322,7 @@ def analyze_ticket_content(content: str) -> Dict[str, Any]:
         return {
             "sentiment": "unknown",
             "category": "uncategorized",
+            "component": "none",
             "confidence": 0.0,
             "error": str(e),
             "error_type": type(e).__name__

@@ -4,17 +4,15 @@ import logging
 import schedule
 import requests
 from datetime import datetime
-import urllib.parse  # Import for URL encoding
+from dateutil import parser
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from zenpy import Zenpy
 from zenpy.lib.api_objects import Ticket
 
-# SQLAlchemy imports
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+# Import MongoDB helper
+from mongodb_helper import get_collection, find_analyses_since, insert_ticket_analysis, close_connections
 
 # Import security module
 from security import ip_whitelist, webhook_auth
@@ -47,38 +45,14 @@ zenpy_client = Zenpy(
     subdomain=ZENDESK_SUBDOMAIN
 )
 
-# Database credentials (PostgreSQL example)
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "zendesk_analytics")
-
-# URL encode the password to handle special characters
-DB_PASSWORD_ENCODED = urllib.parse.quote_plus(DB_PASSWORD)
-
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD_ENCODED}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# MongoDB collection is initialized through mongodb_helper module
 
 #############################################################################
-# 2. SETUP DATABASE (SQLALCHEMY)
+# 2. DATABASE ACCESS (MongoDB via Helper)
 #############################################################################
 
-engine = create_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
-
-class TicketAnalysis(Base):
-    __tablename__ = "ticket_analysis"
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    ticket_id = Column(Integer, index=True)
-    subject = Column(String(255))
-    category = Column(String(50))
-    sentiment = Column(String(50))
-    confidence = Column(Float)
-    description = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow)
-
-Base.metadata.create_all(bind=engine)
+# MongoDB connection is handled by the mongodb_helper module
+# This keeps the database connection details isolated for better maintainability
 
 #############################################################################
 # 3. CORE FUNCTIONS
@@ -109,8 +83,103 @@ def fetch_tickets(status="open", limit=10):
         logger.exception("Error fetching tickets")
         return []
 
+def fetch_tickets_from_view(view_id, limit=None):
+    """
+    Fetch tickets from a specific Zendesk view.
+    
+    Args:
+        view_id: ID of the Zendesk view to fetch tickets from
+        limit: Maximum number of tickets to retrieve, None means no limit
+        
+    Returns:
+        List of Ticket objects
+    """
+    try:
+        if limit:
+            logger.info(f"Fetching up to {limit} tickets from view {view_id}")
+        else:
+            logger.info(f"Fetching all tickets from view {view_id}")
+            
+        # Zenpy API expects view_id as a positional argument
+        tickets = zenpy_client.views.tickets(view_id)
+        
+        # Apply limit only if specified
+        if limit is not None:
+            return list(tickets)[:limit]
+        else:
+            return list(tickets)
+    except Exception as e:
+        logger.exception(f"Error fetching tickets from view {view_id}")
+        return []
+        
+def list_all_views():
+    """
+    List all available Zendesk views with their IDs and titles.
+    
+    Returns:
+        String containing formatted list of views
+    """
+    try:
+        views = zenpy_client.views()
+        view_list = "\nAVAILABLE ZENDESK VIEWS:\n" + "-" * 40 + "\n"
+        view_list += "ID\t\tTITLE\n"
+        view_list += "-" * 40 + "\n"
+        
+        for view in views:
+            view_list += f"{view.id}\t\t{view.title}\n"
+            
+        return view_list
+    except Exception as e:
+        logger.exception("Error fetching views")
+        return "Error fetching views: " + str(e)
+
+def fetch_tickets_by_view_name(view_name, limit=None):
+    """
+    Fetch tickets from a specific Zendesk view by its name.
+    
+    Args:
+        view_name: Name of the Zendesk view to fetch tickets from
+        limit: Maximum number of tickets to retrieve, None means no limit
+        
+    Returns:
+        List of Ticket objects
+    """
+    try:
+        logger.info(f"Searching for view named '{view_name}'")
+        # Get all views
+        views = zenpy_client.views()
+        
+        # Find the view with the specified name
+        target_view_id = None
+        for view in views:
+            if view.title == view_name:
+                target_view_id = view.id
+                logger.info(f"Found view '{view_name}' with ID {target_view_id}")
+                break
+        
+        if not target_view_id:
+            logger.error(f"View '{view_name}' not found")
+            return []
+        
+        # Get tickets from the view
+        if limit:
+            logger.info(f"Fetching up to {limit} tickets from view '{view_name}' (ID: {target_view_id})")
+        else:
+            logger.info(f"Fetching all tickets from view '{view_name}' (ID: {target_view_id})")
+            
+        # Zenpy API expects view_id as a positional argument
+        tickets = zenpy_client.views.tickets(target_view_id)
+        
+        # Apply limit only if specified
+        if limit is not None:
+            return list(tickets)[:limit]
+        else:
+            return list(tickets)
+    except Exception as e:
+        logger.exception(f"Error fetching tickets from view '{view_name}'")
+        return []
+
 def analyze_and_update_ticket(ticket: Ticket):
-    session = SessionLocal()
     try:
         description = ticket.description or ""
         
@@ -119,37 +188,44 @@ def analyze_and_update_ticket(ticket: Ticket):
 
         sentiment = ai_result.get("sentiment", "unknown")
         category = ai_result.get("category", "general_inquiry")
+        component = ai_result.get("component", "none")
         confidence = ai_result.get("confidence", 0.0)
 
+        # Add category tag
         if category not in ticket.tags:
             ticket.tags.append(category)
+            
+        # Add sentiment tag
         if f"sentiment_{sentiment}" not in ticket.tags:
             ticket.tags.append(f"sentiment_{sentiment}")
+            
+        # Add component tag if not "none"
+        if component != "none" and component not in ticket.tags:
+            ticket.tags.append(component)
 
         ticket.comment = {
-            "body": f"AI Classification:\n- Category: {category}\n- Sentiment: {sentiment}\n- Confidence: {confidence:.2f}",
+            "body": f"AI Classification:\n- Category: {category}\n- Component: {component}\n- Sentiment: {sentiment}\n- Confidence: {confidence:.2f}",
             "public": False
         }
 
         exponential_backoff_retry(zenpy_client.tickets.update, ticket)
-        logger.info(f"Updated ticket #{ticket.id} - category={category}, sentiment={sentiment}")
+        logger.info(f"Updated ticket #{ticket.id} - category={category}, component={component}, sentiment={sentiment}")
 
-        db_record = TicketAnalysis(
-            ticket_id=ticket.id,
-            subject=ticket.subject,
-            category=category,
-            sentiment=sentiment,
-            confidence=confidence,
-            description=description
-        )
-        session.add(db_record)
-        session.commit()
+        # Store analysis in MongoDB
+        db_record = {
+            "ticket_id": ticket.id,
+            "subject": ticket.subject,
+            "category": category,
+            "component": component,
+            "sentiment": sentiment,
+            "confidence": confidence,
+            "description": description,
+            "timestamp": datetime.utcnow()
+        }
+        insert_ticket_analysis(db_record)
         logger.info(f"Stored analysis for ticket #{ticket.id}")
     except Exception as e:
         logger.exception(f"Error processing ticket #{ticket.id}")
-        session.rollback()
-    finally:
-        session.close()
 
 #############################################################################
 # 5. SCHEDULING & SUMMARIES
@@ -163,6 +239,7 @@ def generate_summary_from_zendesk(status="open"):
         # Count tickets by status
         status_counts = {}
         category_counts = {}
+        component_counts = {}
         sentiment_counts = {}
         priority_counts = {}
         
@@ -170,12 +247,16 @@ def generate_summary_from_zendesk(status="open"):
             # Count by status
             status_counts[ticket.status] = status_counts.get(ticket.status, 0) + 1
             
-            # Count by category and sentiment (from tags)
+            # Count by category, component, and sentiment (from tags)
             for tag in ticket.tags:
                 if tag.startswith("sentiment_"):
                     sentiment = tag.replace("sentiment_", "")
                     sentiment_counts[sentiment] = sentiment_counts.get(sentiment, 0) + 1
-                elif not tag.startswith("sentiment_"):  # Assuming non-sentiment tags are categories
+                # Check for component tags
+                elif tag in ["gpu", "cpu", "drive", "memory", "power_supply", "motherboard", "cooling", "display", "network"]:
+                    component_counts[tag] = component_counts.get(tag, 0) + 1
+                # Assuming other tags are categories
+                elif not tag.startswith("sentiment_"):
                     category_counts[tag] = category_counts.get(tag, 0) + 1
             
             # Count by priority
@@ -201,6 +282,10 @@ CATEGORY BREAKDOWN:
 {'-' * 20}
 """ + "\n".join([f"{category}: {count}" for category, count in sorted(category_counts.items(), key=lambda x: x[1], reverse=True)]) + f"""
 
+COMPONENT BREAKDOWN:
+{'-' * 20}
+""" + "\n".join([f"{component}: {count}" for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True)]) + f"""
+
 SENTIMENT BREAKDOWN:
 {'-' * 20}
 """ + "\n".join([f"{sentiment}: {count}" for sentiment, count in sorted(sentiment_counts.items(), key=lambda x: x[1], reverse=True)]) + f"""
@@ -218,22 +303,25 @@ PRIORITY BREAKDOWN:
 
 def generate_summary_from_db(days_back=30):
     """Generate a summary of tickets from the database"""
-    session = SessionLocal()
     try:
         from datetime import timedelta
         cutoff = datetime.utcnow() - timedelta(days=days_back)
         
-        recent_analyses = session.query(TicketAnalysis).filter(
-            TicketAnalysis.timestamp >= cutoff
-        ).all()
-
+        # Query MongoDB for recent analyses
+        recent_analyses = find_analyses_since(cutoff)
         total = len(recent_analyses)
         categories = {}
+        components = {}
         sentiments = {}
 
         for record in recent_analyses:
-            categories[record.category] = categories.get(record.category, 0) + 1
-            sentiments[record.sentiment] = sentiments.get(record.sentiment, 0) + 1
+            categories[record["category"]] = categories.get(record["category"], 0) + 1
+            
+            # Handle component data if it exists in the record
+            if "component" in record and record["component"] != "none":
+                components[record["component"]] = components.get(record["component"], 0) + 1
+                
+            sentiments[record["sentiment"]] = sentiments.get(record["sentiment"], 0) + 1
 
         summary_text = f"""
 ========================================
@@ -246,6 +334,10 @@ CATEGORY BREAKDOWN:
 {'-' * 20}
 """ + "\n".join([f"{category}: {count}" for category, count in sorted(categories.items(), key=lambda x: x[1], reverse=True)]) + f"""
 
+COMPONENT BREAKDOWN:
+{'-' * 20}
+""" + "\n".join([f"{component}: {count}" for component, count in sorted(components.items(), key=lambda x: x[1], reverse=True)]) + f"""
+
 SENTIMENT BREAKDOWN:
 {'-' * 20}
 """ + "\n".join([f"{sentiment}: {count}" for sentiment, count in sorted(sentiments.items(), key=lambda x: x[1], reverse=True)])
@@ -256,10 +348,352 @@ SENTIMENT BREAKDOWN:
         logger.exception("Failed to generate summary from database")
         return f"Error generating summary: {str(e)}"
     finally:
-        session.close()
+        pass
+
+def generate_pending_support_report(tickets, view_name="Pending Support"):
+    """
+    Generate a detailed report for tickets in the Pending Support view.
+    
+    Args:
+        tickets: List of Zendesk Ticket objects
+        view_name: Name of the view (for display purposes)
+        
+    Returns:
+        String containing the formatted report
+    """
+    # Count various metrics
+    status_counts = {}
+    priority_counts = {}
+    component_counts = {}
+    age_buckets = {
+        "today": 0,
+        "yesterday": 0,
+        "this_week": 0,
+        "older": 0
+    }
+    customer_segments = {}
+    
+    # Prepare ticket details
+    ticket_details = []
+    today = datetime.now().date()
+    
+    for ticket in tickets:
+        # Track status
+        status_counts[ticket.status] = status_counts.get(ticket.status, 0) + 1
+        
+        # Track priority
+        priority = ticket.priority or "normal"
+        priority_counts[priority] = priority_counts.get(priority, 0) + 1
+        
+        # Track customer segment (organization)
+        org_name = "No Organization"
+        if hasattr(ticket, 'organization') and ticket.organization:
+            org_name = ticket.organization.name
+            customer_segments[org_name] = customer_segments.get(org_name, 0) + 1
+        
+        # Track ticket age
+        if hasattr(ticket, 'created_at'):
+            created_at = ticket.created_at
+            # Check if created_at is a string and convert it to datetime if needed
+            if isinstance(created_at, str):
+                from dateutil import parser
+                try:
+                    created_at = parser.parse(created_at)
+                except Exception as e:
+                    logger.warning(f"Could not parse date: {created_at}, error: {str(e)}")
+                    created_at = None
+            
+            if created_at:
+                try:
+                    created_date = created_at.date()
+                    delta = (today - created_date).days
+                    if delta == 0:
+                        age_buckets["today"] += 1
+                    elif delta == 1:
+                        age_buckets["yesterday"] += 1
+                    elif delta <= 7:
+                        age_buckets["this_week"] += 1
+                    else:
+                        age_buckets["older"] += 1
+                except Exception as e:
+                    logger.warning(f"Error processing date: {str(e)}")
+        
+        
+        # Analyze ticket for hardware components
+        hardware_components = []
+        
+        # First check for AI-generated component tags
+        for tag in ticket.tags:
+            if tag in ["gpu", "cpu", "drive", "memory", "power_supply", "motherboard", 
+                      "cooling", "display", "network", "ipmi", "bios"]:
+                hardware_components.append(tag)
+                component_counts[tag] = component_counts.get(tag, 0) + 1
+        
+        # Also check title/subject for component keywords
+        subject_lower = ticket.subject.lower() if hasattr(ticket, 'subject') else ""
+        component_keywords = {
+            "gpu": ["gpu", "graphics", "video card", "rtx", "nvidia", "amd", "radeon"],
+            "cpu": ["cpu", "processor", "intel", "amd", "ryzen", "xeon"],
+            "drive": ["drive", "ssd", "hdd", "storage", "disk", "nvme"],
+            "memory": ["memory", "ram", "dimm"],
+            "power_supply": ["power supply", "psu", "power"],
+            "motherboard": ["motherboard", "mainboard"],
+            "cooling": ["cooling", "fan", "temperature", "overheating"],
+            "display": ["display", "monitor", "screen"],
+            "network": ["network", "ethernet", "wifi", "wireless"],
+            "boot": ["boot", "post", "startup"],
+            "bios": ["bios", "uefi"],
+            "ipmi": ["ipmi", "bmc", "remote management"]
+        }
+        
+        for component, keywords in component_keywords.items():
+            if any(keyword in subject_lower for keyword in keywords) and component not in hardware_components:
+                hardware_components.append(component)
+                component_counts[component] = component_counts.get(component, 0) + 1
+        
+        # Store ticket details for report
+        ticket_details.append({
+            "id": ticket.id,
+            "subject": ticket.subject if hasattr(ticket, 'subject') else "No subject",
+            "status": ticket.status,
+            "priority": priority,
+            "components": hardware_components,
+            "requester": ticket.requester.name if hasattr(ticket, 'requester') and hasattr(ticket.requester, 'name') else "Unknown",
+            "organization": org_name,
+            "created_at": ticket.created_at if hasattr(ticket, 'created_at') else None,
+            "updated_at": ticket.updated_at if hasattr(ticket, 'updated_at') else None
+        })
+    
+    # Generate the report
+    report = f"""
+===================================================
+PENDING SUPPORT TICKET REPORT ({datetime.now().strftime('%Y-%m-%d %H:%M')})
+===================================================
+
+OVERVIEW
+--------
+Total Tickets: {len(tickets)}
+Queue Purpose: New Support tickets waiting for assignment to agent
+View: {view_name}
+
+STATUS DISTRIBUTION
+------------------
+"""
+    for status, count in sorted(status_counts.items(), key=lambda x: x[1], reverse=True):
+        report += f"{status}: {count}\n"
+    
+    report += f"""
+PRIORITY DISTRIBUTION
+--------------------
+"""
+    for priority, count in sorted(priority_counts.items(), key=lambda x: x[1], reverse=True):
+        report += f"{priority}: {count}\n"
+    
+    report += f"""
+HARDWARE COMPONENT DISTRIBUTION
+-----------------------------
+"""
+    for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True):
+        report += f"{component}: {count}\n"
+    
+    report += f"""
+CUSTOMER DISTRIBUTION
+------------------
+"""
+    for org, count in sorted(customer_segments.items(), key=lambda x: x[1], reverse=True)[:5]:
+        report += f"{org}: {count}\n"
+    
+    report += f"""
+TICKET AGE
+---------
+Today: {age_buckets["today"]}
+Yesterday: {age_buckets["yesterday"]}
+This Week: {age_buckets["this_week"]}
+Older: {age_buckets["older"]}
+
+TICKET DETAILS
+-------------
+"""
+    
+    # Sort tickets by creation date, newest first
+    ticket_details.sort(key=lambda x: x["created_at"] if x["created_at"] else datetime.min, reverse=True)
+    
+    for ticket in ticket_details:
+        report += f"#{ticket['id']} - {ticket['subject']} ({ticket['status']})\n"
+        report += f"Priority: {ticket['priority']}\n"
+        if ticket["components"]:
+            report += f"Components: {', '.join(ticket['components'])}\n"
+        report += f"Requester: {ticket['requester']} | Organization: {ticket['organization']}\n"
+        if ticket["created_at"]:
+            # Handle datetime formatting safely
+            try:
+                created_at = ticket["created_at"]
+                if isinstance(created_at, str):
+                    from dateutil import parser
+                    created_at = parser.parse(created_at)
+                report += f"Created: {created_at.strftime('%Y-%m-%d %H:%M')}\n"
+            except Exception as e:
+                report += f"Created: {ticket['created_at']}\n"
+                
+        if ticket["updated_at"]:
+            # Handle datetime formatting safely
+            try:
+                updated_at = ticket["updated_at"]
+                if isinstance(updated_at, str):
+                    from dateutil import parser
+                    updated_at = parser.parse(updated_at)
+                report += f"Updated: {updated_at.strftime('%Y-%m-%d %H:%M')}\n"
+            except Exception as e:
+                report += f"Updated: {ticket['updated_at']}\n"
+        report += f"{'-' * 40}\n"
+    
+    return report
+
+def generate_hardware_component_report(tickets):
+    """
+    Generate a detailed report focused on hardware components from a list of tickets.
+    
+    Args:
+        tickets: List of Zendesk Ticket objects
+        
+    Returns:
+        String containing the formatted report
+    """
+    # Count hardware component issues
+    component_counts = {}
+    status_counts = {}
+    customer_segments = {}
+    age_buckets = {
+        "today": 0,
+        "yesterday": 0,
+        "this_week": 0,
+        "older": 0
+    }
+    
+    # Extract hardware component information from tickets
+    component_tickets = []
+    today = datetime.now().date()
+    
+    for ticket in tickets:
+        # Track status
+        status_counts[ticket.status] = status_counts.get(ticket.status, 0) + 1
+        
+        # Track customer segment (organization)
+        if hasattr(ticket, 'organization') and ticket.organization:
+            org_name = ticket.organization.name
+            customer_segments[org_name] = customer_segments.get(org_name, 0) + 1
+        
+        # Track ticket age
+        created_date = ticket.created_at.date() if hasattr(ticket, 'created_at') else None
+        if created_date:
+            delta = (today - created_date).days
+            if delta == 0:
+                age_buckets["today"] += 1
+            elif delta == 1:
+                age_buckets["yesterday"] += 1
+            elif delta <= 7:
+                age_buckets["this_week"] += 1
+            else:
+                age_buckets["older"] += 1
+        
+        # Analyze ticket for hardware components
+        hardware_components = []
+        
+        # First check for AI-generated component tags
+        for tag in ticket.tags:
+            if tag in ["gpu", "cpu", "drive", "memory", "power_supply", "motherboard", 
+                      "cooling", "display", "network", "ipmi", "bios"]:
+                hardware_components.append(tag)
+                component_counts[tag] = component_counts.get(tag, 0) + 1
+        
+        # Also check title/subject for component keywords
+        subject_lower = ticket.subject.lower() if hasattr(ticket, 'subject') else ""
+        component_keywords = {
+            "gpu": ["gpu", "graphics", "video card", "rtx", "nvidia", "amd", "radeon"],
+            "cpu": ["cpu", "processor", "intel", "amd", "ryzen", "xeon"],
+            "drive": ["drive", "ssd", "hdd", "storage", "disk", "nvme"],
+            "memory": ["memory", "ram", "dimm"],
+            "power_supply": ["power supply", "psu", "power"],
+            "motherboard": ["motherboard", "mainboard"],
+            "cooling": ["cooling", "fan", "temperature", "overheating"],
+            "display": ["display", "monitor", "screen"],
+            "network": ["network", "ethernet", "wifi", "wireless"],
+            "boot": ["boot", "post", "startup"],
+            "bios": ["bios", "uefi"],
+            "ipmi": ["ipmi", "bmc", "remote management"]
+        }
+        
+        for component, keywords in component_keywords.items():
+            if any(keyword in subject_lower for keyword in keywords) and component not in hardware_components:
+                hardware_components.append(component)
+                component_counts[component] = component_counts.get(component, 0) + 1
+        
+        if hardware_components:
+            component_tickets.append({
+                "id": ticket.id,
+                "subject": ticket.subject if hasattr(ticket, 'subject') else "No subject",
+                "status": ticket.status,
+                "components": hardware_components,
+                "requester": ticket.requester.name if hasattr(ticket, 'requester') and hasattr(ticket.requester, 'name') else "Unknown",
+                "organization": ticket.organization.name if hasattr(ticket, 'organization') and ticket.organization else "No organization",
+                "created_at": ticket.created_at if hasattr(ticket, 'created_at') else None
+            })
+    
+    # Generate the report
+    report = f"""
+# Zendesk Hardware Support Ticket Report
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+
+## Overview
+Total Tickets: {len(tickets)}
+Hardware Component Issues: {len(component_tickets)}
+
+## Status Distribution
+{'-' * 40}
+"""
+    for status, count in sorted(status_counts.items(), key=lambda x: x[1], reverse=True):
+        report += f"{status}: {count}\n"
+    
+    report += f"""
+## Hardware Component Distribution
+{'-' * 40}
+"""
+    for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True):
+        report += f"{component}: {count}\n"
+    
+    report += f"""
+## Customer Segment Distribution
+{'-' * 40}
+"""
+    for org, count in sorted(customer_segments.items(), key=lambda x: x[1], reverse=True)[:10]:
+        report += f"{org}: {count}\n"
+    
+    report += f"""
+## Ticket Age
+{'-' * 40}
+Today: {age_buckets["today"]}
+Yesterday: {age_buckets["yesterday"]}
+This Week: {age_buckets["this_week"]}
+Older: {age_buckets["older"]}
+
+## Hardware Component Tickets
+{'-' * 40}
+"""
+    
+    # Sort component tickets by created date (newest first)
+    component_tickets.sort(key=lambda x: x["created_at"] if x["created_at"] else datetime.min, reverse=True)
+    
+    for ticket in component_tickets:
+        report += f"ID: #{ticket['id']} - {ticket['subject']}\n"
+        report += f"Status: {ticket['status']} | Components: {', '.join(ticket['components'])}\n"
+        report += f"Requester: {ticket['requester']} | Organization: {ticket['organization']}\n"
+        if ticket["created_at"]:
+            report += f"Created: {ticket['created_at'].strftime('%Y-%m-%d %H:%M')}\n"
+        report += f"{'-' * 40}\n"
+    
+    return report
 
 def send_summary_notification(frequency="daily"):
-    session = SessionLocal()
     try:
         now = datetime.utcnow()
         if frequency == "daily":
@@ -268,22 +702,27 @@ def send_summary_notification(frequency="daily"):
             from datetime import timedelta
             cutoff = now - timedelta(days=7)
 
-        recent_analyses = session.query(TicketAnalysis).filter(
-            TicketAnalysis.timestamp >= cutoff
-        ).all()
-
+        # Query MongoDB for recent analyses
+        recent_analyses = find_analyses_since(cutoff)
         total = len(recent_analyses)
         categories = {}
+        components = {}
         sentiments = {}
 
         for record in recent_analyses:
-            categories[record.category] = categories.get(record.category, 0) + 1
-            sentiments[record.sentiment] = sentiments.get(record.sentiment, 0) + 1
+            categories[record["category"]] = categories.get(record["category"], 0) + 1
+            
+            # Handle component data if it exists in the record
+            if "component" in record and record["component"] != "none":
+                components[record["component"]] = components.get(record["component"], 0) + 1
+                
+            sentiments[record["sentiment"]] = sentiments.get(record["sentiment"], 0) + 1
 
         summary_text = (
             f"Zendesk {frequency.capitalize()} Summary:\n"
             f"Tickets Analyzed: {total}\n"
             f"Categories: {categories}\n"
+            f"Components: {components}\n"
             f"Sentiments: {sentiments}\n"
         )
         logger.info(summary_text)
@@ -296,7 +735,7 @@ def send_summary_notification(frequency="daily"):
     except Exception as e:
         logger.exception("Failed to send summary notification")
     finally:
-        session.close()
+        pass
 
 def schedule_tasks():
     schedule.every().day.at("09:00").do(send_summary_notification, frequency="daily")
@@ -347,33 +786,106 @@ def health_check():
 
 if __name__ == "__main__":
     import argparse
+    import atexit
+    import os
+
+    # Register function to close MongoDB connections on exit
+    atexit.register(close_connections)
 
     parser = argparse.ArgumentParser(description="Zendesk AI Integration App")
-    parser.add_argument("--mode", choices=["run", "webhook", "schedule", "summary"], default="run")
+    parser.add_argument("--mode", choices=["run", "webhook", "schedule", "summary", "report", "pending", "list-views"], default="run")
     parser.add_argument("--status", default="open")
-    parser.add_argument("--limit", type=int, default=5)
+    parser.add_argument("--limit", type=int, help="Optional: Maximum number of tickets to retrieve (if not specified, all tickets will be fetched)")
     parser.add_argument("--days", type=int, default=30, help="Number of days back to include in summary")
+    parser.add_argument("--view", type=int, help="Zendesk view ID to analyze")
+    parser.add_argument("--component-report", action="store_true", help="Generate a hardware component focused report")
+    parser.add_argument("--pending-view", default="Pending Support", help="Name of the pending support view (default: 'Pending Support')")
+    parser.add_argument("--output", help="Filename to save the report to (will be created in current directory)")
     args = parser.parse_args()
 
-    if args.mode == "run":
-        logger.info("Fetching & processing tickets one-time...")
-        tickets = fetch_tickets(status=args.status, limit=args.limit)
-        for t in tickets:
-            analyze_and_update_ticket(t)
-        logger.info("Done processing.")
-    elif args.mode == "webhook":
-        logger.info("Starting Flask webhook server on port 5000...")
-        logger.info("Security features enabled:")
-        logger.info(f"- IP Whitelist: {'Enabled' if os.getenv('ALLOWED_IPS') else 'Disabled'}")
-        logger.info(f"- Webhook Signature Verification: {'Enabled' if os.getenv('WEBHOOK_SECRET_KEY') else 'Disabled'}")
-        app.run(host='0.0.0.0', port=5000, debug=False)
-    elif args.mode == "schedule":
-        logger.info("Starting scheduled tasks for daily/weekly summaries...")
-        schedule_tasks()
-    elif args.mode == "summary":
-        logger.info(f"Generating summary of {args.status} tickets...")
-        # Try to get summary from Zendesk directly first
-        generate_summary_from_zendesk(status=args.status)
-        print("\n")
-        # Then show summary from database 
-        generate_summary_from_db(days_back=args.days)
+    try:
+        if args.mode == "run":
+            if args.view:
+                logger.info(f"Fetching & processing tickets from view {args.view}...")
+                tickets = fetch_tickets_from_view(view_id=args.view, limit=args.limit)
+                if args.component_report:
+                    report = generate_hardware_component_report(tickets)
+                    print(report)
+                    # Optionally save to file
+                    report_filename = args.output if args.output else f"hardware_report_{datetime.now().strftime('%Y%m%d_%H%M')}.txt"
+                    with open(report_filename, "w") as f:
+                        f.write(report)
+                    logger.info(f"Hardware component report generated with {len(tickets)} tickets and saved to {report_filename}")
+                else:
+                    for t in tickets:
+                        analyze_and_update_ticket(t)
+                    logger.info("Done processing.")
+            else:
+                logger.info("Fetching & processing tickets one-time...")
+                tickets = fetch_tickets(status=args.status, limit=args.limit)
+                for t in tickets:
+                    analyze_and_update_ticket(t)
+                logger.info("Done processing.")
+        elif args.mode == "webhook":
+            logger.info("Starting Flask webhook server on port 5000...")
+            logger.info("Security features enabled:")
+            logger.info(f"- IP Whitelist: {'Enabled' if os.getenv('ALLOWED_IPS') else 'Disabled'}")
+            logger.info(f"- Webhook Signature Verification: {'Enabled' if os.getenv('WEBHOOK_SECRET_KEY') else 'Disabled'}")
+            # Flask will handle MongoDB connections during requests
+            app.run(host='0.0.0.0', port=5000, debug=False)
+        elif args.mode == "schedule":
+            logger.info("Starting scheduled tasks for daily/weekly summaries...")
+            schedule_tasks()
+        elif args.mode == "report":
+            if args.view:
+                logger.info(f"Generating hardware component report for view {args.view}...")
+                tickets = fetch_tickets_from_view(view_id=args.view, limit=args.limit)
+                report = generate_hardware_component_report(tickets)
+                print(report)
+                # Optionally save to file
+                report_filename = args.output if args.output else f"hardware_report_{datetime.now().strftime('%Y%m%d_%H%M')}.txt"
+                with open(report_filename, "w") as f:
+                    f.write(report)
+                logger.info(f"Hardware component report generated with {len(tickets)} tickets and saved to {report_filename}")
+            else:
+                logger.error("View ID is required for report mode. Use --view parameter.")
+                
+        elif args.mode == "list-views":
+            logger.info("Listing all available Zendesk views...")
+            views_list = list_all_views()
+            print(views_list)
+            # Optionally save to file
+            if args.output:
+                with open(args.output, "w") as f:
+                    f.write(views_list)
+                logger.info(f"Views list saved to {args.output}")
+                
+        elif args.mode == "pending":
+            logger.info(f"Generating report for {args.pending_view} view...")
+            # No default limit - fetch all tickets unless explicitly limited
+            tickets = fetch_tickets_by_view_name(view_name=args.pending_view, limit=args.limit)
+            if tickets:
+                report = generate_pending_support_report(tickets, view_name=args.pending_view)
+                print(report)
+                # Optionally save to file
+                report_filename = args.output if args.output else f"pending_support_report_{datetime.now().strftime('%Y%m%d_%H%M')}.txt"
+                with open(report_filename, "w") as f:
+                    f.write(report)
+                logger.info(f"Pending Support report generated with {len(tickets)} tickets and saved to {report_filename}")
+            else:
+                logger.error(f"No tickets found in '{args.pending_view}' view or view not found.")
+                
+        elif args.mode == "summary":
+            logger.info(f"Generating summary of {args.status} tickets...")
+            # Try to get summary from Zendesk directly first
+            generate_summary_from_zendesk(status=args.status)
+            print("\n")
+            # Then show summary from database 
+            generate_summary_from_db(days_back=args.days)
+    except KeyboardInterrupt:
+        logger.info("Shutting down gracefully...")
+    except Exception as e:
+        logger.exception(f"Error in main execution: {e}")
+    finally:
+        # Ensure connections are closed when the program exits
+        close_connections()
