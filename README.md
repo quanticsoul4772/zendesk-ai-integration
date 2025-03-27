@@ -29,6 +29,7 @@ This application integrates Zendesk support tickets with AI services (OpenAI and
   - Real-time webhook analysis
   - Scheduled daily/weekly analysis
   - View-based reporting and analytics
+  - Multi-view aggregated analysis
 - **Comprehensive sentiment reporting**:
   - Sentiment distribution analysis
   - Urgency and frustration level reporting
@@ -197,6 +198,22 @@ Generate a hardware-focused report for a specific view:
 python src/zendesk_ai_app.py --mode run --view [VIEW_ID] --component-report
 ```
 
+### Multi-View Analysis
+
+Analyze tickets from multiple views at once:
+
+```bash
+python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172823 --output multi_view_report.txt
+```
+
+Or use view names instead of IDs:
+
+```bash
+python src/zendesk_ai_app.py --mode sentiment --view-names "Support :: Pending Customer,Support :: Pending RMA" --output multi_view_report.txt
+```
+
+See [MULTI_VIEW.md](MULTI_VIEW.md) for detailed documentation on multi-view analysis.
+
 ## Documentation
 
 - [README.md](README.md) - Main documentation
@@ -204,6 +221,7 @@ python src/zendesk_ai_app.py --mode run --view [VIEW_ID] --component-report
 - [REPORTING.md](REPORTING.md) - Detailed reporting documentation
 - [JSON_PARSING.md](JSON_PARSING.md) - JSON parsing enhancements
 - [SENTIMENT_ANALYSIS.md](SENTIMENT_ANALYSIS.md) - Sentiment analysis methodology
+- [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
 
 ## Architecture and Project Structure
 

@@ -1,0 +1,122 @@
+
+============================================================
+SENTIMENT ANALYSIS REPORT (2025-03-26 21:22)
+============================================================
+
+Sentiment Analysis Report - View ID: 29753646016023
+---------------------------------------------------
+
+OVERVIEW
+--------
+Total Tickets Analyzed: 15
+
+SENTIMENT DISTRIBUTION
+--------------------
+negative: 14
+positive: 1
+
+URGENCY LEVEL DISTRIBUTION
+------------------------
+Level 1: 0
+Level 2: 0
+Level 3: 0
+Level 4: 14
+Level 5: 1
+
+FRUSTRATION LEVEL DISTRIBUTION
+----------------------------
+Level 1: 0
+Level 2: 1
+Level 3: 3
+Level 4: 11
+Level 5: 0
+
+BUSINESS IMPACT
+--------------
+Tickets with business impact: 15
+Percentage of total: 100.00%
+
+PRIORITY SCORE DISTRIBUTION
+--------------------------
+Score 1: 0
+Score 2: 0
+Score 3: 0
+Score 4: 0
+Score 5: 0
+Score 6: 0
+Score 7: 1
+Score 8: 13
+Score 9: 1
+Score 10: 0
+
+AVERAGES
+--------
+Average Urgency Level: 4.07/5
+Average Frustration Level: 3.67/5
+Average Priority Score: 8.00/10
+
+CATEGORY DISTRIBUTION
+--------------------
+hardware_issue: 14
+rma: 1
+
+COMPONENT DISTRIBUTION
+---------------------
+cpu: 4
+motherboard: 3
+gpu: 3
+boot: 2
+cooling: 1
+ipmi: 1
+
+HIGH PRIORITY TICKETS
+-------------------
+#26025 - RMA33582-S | Burnt system (Priority: 9/10)
+#27214 - RMA33835-S | Re:Re: RMA33003-C | Faulty Mellanox and CPU (Priority: 8/10)
+#26040 - RMA33583-S | System shut down when you using high CPU thread (Priority: 8/10)
+#23425 - RMA32980-S | Offline Logical CPU (Priority: 8/10)
+#26418 - RMA33657-S | System won't boot up (Priority: 8/10)
+#27109 - RMA33800 MICROSOFT CORPORATION RMA Request for ZD26098 - 4622123871 (Priority: 8/10)
+#26918 - RMA33770-S | GIGABYTE G482-Z54 won't boot up and BMC issue (Priority: 8/10)
+#26970 - RMA33783-S | Request RMA for ZD26636 - 4622124114 (Priority: 8/10)
+#25862 - RMA33528-S | Three out of eight GPUs have failed intermittently on system (Priority: 8/10)
+#25611 - RMA33514: [Exxact Corporation] Ticket #24626 - Re: RMA33301-S | ASUS ESC8000-E11: won't post with Intel Xeon Platinum 8592 CPU (Priority: 8/10)
+#25227 - RMA33417 Ohio Cluster Node - 4622121006 RMA (Priority: 8/10)
+#25224 - Ohio Cluster Node - 4622121000 RMA (Priority: 8/10)
+#21990 - RMA32766-S | System Overheating Issues: CPU and GPU Thermal Throttling  (Priority: 8/10)
+#26737 - RMA33736 BMC failed on ASUS RS720A-E11 (Priority: 8/10)
+#26761 - RMA33741 | Photys Therapeutics (Priority: 7/10)
+
+BUSINESS IMPACT TICKETS
+----------------------
+#27214 - RMA33835-S | Re:Re: RMA33003-C | Faulty Mellanox and CPU
+  Impact: System down, production impact, potential revenue loss
+#26040 - RMA33583-S | System shut down when you using high CPU thread
+  Impact: System shutdown issue is impacting the customer's ability to run critical Relion application, which could lead to production delays and potential revenue loss.
+#23425 - RMA32980-S | Offline Logical CPU
+  Impact: System is down and impacting productivity, potential for revenue loss
+#26418 - RMA33657-S | System won't boot up
+  Impact: System down, potential production impact
+#26761 - RMA33741 | Photys Therapeutics
+  Impact: Potential production impact if system is not returned and repaired in a timely manner
+#27109 - RMA33800 MICROSOFT CORPORATION RMA Request for ZD26098 - 4622123871
+  Impact: System down, potential revenue loss, and production impact
+#26918 - RMA33770-S | GIGABYTE G482-Z54 won't boot up and BMC issue
+  Impact: System down, potential production impact
+#26970 - RMA33783-S | Request RMA for ZD26636 - 4622124114
+  Impact: System down, potential production impact, revenue loss
+#25862 - RMA33528-S | Three out of eight GPUs have failed intermittently on system
+  Impact: System failure impacting production, potential revenue loss
+#26025 - RMA33582-S | Burnt system
+  Impact: Production system completely down, losing revenue
+#25611 - RMA33514: [Exxact Corporation] Ticket #24626 - Re: RMA33301-S | ASUS ESC8000-E11: won't post with Intel Xeon Platinum 8592 CPU
+  Impact: System is down and unable to be used, impacting productivity and potentially revenue
+#25227 - RMA33417 Ohio Cluster Node - 4622121006 RMA
+  Impact: Production system is down, impacting operations and potentially causing revenue loss
+#25224 - Ohio Cluster Node - 4622121000 RMA
+  Impact: Production system down, impacting customer operations and revenue
+#21990 - RMA32766-S | System Overheating Issues: CPU and GPU Thermal Throttling 
+  Impact: System overheating issues leading to performance degradation and thermal throttling, which could impact production and cause revenue loss
+#26737 - RMA33736 BMC failed on ASUS RS720A-E11
+  Impact: System down, potential production impact
+

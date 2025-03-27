@@ -1,0 +1,68 @@
+HARDWARE COMPONENT REPORT
+=======================
+
+Total tickets analyzed: 15
+Tickets with hardware components: 15
+
+COMPONENT DISTRIBUTION
+---------------------
+memory: 14
+cpu: 8
+boot: 6
+network: 6
+gpu: 6
+drive: 6
+cooling: 5
+bios: 4
+ipmi: 4
+motherboard: 3
+display: 3
+power_supply: 2
+
+TICKET DETAILS
+-------------
+#27214 - RMA33835-S | Re:Re: RMA33003-C | Faulty Mellanox and CPU
+Components: bios, boot, network, memory, cpu
+
+#26040 - RMA33583-S | System shut down when you using high CPU thread
+Components: ipmi, network, memory, cpu, gpu
+
+#23425 - RMA32980-S | Offline Logical CPU
+Components: memory, cpu
+
+#26418 - RMA33657-S | System won't boot up
+Components: ipmi, drive, motherboard, boot, power_supply, memory
+
+#26761 - RMA33741 | Photys Therapeutics
+Components: network, drive, memory, motherboard
+
+#27109 - RMA33800 MICROSOFT CORPORATION RMA Request for ZD26098 - 4622123871
+Components: boot, memory, cpu
+
+#26918 - RMA33770-S | GIGABYTE G482-Z54 won't boot up and BMC issue
+Components: bios, ipmi, motherboard, boot, power_supply, memory, cpu, cooling, display, gpu
+
+#26970 - RMA33783-S | Request RMA for ZD26636 - 4622124114
+Components: bios, boot, memory, cpu, display
+
+#25862 - RMA33528-S | Three out of eight GPUs have failed intermittently on system
+Components: cooling, drive, memory, gpu
+
+#26025 - RMA33582-S | Burnt system
+Components: display, memory, cooling
+
+#25611 - RMA33514: [Exxact Corporation] Ticket #24626 - Re: RMA33301-S | ASUS ESC8000-E11: won't post with Intel Xeon Platinum 8592 CPU
+Components: boot, cpu, cooling
+
+#25227 - RMA33417 Ohio Cluster Node - 4622121006 RMA
+Components: network, drive, memory, gpu
+
+#25224 - Ohio Cluster Node - 4622121000 RMA
+Components: network, drive, memory, gpu
+
+#21990 - RMA32766-S | System Overheating Issues: CPU and GPU Thermal Throttling 
+Components: memory, cooling, cpu, gpu
+
+#26737 - RMA33736 BMC failed on ASUS RS720A-E11
+Components: bios, ipmi, drive, network, memory
+
