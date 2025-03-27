@@ -247,58 +247,32 @@ class CommandLineInterface:
                 else:
                     logger.error("Hardware reporter module not available.")
             else:
-                # Process each ticket
-                processed = 0
-                for ticket in tickets:
-                    subject = ticket.subject or ""
-                    description = ticket.description or ""
-                    
-                    # Analyze ticket
-                    analysis = ai_analyzer.analyze_ticket(
-                        ticket_id=ticket.id,
-                        subject=subject,
-                        description=description,
-                        use_enhanced=use_enhanced,
-                        use_claude=use_claude
-                    )
-                    
-                    # Save analysis to database
-                    db_repository.save_analysis(analysis)
-                    
-                    # No ticket modifications - this is a read-only system
-                    # Analysis is stored in the database for reporting
-                    
-                    processed += 1
+                # Use batch processing to analyze tickets
+                logger.info(f"Processing {len(tickets)} tickets using batch processing...")
                 
-                logger.info(f"Processed {processed} tickets. Done.")
+                # Use the batch processor to analyze all tickets in parallel
+                analyses = ai_analyzer.analyze_tickets_batch(tickets, use_claude=use_claude)
+                
+                # Save all analyses to database
+                for analysis in analyses:
+                    db_repository.save_analysis(analysis)
+                
+                logger.info(f"Processed {len(analyses)} tickets using batch processing. Done.")
         else:
             logger.info(f"Fetching & analyzing tickets with status: {args.status}")
             tickets = zendesk_client.fetch_tickets(args.status, args.limit)
             
-            # Process each ticket
-            processed = 0
-            for ticket in tickets:
-                subject = ticket.subject or ""
-                description = ticket.description or ""
-                
-                # Analyze ticket
-                analysis = ai_analyzer.analyze_ticket(
-                    ticket_id=ticket.id,
-                    subject=subject,
-                    description=description,
-                    use_enhanced=use_enhanced,
-                    use_claude=use_claude
-                )
-                
-                # Save analysis to database
-                db_repository.save_analysis(analysis)
-                
-                # No ticket modifications - this is a read-only system
-                # Analysis is stored in the database for reporting
-                
-                processed += 1
+            # Use batch processing to analyze tickets
+            logger.info(f"Processing {len(tickets)} tickets using batch processing...")
             
-            logger.info(f"Processed {processed} tickets. Done.")
+            # Use the batch processor to analyze all tickets in parallel
+            analyses = ai_analyzer.analyze_tickets_batch(tickets, use_claude=use_claude)
+            
+            # Save all analyses to database
+            for analysis in analyses:
+                db_repository.save_analysis(analysis)
+            
+            logger.info(f"Processed {len(analyses)} tickets using batch processing. Done.")
         
         return True
     
@@ -365,34 +339,26 @@ class CommandLineInterface:
                 logger.error("Hardware reporter module not available.")
                 return False
         
-        # Process each ticket for sentiment analysis
-        analyses = []
-        processed = 0
-        for ticket in tickets:
-            subject = ticket.subject or ""
-            description = ticket.description or ""
-            
-            # Analyze ticket
-            analysis = ai_analyzer.analyze_ticket(
-                ticket_id=ticket.id,
-                subject=subject,
-                description=description,
-                use_enhanced=use_enhanced,
-                use_claude=use_claude
-            )
-            
-            # Add view information to the analysis
-            if hasattr(ticket, 'source_view_id'):
-                analysis['source_view_id'] = getattr(ticket, 'source_view_id')
-                analysis['source_view_name'] = view_map.get(analysis['source_view_id'], "Unknown View")
+        # Use batch processing to analyze tickets
+        logger.info(f"Processing {len(tickets)} tickets from {len(view_ids)} views using batch processing...")
+        
+        # Use the batch processor to analyze all tickets in parallel
+        analyses = ai_analyzer.analyze_tickets_batch(tickets, use_claude=use_claude)
+        
+        # Add view information to the analyses and save to database
+        for analysis in analyses:
+            ticket_id = analysis.get('ticket_id')
+            # Find the corresponding ticket to get the view ID
+            for ticket in tickets:
+                if ticket.id == ticket_id and hasattr(ticket, 'source_view_id'):
+                    analysis['source_view_id'] = getattr(ticket, 'source_view_id')
+                    analysis['source_view_name'] = view_map.get(analysis['source_view_id'], "Unknown View")
+                    break
             
             # Save analysis to database
             db_repository.save_analysis(analysis)
-            analyses.append(analysis)
-            
-            processed += 1
         
-        logger.info(f"Processed {processed} tickets from {len(view_ids)} views.")
+        logger.info(f"Processed {len(analyses)} tickets from {len(view_ids)} views using batch processing.")
         
         # Generate a multi-view report
         title = f"Multi-View Sentiment Analysis Report"
@@ -443,36 +409,28 @@ class CommandLineInterface:
             
         logger.info(f"Analyzing {len(tickets)} unique tickets from {len(view_names)} views...")
         
-        # Process each ticket for sentiment analysis
-        analyses = []
-        processed = 0
-        for ticket in tickets:
-            subject = ticket.subject or ""
-            description = ticket.description or ""
-            
-            # Analyze ticket
-            analysis = ai_analyzer.analyze_ticket(
-                ticket_id=ticket.id,
-                subject=subject,
-                description=description,
-                use_enhanced=use_enhanced,
-                use_claude=use_claude
-            )
-            
-            # Add view information to the analysis
-            if hasattr(ticket, 'source_view_id'):
-                analysis['source_view_id'] = getattr(ticket, 'source_view_id')
-            
-            if hasattr(ticket, 'source_view_name'):
-                analysis['source_view_name'] = getattr(ticket, 'source_view_name')
+        # Use batch processing to analyze tickets
+        logger.info(f"Processing {len(tickets)} tickets from {len(view_names)} views using batch processing...")
+        
+        # Use the batch processor to analyze all tickets in parallel
+        analyses = ai_analyzer.analyze_tickets_batch(tickets, use_claude=use_claude)
+        
+        # Add view information to the analyses and save to database
+        for analysis in analyses:
+            ticket_id = analysis.get('ticket_id')
+            # Find the corresponding ticket to get the view information
+            for ticket in tickets:
+                if ticket.id == ticket_id:
+                    if hasattr(ticket, 'source_view_id'):
+                        analysis['source_view_id'] = getattr(ticket, 'source_view_id')
+                    if hasattr(ticket, 'source_view_name'):
+                        analysis['source_view_name'] = getattr(ticket, 'source_view_name')
+                    break
             
             # Save analysis to database
             db_repository.save_analysis(analysis)
-            analyses.append(analysis)
-            
-            processed += 1
         
-        logger.info(f"Processed {processed} tickets from {len(view_names)} views.")
+        logger.info(f"Processed {len(analyses)} tickets from {len(view_names)} views using batch processing.")
         
         # Generate a multi-view report
         title = f"Multi-View Sentiment Analysis Report"
@@ -918,16 +876,11 @@ class CommandLineInterface:
             # If tickets found, analyze them
             if tickets:
                 logger.info(f"Analyzing {len(tickets)} tickets from {view_desc}...")
-                analyses = []
-                for ticket in tickets:
-                    analysis = ai_analyzer.analyze_ticket(
-                        ticket_id=ticket.id,
-                        subject=ticket.subject or "",
-                        description=ticket.description or "",
-                        use_enhanced=use_enhanced,
-                        use_claude=use_claude
-                    )
-                    analyses.append(analysis)
+                # Use batch processing to analyze tickets
+                analyses = ai_analyzer.analyze_tickets_batch(tickets, use_claude=use_claude)
+                
+                # Save all analyses to database
+                for analysis in analyses:
                     db_repository.save_analysis(analysis)
                 
                 # Generate report

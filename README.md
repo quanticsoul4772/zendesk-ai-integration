@@ -30,6 +30,10 @@ This application integrates Zendesk support tickets with AI services (OpenAI and
   - IP whitelisting for webhook endpoints
   - HMAC signature verification
   - Robust error handling
+- **Performance optimizations**:
+  - Caching system for Zendesk data with TTL
+  - Parallel batch processing for ticket analysis
+  - See [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md) for details
 - **Multiple operation modes**:
   - One-time batch analysis
   - Real-time webhook analysis
@@ -241,6 +245,7 @@ See [MULTI_VIEW.md](MULTI_VIEW.md) for detailed documentation on multi-view anal
 - [SENTIMENT_ANALYSIS.md](SENTIMENT_ANALYSIS.md) - Sentiment analysis methodology
 - [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
 - [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting documentation
+- [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md) - Performance optimization features
 
 ## Architecture and Project Structure
 

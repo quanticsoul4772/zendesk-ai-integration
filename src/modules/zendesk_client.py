@@ -10,6 +10,9 @@ import logging
 from typing import List, Optional, Dict, Any, Union
 from dotenv import load_dotenv
 
+# Import the cache manager
+from modules.cache_manager import ZendeskCache
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -21,6 +24,9 @@ class ZendeskClient:
     
     def __init__(self):
         """Initialize the Zendesk client using credentials from environment variables."""
+        # Initialize cache system
+        self.cache = ZendeskCache()
+        
         # Initialize Zendesk client
         try:
             from zenpy import Zenpy
@@ -60,7 +66,16 @@ class ZendeskClient:
         Returns:
             List of Zendesk tickets.
         """
-        logger.info(f"Fetching tickets with status: {status}")
+        # Create a cache key based on the function parameters
+        cache_key = f"tickets_{status}_{limit}_{str(filter_by)}"
+        
+        # Try to get from cache first
+        cached_result = self.cache.get_tickets(cache_key)
+        if cached_result is not None:
+            logger.info(f"Using cached tickets with status: {status}")
+            return cached_result
+            
+        logger.info(f"Fetching tickets with status: {status} (cache miss)")
         try:
             if filter_by and 'id' in filter_by:
                 # Fetch a specific ticket by ID
@@ -82,6 +97,9 @@ class ZendeskClient:
                 logger.info(f"Filtered out closed tickets, remaining: {len(tickets)}")
             
             logger.info(f"Fetched {len(tickets)} tickets with status: {status}")
+            
+            # Cache the results before returning
+            self.cache.set_tickets(cache_key, tickets)
             return tickets
         except Exception as e:
             logger.exception(f"Error fetching tickets: {e}")
@@ -98,7 +116,16 @@ class ZendeskClient:
         Returns:
             List of Zendesk tickets.
         """
-        logger.info(f"Fetching tickets from view ID: {view_id}")
+        # Create a cache key
+        cache_key = f"view_tickets_{view_id}_{limit}"
+        
+        # Try to get from cache first
+        cached_result = self.cache.get_tickets(cache_key)
+        if cached_result is not None:
+            logger.info(f"Using cached tickets for view ID: {view_id}")
+            return cached_result
+            
+        logger.info(f"Fetching tickets from view ID: {view_id} (cache miss)")
         
         # First check if the view exists
         try:
@@ -122,6 +149,9 @@ class ZendeskClient:
                 logger.info(f"Filtered out {original_count - len(tickets)} closed tickets from view")
             
             logger.info(f"Fetched {len(tickets)} tickets from view ID: {view_id}")
+            
+            # Cache the results before returning
+            self.cache.set_tickets(cache_key, tickets)
             return tickets
         except Exception as e:
             # Handle RecordNotFoundException specifically
@@ -146,12 +176,26 @@ class ZendeskClient:
         all_tickets = []
         ticket_ids_seen = set()  # To prevent duplicates
         
-        # Get all available views for validation
-        try:
-            views = self.client.views()
-            # Create a set of valid view IDs for fast lookup
+        # Create a cache key for views
+        cache_key = "all_views"
+        
+        # Try to get views from cache first
+        cached_views = self.cache.get_views(cache_key)
+        if cached_views is not None:
+            views = cached_views
             valid_view_ids = {view.id for view in views}
-            logger.info(f"Found {len(valid_view_ids)} available views in Zendesk")
+            logger.info(f"Using cached views, found {len(valid_view_ids)} available views")
+        else:
+            # Get all available views for validation if not in cache
+            try:
+                views = self.client.views()
+                # Create a set of valid view IDs for fast lookup
+                valid_view_ids = {view.id for view in views}
+                logger.info(f"Found {len(valid_view_ids)} available views in Zendesk")
+                
+                # Cache the views
+                self.cache.set_views(cache_key, views)
+            
         except Exception as e:
             logger.error(f"Error fetching available views: {e}")
             # If we can't fetch views, return empty list
@@ -312,15 +356,32 @@ class ZendeskClient:
         Returns:
             Dictionary mapping view IDs to view names
         """
+        # Create a cache key
+        cache_key = f"view_names_{','.join(str(id) for id in view_ids)}"
+        
+        # Try to get from cache first
+        cached_map = self.cache.get_views(cache_key)
+        if cached_map is not None:
+            return cached_map
+            
         view_map = {}
         
         try:
-            views = self.client.views()
+            # Try to get all views from cache first
+            cached_views = self.cache.get_views("all_views")
+            if cached_views is not None:
+                views = cached_views
+            else:
+                views = self.client.views()
+                # Cache all views for future use
+                self.cache.set_views("all_views", views)
             
             for view in views:
                 if view.id in view_ids:
                     view_map[view.id] = view.title
-                    
+            
+            # Cache the mapping
+            self.cache.set_views(cache_key, view_map)
             return view_map
         except Exception as e:
             logger.exception(f"Error getting view names by IDs: {e}")
@@ -339,8 +400,16 @@ class ZendeskClient:
         valid_views = set()
         
         try:
-            # Get all available views
-            all_views = self.client.views()
+            # Try to get from cache first
+            cached_views = self.cache.get_views("all_views")
+            if cached_views is not None:
+                all_views = cached_views
+            else:
+                # Get all available views if not in cache
+                all_views = self.client.views()
+                # Cache the views
+                self.cache.set_views("all_views", all_views)
+                
             all_view_ids = {view.id for view in all_views}
             
             # Check which of the provided view IDs exist
@@ -362,13 +431,31 @@ class ZendeskClient:
         Returns:
             Formatted string with view IDs and names.
         """
+        # Create a cache key for the formatted view list
+        cache_key = "formatted_view_list"
+        
+        # Try to get from cache first
+        cached_list = self.cache.get_views(cache_key)
+        if cached_list is not None:
+            return cached_list
+            
         try:
-            views = self.client.views()
+            # Try to get views from cache
+            cached_views = self.cache.get_views("all_views")
+            if cached_views is not None:
+                views = cached_views
+            else:
+                views = self.client.views()
+                # Cache the views
+                self.cache.set_views("all_views", views)
+                
             view_list = "\nZENDESK VIEWS\n============\n\nID\t\tName\n--\t\t----\n"
             
             for view in sorted(views, key=lambda v: v.title):
                 view_list += f"{view.id}\t\t{view.title}\n"
                 
+            # Cache the formatted list
+            self.cache.set_views(cache_key, view_list)
             return view_list
         except Exception as e:
             logger.exception(f"Error fetching views: {e}")
