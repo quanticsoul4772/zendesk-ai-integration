@@ -1,27 +1,35 @@
 # Zendesk AI Integration
 
-This application integrates Zendesk support tickets with OpenAI to provide automated sentiment analysis, categorization, and reporting without modifying any tickets.
+This application integrates Zendesk support tickets with AI services (OpenAI and Anthropic Claude) to provide automated sentiment analysis, categorization, and reporting while maintaining a read-only approach to customer tickets.
 
 ## Features
 
-- Read-only sentiment analysis - analyzes tickets without modifying them
-- Enhanced sentiment analysis with urgency, frustration, and business impact detection
-  - Uses OpenAI's advanced GPT-4o model for improved accuracy
+- **Read-only sentiment analysis** - analyzes tickets without modifying them
+- **Multi-LLM Support**:
+  - OpenAI's advanced GPT-4o model
+  - Anthropic's Claude models
+- **Enhanced sentiment analysis** with urgency, frustration, and business impact detection:
   - Contextual examples for better sentiment classification
   - Temperature-controlled variance for more nuanced analysis
-- Priority score calculation based on multiple sentiment factors
-- Hardware component detection in tickets
-- MongoDB database for analytics and reporting
-- Enhanced security features:
+  - Urgency level detection (1-5 scale)
+  - Frustration level detection (1-5 scale)
+  - Business impact assessment
+  - Technical expertise estimation
+  - Priority score calculation (1-10 scale)
+  - Key phrase extraction
+  - Emotion detection
+- **Hardware component detection** in tickets
+- **MongoDB database** for analytics and reporting
+- **Enhanced security features**:
   - IP whitelisting for webhook endpoints
   - HMAC signature verification
   - Robust error handling
-- Multiple operation modes:
+- **Multiple operation modes**:
   - One-time batch analysis
   - Real-time webhook analysis
   - Scheduled daily/weekly analysis
   - View-based reporting and analytics
-- Comprehensive sentiment reporting:
+- **Comprehensive sentiment reporting**:
   - Sentiment distribution analysis
   - Urgency and frustration level reporting
   - Business impact assessment
@@ -46,8 +54,9 @@ ZENDESK_EMAIL=your_email@company.com
 ZENDESK_API_TOKEN=your_zendesk_api_token
 ZENDESK_SUBDOMAIN=your_zendesk_subdomain
 
-# OpenAI API key
+# AI API keys
 OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
 
 # MongoDB configuration
 MONGODB_URI=mongodb://localhost:27017
@@ -60,6 +69,9 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
 # Security settings
 WEBHOOK_SECRET_KEY=your_secure_random_key_here
 ALLOWED_IPS=127.0.0.1,10.0.0.0/24
+
+# Feature flags
+DISABLE_TAG_UPDATES=false
 ```
 
 ### Security Configuration
@@ -74,15 +86,21 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 ## Usage
 
-### Enhanced Sentiment Analysis
+### Sentiment Analysis with Claude or OpenAI
 
-To analyze tickets with enhanced sentiment analysis:
+Analyze tickets with Claude (default):
 
 ```bash
 python src/zendesk_ai_app.py --mode run --status open
 ```
 
-To use the basic sentiment analysis instead:
+Specify OpenAI instead of Claude:
+
+```bash
+python src/zendesk_ai_app.py --mode run --status open --use-openai
+```
+
+To use the basic sentiment analysis instead of enhanced:
 
 ```bash
 python src/zendesk_ai_app.py --mode run --status open --basic-sentiment
@@ -94,17 +112,7 @@ To reanalyze existing tickets with the improved sentiment model:
 python src/zendesk_ai_app.py --mode run --reanalyze --days 7
 ```
 
-This will reprocess all tickets from the last 7 days with the enhanced GPT-4o model.
-
-The enhanced sentiment analysis provides:
-
-- Urgency level detection (1-5 scale)
-- Frustration level detection (1-5 scale)
-- Business impact assessment
-- Technical expertise estimation
-- Priority score calculation (1-10 scale)
-- Key phrase extraction
-- Emotion detection
+This will reprocess all tickets from the last 7 days with the enhanced sentiment model.
 
 ### Sentiment Analysis Reporting
 
@@ -195,6 +203,7 @@ python src/zendesk_ai_app.py --mode run --view [VIEW_ID] --component-report
 - [WEBHOOK_SETUP.md](WEBHOOK_SETUP.md) - Webhook configuration instructions
 - [REPORTING.md](REPORTING.md) - Detailed reporting documentation
 - [JSON_PARSING.md](JSON_PARSING.md) - JSON parsing enhancements
+- [SENTIMENT_ANALYSIS.md](SENTIMENT_ANALYSIS.md) - Sentiment analysis methodology
 
 ## Architecture and Project Structure
 
@@ -217,9 +226,11 @@ The application follows the Single Responsibility Principle, with each module ha
   - `pending_report.py` - Generates pending support reports
   - `sentiment_report.py` - Generates sentiment analysis reports
 
-### Support Modules
-- `src/ai_service.py` - Basic OpenAI integration with error handling
-- `src/enhanced_sentiment.py` - Enhanced sentiment analysis implementation
+### AI Services
+- `src/ai_service.py` - OpenAI integration with error handling
+- `src/enhanced_sentiment.py` - Enhanced OpenAI sentiment analysis implementation
+- `src/claude_service.py` - Anthropic Claude integration with error handling
+- `src/claude_enhanced_sentiment.py` - Enhanced Claude sentiment analysis implementation
 - `src/security.py` - Security-related functions and decorators
 
 ## Design Philosophy
