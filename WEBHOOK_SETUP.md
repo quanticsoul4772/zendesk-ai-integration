@@ -9,6 +9,35 @@ This guide explains how to configure Zendesk to send webhook notifications to yo
 3. A publicly accessible URL for your webhook server
 4. The webhook secret key from your `.env` file
 
+## Important Note: Read-Only Operation
+
+The webhook server operates in a **completely read-only mode**, meaning:
+1. It analyzes tickets using AI
+2. It stores analysis results in MongoDB
+3. It **never modifies tickets** in Zendesk
+
+This design ensures the system can safely be used in production environments without risk of interfering with support workflows.
+
+## Starting the Webhook Server
+
+To run the webhook server using our modular architecture:
+
+```bash
+python src/zendesk_ai_app.py --mode webhook
+```
+
+This will:
+1. Initialize the Zendesk client, AI analyzer, and database repository modules
+2. Create a Flask server with the appropriate routes
+3. Apply security features (IP whitelisting and signature verification)
+4. Start listening for incoming webhooks on port 5000 (default)
+
+You can customize the host and port:
+
+```bash
+python src/zendesk_ai_app.py --mode webhook --host 127.0.0.1 --port 8080
+```
+
 ## Step 1: Access Zendesk Admin Center
 
 1. Log in to your Zendesk account
@@ -77,7 +106,40 @@ You may want to create additional triggers for other events:
 
 1. Create a test ticket in Zendesk
 2. Check your webhook server logs to confirm it received the webhook
-3. Verify that the ticket was analyzed and updated with tags
+3. Verify that the ticket was analyzed and the results stored in MongoDB
+
+## Webhook Server Implementation
+
+In our modular architecture, webhooks are handled by the following components:
+
+1. `src/modules/webhook_server.py` - Core webhook server implementation 
+   - Contains the Flask server setup
+   - Defines webhook routes
+   - Handles incoming JSON payloads
+   - Coordinates with other modules for processing
+
+2. `src/security.py` - Security components
+   - Provides IP whitelisting via a decorator
+   - Verifies webhook signatures via a decorator
+   - Validates incoming requests
+
+When a webhook is received, the server:
+1. Validates the request (IP and signature)
+2. Extracts the ticket ID from the payload
+3. Fetches the complete ticket data from Zendesk
+4. Sends the ticket content to the AI analyzer
+5. Stores the analysis results in the database
+6. Returns a success/failure response to Zendesk
+
+## Health Check Endpoint
+
+The webhook server also provides a health check endpoint at `/health` that you can use to verify the server is running:
+
+```
+GET https://your-server.com/health
+```
+
+This endpoint returns a simple status response and can be used for monitoring and availability checks.
 
 ## Troubleshooting
 
@@ -91,6 +153,7 @@ You may want to create additional triggers for other events:
 
 - Confirm the shared secret in Zendesk matches your `.env` file
 - Check server logs for detailed error messages
+- Ensure the `WEBHOOK_SECRET_KEY` environment variable is set correctly
 
 ### Connection Issues
 
@@ -98,9 +161,17 @@ You may want to create additional triggers for other events:
 - Check firewall settings and network rules
 - Ensure your server is handling POST requests properly
 
+### Module Import Errors
+
+If you encounter module import errors:
+1. Make sure you're running the application from the project root directory
+2. Check that your virtual environment is activated
+3. Verify that all required packages are installed: `pip install -r requirements.txt`
+
 ## Security Considerations
 
 - Always use HTTPS for your webhook endpoint
 - Regularly rotate your webhook secret key
 - Use IP whitelisting if your Zendesk instance has fixed IP addresses
 - Monitor webhook activity for unauthorized access attempts
+- Consider rate limiting for protection against DoS attacks

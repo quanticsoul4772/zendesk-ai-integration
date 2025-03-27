@@ -1,141 +1,207 @@
-# Zendesk AI Integration Reporting Guide
+# Reporting Features
 
-This guide explains how to use the reporting features of the Zendesk AI Integration application to gain insights into your support tickets.
-
-## Overview
-
-The reporting functionality allows you to:
-
-1. Generate comprehensive reports from any Zendesk view
-2. See ticket status, priority, and age distributions
-3. Get hardware component analysis from ticket content
-4. View detailed information about each ticket
-5. Save reports to text files for sharing or archiving
+This document describes the reporting features available in the Zendesk AI Integration.
 
 ## Available Reports
 
-### View-Based Reports
+### Sentiment Analysis Report
 
-The most powerful reporting feature is the ability to generate reports based on any Zendesk view.
+Generate a detailed sentiment analysis report:
+
+```bash
+python src/zendesk_ai_app.py --mode sentiment --days 7
+```
+
+This report provides comprehensive sentiment analytics:
+- Distribution of sentiment polarity (positive, negative, neutral)
+- Urgency level distribution (1-5 scale)
+- Frustration level distribution (1-5 scale)
+- Business impact analysis
+- Priority score distribution
+- Average metrics
+- High-priority ticket identification
+
+You can generate reports for different time periods:
+```bash
+python src/zendesk_ai_app.py --mode sentiment --days 1   # Last 24 hours
+python src/zendesk_ai_app.py --mode sentiment --days 7   # Last week
+python src/zendesk_ai_app.py --mode sentiment --days 30  # Last month
+```
+
+Or focus on specific views:
+```bash
+python src/zendesk_ai_app.py --mode sentiment --view "Support Queue"
+```
+
+### Pending Support Report
+
+Generate a detailed report of tickets in the Pending Support view:
 
 ```bash
 python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support"
 ```
 
-This command will:
-- Find the named view in your Zendesk instance
-- Fetch all tickets from that view
-- Generate a comprehensive report
-- Save the report to a text file
-
-The report includes:
+This report includes:
 - Total ticket count
 - Status distribution
 - Priority distribution
-- Hardware component distribution
+- Hardware component analysis
 - Customer distribution
 - Ticket age analysis
-- Detailed listing of all tickets with their metadata
+- Detailed information about each ticket
 
-### Hardware Component Reports
+### Hardware Component Report
 
-For hardware-specific analysis, you can use the component report mode:
+Generate a report focused on hardware component issues:
 
 ```bash
-python src/zendesk_ai_app.py --mode run --view 15990417987223 --component-report
+python src/zendesk_ai_app.py --mode run --view [VIEW_ID] --component-report
 ```
 
-This specialized report focuses on hardware components mentioned in tickets and provides deeper analysis of hardware-related issues.
+This report analyzes tickets for hardware component mentions and provides:
+- Component distribution
+- Status breakdown
+- Customer segment analysis
+- Detailed listing of hardware-related tickets
 
-### Finding Available Views
+### Summary Reports
 
-To see all available Zendesk views that you can report on:
+Generate summary reports from Zendesk and the database:
+
+```bash
+python src/zendesk_ai_app.py --mode summary --status open
+```
+
+## Enhanced Sentiment Analysis
+
+The Zendesk AI Integration includes enhanced sentiment analysis that provides deeper insights into customer tickets.
+
+### Understanding the Sentiment Metrics
+
+#### Urgency Level (1-5 scale)
+- **1**: No urgency, routine inquiry
+- **2**: Mild urgency, would like a response soon
+- **3**: Moderate urgency, needs attention this week
+- **4**: High urgency, needs prompt attention
+- **5**: Critical emergency, needs immediate attention
+
+#### Frustration Level (1-5 scale)
+- **1**: No frustration, neutral tone
+- **2**: Mild frustration, slight annoyance
+- **3**: Moderate frustration, clear dissatisfaction
+- **4**: High frustration, significantly upset
+- **5**: Extreme frustration, angry or very upset
+
+#### Technical Expertise (1-5 scale)
+- **1**: Basic user, limited technical knowledge
+- **2**: Some technical knowledge
+- **3**: Moderate technical understanding
+- **4**: Advanced technical skills
+- **5**: Expert with detailed technical understanding
+
+#### Business Impact
+- **Detected**: Whether business operations are impacted
+- **Description**: Brief explanation of the business impact
+
+#### Priority Score (1-10 scale)
+Automatically calculated based on:
+- Urgency level (35% weight)
+- Frustration level (30% weight)
+- Business impact (25% weight)
+- Technical expertise (10% weight, inverse relationship)
+
+### Interpretation
+
+- **Priority Scores 8-10**: Critical issues needing immediate attention
+- **Priority Scores 5-7**: Important issues with moderate urgency
+- **Priority Scores 1-4**: Routine issues with normal priority
+
+### Viewing Enhanced Sentiment Data
+
+Enhanced sentiment data appears in reports generated by the sentiment report module. This includes:
+
+1. **Sentiment Reports**: Comprehensive analysis of sentiment trends
+2. **MongoDB Data**: All sentiment data is stored in the database for analysis
+3. **Analysis Files**: Reports can be saved to files for sharing and review
+
+## Report Implementation
+
+The reporting functionality is now implemented using a modular approach:
+
+### Reporter Modules
+
+All report generators are located in the `src/modules/reporters` directory:
+
+- `hardware_report.py` - Implements `HardwareReporter` class for generating hardware component reports
+- `pending_report.py` - Implements `PendingReporter` class for generating pending support reports
+- `sentiment_report.py` - Implements `SentimentReporter` class for generating sentiment analysis reports
+
+Each reporter module follows the Single Responsibility Principle and focuses only on one type of report.
+
+### Report Generation Process
+
+1. The Command Line Interface (`cli.py`) receives the request for a specific report
+2. It loads the appropriate reporter module
+3. The reporter module fetches the necessary data through the Zendesk Client
+4. The reporter generates and formats the report
+5. The CLI module handles output (display to console and/or save to file)
+
+### Customizing Reports
+
+To customize existing reports:
+
+1. Locate the appropriate reporter module in `src/modules/reporters/`
+2. Modify the report generation method (e.g., `generate_report()`)
+3. Update the formatting as needed
+
+### Creating New Report Types
+
+To add a new report type:
+
+1. Create a new file in `src/modules/reporters/` (e.g., `custom_report.py`)
+2. Implement a class that generates the report (e.g., `CustomReporter`)
+3. Add the new reporter to the `report_modules` dictionary in `zendesk_ai_app.py`
+4. Add a new command-line option in `cli.py` to access your report
+
+## Finding Zendesk Views
+
+To list all available Zendesk views:
 
 ```bash
 python src/zendesk_ai_app.py --mode list-views
 ```
 
-This displays a list of all views with their IDs and names.
-
-## Limiting Report Size
-
-If you want to limit the number of tickets in a report:
-
-```bash
-python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support" --limit 10
-```
-
-By default, reports include all tickets in the view.
-
-## Report Output
-
-Reports are:
-1. Displayed in the console
-2. Saved to a text file in the current directory (named with a timestamp)
-
-To specify a custom output file:
-
-```bash
-python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support" --output my_report.txt
-```
-
-## Component Detection
-
-The application automatically detects hardware components mentioned in tickets by:
-1. Checking for component-specific tags
-2. Analyzing ticket subject lines for component keywords
-
-Detected components include:
-- GPU
-- CPU
-- Drive/Storage
-- Memory/RAM
-- Power Supply
-- Motherboard
-- Cooling
-- Display
-- Network
-- BIOS
-- IPMI/BMC
-
-## Examples
-
-### Daily Support Queue Report
-
-```bash
-python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support"
-```
-
-### Weekly Hardware Issues Report
-
-```bash
-python src/zendesk_ai_app.py --mode run --view 15990417987223 --component-report --output weekly_hardware_report.txt
-```
-
-### Open RMA Tickets Report
-
-```bash
-python src/zendesk_ai_app.py --mode pending --pending-view "RMA :: Pending RTV Approval"
-```
+This command displays all views with their IDs and names, allowing you to identify the correct view for reporting.
 
 ## Troubleshooting
 
+### Dates Not Formatted Correctly
+
+The application uses python-dateutil to parse dates from Zendesk. If your dates are not formatted correctly in reports, ensure:
+
+1. python-dateutil is installed: `pip install python-dateutil`
+2. Zendesk is returning date values (rather than null)
+
+### Missing Sentiment Data
+
+If enhanced sentiment data is missing from reports, check:
+
+1. You're not using the `--basic-sentiment` flag
+2. The MongoDB connection is working
+3. The OpenAI API key is correctly configured
+
 ### View Not Found
 
-If you receive "View not found" error:
-- Use `--mode list-views` to see all available views
-- Check for exact spelling and capitalization of view names
+If a view cannot be found, verify:
 
-### Empty Reports
+1. The exact name of the view from the `list-views` command
+2. You've enclosed view names with spaces in quotes
+3. You have permission to access the view in Zendesk
 
-If your report shows no tickets:
-- Verify the view contains tickets in Zendesk
-- Check your Zendesk API credentials
-- Ensure your API token has sufficient permissions
+### Module Import Errors
 
-### Component Detection Issues
+If you encounter module import errors:
 
-If components aren't being detected properly:
-- Review your ticket tagging process
-- Consider adding more component keywords in the `generate_pending_support_report` function
-- Make sure ticket subjects use standardized component nomenclature
+1. Make sure you're running the application from the project root directory
+2. Check that your virtual environment is activated
+3. Verify that all required packages are installed: `pip install -r requirements.txt`

@@ -1,11 +1,15 @@
 # Zendesk AI Integration
 
-This application integrates Zendesk support tickets with OpenAI to provide automatic categorization and sentiment analysis. It also includes reporting functionality for Zendesk views.
+This application integrates Zendesk support tickets with OpenAI to provide automated sentiment analysis, categorization, and reporting without modifying any tickets.
 
 ## Features
 
-- Automatic ticket categorization using AI
-- Sentiment analysis for customer communications
+- Read-only sentiment analysis - analyzes tickets without modifying them
+- Enhanced sentiment analysis with urgency, frustration, and business impact detection
+  - Uses OpenAI's advanced GPT-4o model for improved accuracy
+  - Contextual examples for better sentiment classification
+  - Temperature-controlled variance for more nuanced analysis
+- Priority score calculation based on multiple sentiment factors
 - Hardware component detection in tickets
 - MongoDB database for analytics and reporting
 - Enhanced security features:
@@ -13,10 +17,15 @@ This application integrates Zendesk support tickets with OpenAI to provide autom
   - HMAC signature verification
   - Robust error handling
 - Multiple operation modes:
-  - One-time batch processing
-  - Real-time webhook processing
+  - One-time batch analysis
+  - Real-time webhook analysis
   - Scheduled daily/weekly analysis
   - View-based reporting and analytics
+- Comprehensive sentiment reporting:
+  - Sentiment distribution analysis
+  - Urgency and frustration level reporting
+  - Business impact assessment
+  - High-priority ticket identification
 
 ## Installation
 
@@ -65,17 +74,68 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 ## Usage
 
-### One-time Analysis
+### Enhanced Sentiment Analysis
 
-Process a batch of tickets:
+To analyze tickets with enhanced sentiment analysis:
 
 ```bash
-python src/zendesk_ai_app.py --mode run --status open --limit 5
+python src/zendesk_ai_app.py --mode run --status open
+```
+
+To use the basic sentiment analysis instead:
+
+```bash
+python src/zendesk_ai_app.py --mode run --status open --basic-sentiment
+```
+
+To reanalyze existing tickets with the improved sentiment model:
+
+```bash
+python src/zendesk_ai_app.py --mode run --reanalyze --days 7
+```
+
+This will reprocess all tickets from the last 7 days with the enhanced GPT-4o model.
+
+The enhanced sentiment analysis provides:
+
+- Urgency level detection (1-5 scale)
+- Frustration level detection (1-5 scale)
+- Business impact assessment
+- Technical expertise estimation
+- Priority score calculation (1-10 scale)
+- Key phrase extraction
+- Emotion detection
+
+### Sentiment Analysis Reporting
+
+Generate detailed sentiment analysis reports:
+
+```bash
+python src/zendesk_ai_app.py --mode sentiment --days 7
+```
+
+This generates a comprehensive report including:
+- Sentiment distribution
+- Urgency and frustration levels
+- Business impact assessment
+- High-priority tickets
+- Average sentiment metrics
+
+You can specify a specific view:
+
+```bash
+python src/zendesk_ai_app.py --mode sentiment --view "Support Queue"
+```
+
+Or output to a file:
+
+```bash
+python src/zendesk_ai_app.py --mode sentiment --days 30 --output sentiment_report.txt
 ```
 
 ### Webhook Server
 
-Start a webhook server for real-time processing:
+Start a webhook server for real-time analysis:
 
 ```bash
 python src/zendesk_ai_app.py --mode webhook
@@ -134,13 +194,44 @@ python src/zendesk_ai_app.py --mode run --view [VIEW_ID] --component-report
 - [README.md](README.md) - Main documentation
 - [WEBHOOK_SETUP.md](WEBHOOK_SETUP.md) - Webhook configuration instructions
 - [REPORTING.md](REPORTING.md) - Detailed reporting documentation
+- [JSON_PARSING.md](JSON_PARSING.md) - JSON parsing enhancements
 
-## Project Structure
+## Architecture and Project Structure
 
-- `src/zendesk_ai_app.py` - Main application file
-- `src/ai_service.py` - OpenAI integration with error handling
-- `src/mongodb_helper.py` - MongoDB database connection and queries
+The application follows the Single Responsibility Principle, with each module having a clearly defined responsibility:
+
+### Main Components
+
+- `src/zendesk_ai_app.py` - Entry point that coordinates between modules
+- `src/modules/` - Directory containing modular components:
+  - `zendesk_client.py` - Handles all Zendesk API interactions (read-only)
+  - `ai_analyzer.py` - Processes ticket content using AI services
+  - `db_repository.py` - Manages database operations
+  - `webhook_server.py` - Handles webhook requests
+  - `scheduler.py` - Manages scheduled tasks
+  - `cli.py` - Command-line interface and argument parsing
+
+### Reporters Package
+- `src/modules/reporters/` - Contains report generators:
+  - `hardware_report.py` - Generates hardware component reports
+  - `pending_report.py` - Generates pending support reports
+  - `sentiment_report.py` - Generates sentiment analysis reports
+
+### Support Modules
+- `src/ai_service.py` - Basic OpenAI integration with error handling
+- `src/enhanced_sentiment.py` - Enhanced sentiment analysis implementation
 - `src/security.py` - Security-related functions and decorators
+
+## Design Philosophy
+
+This application follows a read-only design philosophy where tickets are analyzed but never modified. All analysis results are stored in the database for reporting and analytics purposes. This approach provides:
+
+1. **Non-Intrusive Analysis**: Analyze tickets without modifying them
+2. **Historical Tracking**: Store analysis results for trend analysis
+3. **Comprehensive Reporting**: Generate detailed sentiment reports
+4. **Safety**: Prevent unintended modifications to production tickets
+
+By keeping the system read-only, it can safely be used in production environments without risk of interfering with support workflows.
 
 ## License
 

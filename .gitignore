@@ -40,3 +40,8 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Report output files
+*_report_*.txt
+pending_support_report_*.txt
+sentiment_analysis_report_*.txt

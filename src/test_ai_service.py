@@ -3,6 +3,10 @@ Test script for the AI service module.
 """
 import os
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables first
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
