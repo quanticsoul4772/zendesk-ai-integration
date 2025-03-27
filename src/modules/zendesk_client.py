@@ -99,7 +99,16 @@ class ZendeskClient:
             List of Zendesk tickets.
         """
         logger.info(f"Fetching tickets from view ID: {view_id}")
+        
+        # First check if the view exists
         try:
+            # Validate if the view exists
+            valid_views = self._validate_view_ids([view_id])
+            if view_id not in valid_views:
+                logger.warning(f"View ID {view_id} does not exist or is not accessible")
+                return []
+                
+            # Fetch tickets from the view
             if limit:
                 tickets = list(self.client.views.tickets(view_id))[:limit]
             else:
@@ -115,7 +124,11 @@ class ZendeskClient:
             logger.info(f"Fetched {len(tickets)} tickets from view ID: {view_id}")
             return tickets
         except Exception as e:
-            logger.exception(f"Error fetching tickets from view: {e}")
+            # Handle RecordNotFoundException specifically
+            if "RecordNotFound" in str(e):
+                logger.error(f"View ID {view_id} not found: {e}")
+            else:
+                logger.exception(f"Error fetching tickets from view: {e}")
             return []
 
     def fetch_tickets_from_multiple_views(self, view_ids, limit=None, status=None):
@@ -133,7 +146,32 @@ class ZendeskClient:
         all_tickets = []
         ticket_ids_seen = set()  # To prevent duplicates
         
-        for view_id in view_ids:
+        # Get all available views for validation
+        try:
+            views = self.client.views()
+            # Create a set of valid view IDs for fast lookup
+            valid_view_ids = {view.id for view in views}
+            logger.info(f"Found {len(valid_view_ids)} available views in Zendesk")
+        except Exception as e:
+            logger.error(f"Error fetching available views: {e}")
+            # If we can't fetch views, return empty list
+            return []
+            
+        # Check for invalid view IDs
+        invalid_views = [view_id for view_id in view_ids if view_id not in valid_view_ids]
+        if invalid_views:
+            for view_id in invalid_views:
+                logger.warning(f"View ID {view_id} does not exist or is not accessible")
+        
+        # Process only valid views
+        valid_views = [view_id for view_id in view_ids if view_id in valid_view_ids]
+        if not valid_views:
+            logger.warning("None of the specified views exist or are accessible")
+            return []
+            
+        logger.info(f"Processing {len(valid_views)} valid views out of {len(view_ids)} requested")
+        
+        for view_id in valid_views:
             logger.info(f"Fetching tickets from view ID: {view_id}")
             view_tickets = []
             
@@ -159,7 +197,8 @@ class ZendeskClient:
                 logger.info(f"Fetched {len(view_tickets)} unique tickets from view ID: {view_id}")
                 all_tickets.extend(view_tickets)
             except Exception as e:
-                logger.exception(f"Error fetching tickets from view {view_id}: {e}")
+                # Log the error but don't raise the exception to continue with other views
+                logger.error(f"Error fetching tickets from view {view_id}: {e}")
         
         logger.info(f"Total unique tickets from all views: {len(all_tickets)}")
         return all_tickets
@@ -287,6 +326,35 @@ class ZendeskClient:
             logger.exception(f"Error getting view names by IDs: {e}")
             return {}
 
+    def _validate_view_ids(self, view_ids):
+        """
+        Validates which view IDs exist and are accessible.
+        
+        Args:
+            view_ids: List of view IDs to validate
+            
+        Returns:
+            Set of valid view IDs that exist
+        """
+        valid_views = set()
+        
+        try:
+            # Get all available views
+            all_views = self.client.views()
+            all_view_ids = {view.id for view in all_views}
+            
+            # Check which of the provided view IDs exist
+            for view_id in view_ids:
+                if view_id in all_view_ids:
+                    valid_views.add(view_id)
+                else:
+                    logger.warning(f"View ID {view_id} does not exist or is not accessible")
+            
+            return valid_views
+        except Exception as e:
+            logger.error(f"Error validating view IDs: {e}")
+            return set()
+            
     def list_all_views(self):
         """
         List all available Zendesk views with their IDs and titles.

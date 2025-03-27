@@ -42,6 +42,9 @@ ehthumbs.db
 Thumbs.db
 
 # Report output files
+*_report.txt
 *_report_*.txt
 pending_support_report_*.txt
 sentiment_analysis_report_*.txt
+hardware_report_*.txt
+multi_view_report_*.txt

@@ -224,6 +224,94 @@ class PendingReporter:
         
         return report
     
+    def generate_multi_view_report(self, tickets_by_view: Dict[str, List[Ticket]]) -> str:
+        """
+        Generate a comprehensive report of pending support tickets across multiple views.
+        
+        Args:
+            tickets_by_view: Dictionary mapping view names to lists of tickets
+        
+        Returns:
+            Formatted report text.
+        """
+        if not tickets_by_view:
+            return "No views or tickets found."
+        
+        now = datetime.now()
+        report = f"\n{'='*60}\n"
+        report += f"MULTI-VIEW PENDING SUPPORT TICKET REPORT ({now.strftime('%Y-%m-%d %H:%M')})\n"
+        report += f"{'='*60}\n\n"
+        
+        # Overview section
+        total_tickets = sum(len(tickets) for tickets in tickets_by_view.values())
+        report += "OVERVIEW\n--------\n"
+        report += f"Total Views: {len(tickets_by_view)}\n"
+        report += f"Total Tickets: {total_tickets}\n\n"
+        
+        # Per-view summary
+        report += "TICKETS BY VIEW\n--------------\n"
+        for view_name, tickets in tickets_by_view.items():
+            report += f"{view_name}: {len(tickets)} tickets\n"
+        report += "\n"
+        
+        # Status distribution across all views
+        all_tickets = []
+        for tickets in tickets_by_view.values():
+            all_tickets.extend(tickets)
+            
+        status_counts = {}
+        for ticket in all_tickets:
+            status = ticket.status
+            status_counts[status] = status_counts.get(status, 0) + 1
+        
+        report += "OVERALL STATUS DISTRIBUTION\n-------------------------\n"
+        for status, count in sorted(status_counts.items()):
+            report += f"{status}: {count}\n"
+        report += "\n"
+        
+        # Priority distribution across all views
+        priority_counts = {}
+        for ticket in all_tickets:
+            priority = ticket.priority or "normal"
+            priority_counts[priority] = priority_counts.get(priority, 0) + 1
+        
+        report += "OVERALL PRIORITY DISTRIBUTION\n---------------------------\n"
+        for priority, count in sorted(priority_counts.items()):
+            report += f"{priority}: {count}\n"
+        report += "\n"
+        
+        # Hardware component distribution across all views
+        component_counts = {}
+        for ticket in all_tickets:
+            subject = ticket.subject or ""
+            description = ticket.description or ""
+            components = self.hardware_reporter.extract_hardware_components(subject + " " + description)
+            for component in components:
+                component_counts[component] = component_counts.get(component, 0) + 1
+        
+        if component_counts:
+            report += "OVERALL HARDWARE COMPONENT DISTRIBUTION\n------------------------------------\n"
+            for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True):
+                report += f"{component}: {count}\n"
+            report += "\n"
+        
+        # Per-view detailed reports
+        report += "PER-VIEW REPORTS\n---------------\n"
+        for view_name, tickets in tickets_by_view.items():
+            report += f"\n{'='*40}\n"
+            report += f"VIEW: {view_name}\n"
+            report += f"{'='*40}\n\n"
+            
+            # Generate report for this view but skip the header
+            view_report = self.generate_report(tickets, view_name=view_name)
+            # Skip the first few lines (header) from the individual report
+            view_report_lines = view_report.split('\n')
+            skip_lines = 4  # Skip the first 4 lines (header)
+            view_report_content = '\n'.join(view_report_lines[skip_lines:])
+            report += view_report_content
+        
+        return report
+    
     def save_report(self, report: str, filename: Optional[str] = None) -> Optional[str]:
         """
         Save the report to a file.
