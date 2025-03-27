@@ -18,6 +18,12 @@ This application integrates Zendesk support tickets with AI services (OpenAI and
   - Priority score calculation (1-10 scale)
   - Key phrase extraction
   - Emotion detection
+- **Intuitive reporting** with descriptive labels and contextual information:
+  - Executive summary highlighting critical issues
+  - Descriptive labels for numerical scales
+  - Percentage values for all metrics
+  - Summaries and alerts for significant findings
+  - Top components analysis
 - **Hardware component detection** in tickets
 - **MongoDB database** for analytics and reporting
 - **Enhanced security features**:
@@ -101,11 +107,7 @@ Specify OpenAI instead of Claude:
 python src/zendesk_ai_app.py --mode run --status open --use-openai
 ```
 
-To use the basic sentiment analysis instead of enhanced:
-
-```bash
-python src/zendesk_ai_app.py --mode run --status open --basic-sentiment
-```
+Enhanced sentiment analysis is now the standard for all operations.
 
 To reanalyze existing tickets with the improved sentiment model:
 
@@ -174,6 +176,22 @@ Generate a report for a specific Zendesk view:
 python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support"
 ```
 
+### Enhanced Reporting
+
+Generate reports with descriptive labels and more intuitive formatting:
+
+```bash
+python src/zendesk_ai_app.py --mode sentiment --days 7 --format enhanced
+```
+
+For multi-view enhanced reports:
+
+```bash
+python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172823 --format enhanced
+```
+
+See [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) for more information on the enhanced reporting feature.
+
 This will generate a comprehensive report of all tickets in the specified view, including status distribution, hardware component analysis, and detailed ticket information.
 
 If you want to limit the number of tickets in the report:
@@ -222,6 +240,7 @@ See [MULTI_VIEW.md](MULTI_VIEW.md) for detailed documentation on multi-view anal
 - [JSON_PARSING.md](JSON_PARSING.md) - JSON parsing enhancements
 - [SENTIMENT_ANALYSIS.md](SENTIMENT_ANALYSIS.md) - Sentiment analysis methodology
 - [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
+- [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting documentation
 
 ## Architecture and Project Structure
 

@@ -82,17 +82,7 @@ class CommandLineInterface:
             help="Name of the pending support view to analyze"
         )
         
-        self.parser.add_argument(
-            "--enhanced-sentiment", 
-            action="store_true", 
-            help="Use enhanced sentiment analysis (default: enabled)"
-        )
-        
-        self.parser.add_argument(
-            "--basic-sentiment", 
-            action="store_true", 
-            help="Use basic sentiment analysis instead of enhanced version"
-        )
+        # Enhanced sentiment analysis is now the standard - no flags needed
         
         self.parser.add_argument(
             "--use-claude", 
@@ -121,6 +111,13 @@ class CommandLineInterface:
         self.parser.add_argument(
             "--output", 
             help="Filename to save the report to (will be created in current directory)"
+        )
+        
+        self.parser.add_argument(
+            "--format", 
+            choices=["standard", "enhanced"],
+            default="enhanced",
+            help="Report format to use (standard or enhanced with descriptive labels)"
         )
         
         self.parser.add_argument(
@@ -165,8 +162,8 @@ class CommandLineInterface:
         Returns:
             Boolean indicating success
         """
-        # Determine whether to use enhanced sentiment analysis
-        use_enhanced = not args.basic_sentiment  # Use enhanced by default unless basic is specified
+        # Enhanced sentiment analysis is now the standard
+        use_enhanced = True
         
         # Determine which AI provider to use
         use_claude = not args.use_openai  # Use Claude by default unless OpenAI is specified
@@ -308,11 +305,18 @@ class CommandLineInterface:
     def _handle_multi_view_mode(self, args, zendesk_client, ai_analyzer, db_repository, 
                                report_modules, use_enhanced, use_claude):
         """Handle multi-view mode: analyze tickets from multiple views."""
-        # Import the sentiment reporter for multi-view reporting
-        from modules.reporters.sentiment_report import SentimentReporter
+        # Save args for access in _generate_multi_view_report
+        self.args = args
         
-        # Initialize the reporter
-        sentiment_reporter = SentimentReporter(db_repository)
+        # Determine which reporter to use based on format
+        if args.format == "enhanced":
+            from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
+            reporter = EnhancedSentimentReporter(db_repository)
+        else:
+            from modules.reporters.sentiment_report import SentimentReporter
+            reporter = SentimentReporter(db_repository)
+        """Handle multi-view mode: analyze tickets from multiple views."""
+        # Reporter already initialized
         
         # Get view IDs from the views argument
         if args.views:
@@ -500,6 +504,14 @@ class CommandLineInterface:
         return True
     
     def _generate_multi_view_report(self, analyses, view_map, title):
+        """Generate a report for tickets from multiple views."""
+        # Determine which reporter to use based on format
+        if hasattr(self, 'args') and getattr(self.args, 'format', 'standard') == 'enhanced':
+            from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
+            reporter = EnhancedSentimentReporter()
+        else:
+            from modules.reporters.sentiment_report import SentimentReporter
+            reporter = SentimentReporter()
         """
         Generate a report for tickets from multiple views.
         
@@ -516,8 +528,7 @@ class CommandLineInterface:
         if not analyses:
             return "No analyses found for reporting."
         
-        # Initialize the reporter
-        sentiment_reporter = SentimentReporter()
+        # Reporter already initialized
         
         # Group analyses by view
         view_analyses = {}
@@ -549,7 +560,7 @@ class CommandLineInterface:
         
         # Combined sentiment analysis
         report += "COMBINED SENTIMENT ANALYSIS\n-------------------------\n"
-        report += sentiment_reporter.generate_report(analyses)[61:]
+        report += reporter.generate_report(analyses)[61:]
         
         # Per-view sentiment analysis
         report += "\nPER-VIEW SENTIMENT ANALYSIS\n--------------------------\n"
@@ -558,24 +569,24 @@ class CommandLineInterface:
             report += f"\n{view_name}\n{'-' * len(view_name)}\n"
             
             # Get sentiment distribution for this view
-            polarity_counts = sentiment_reporter._count_sentiment_polarities(view_tickets)
+            polarity_counts = reporter._count_sentiment_polarities(view_tickets)
             report += "Sentiment Distribution:\n"
             for polarity, count in sorted(polarity_counts.items()):
                 report += f"  {polarity}: {count}\n"
             
             # Get priority distribution for this view
-            priority_counts = sentiment_reporter._count_priority_scores(view_tickets)
+            priority_counts = reporter._count_priority_scores(view_tickets)
             high_priority = sum(count for score, count in priority_counts.items() if score >= 7)
             report += f"High Priority Tickets (7-10): {high_priority}\n"
             
             # Get business impact for this view
-            business_impact_count = sentiment_reporter._count_business_impact(view_tickets)
+            business_impact_count = reporter._count_business_impact(view_tickets)
             report += f"Business Impact Tickets: {business_impact_count}\n"
             
             # Calculate averages for this view
-            avg_urgency = sentiment_reporter._calculate_average_urgency(view_tickets)
-            avg_frustration = sentiment_reporter._calculate_average_frustration(view_tickets)
-            avg_priority = sentiment_reporter._calculate_average_priority(view_tickets)
+            avg_urgency = reporter._calculate_average_urgency(view_tickets)
+            avg_frustration = reporter._calculate_average_frustration(view_tickets)
+            avg_priority = reporter._calculate_average_priority(view_tickets)
             
             report += f"Average Urgency: {avg_urgency:.2f}/5\n"
             report += f"Average Frustration: {avg_frustration:.2f}/5\n"
@@ -860,16 +871,20 @@ class CommandLineInterface:
     
     def _handle_sentiment_mode(self, args, zendesk_client, ai_analyzer, db_repository, report_modules, use_enhanced=True, use_claude=True):
         """Handle 'sentiment' mode: generate sentiment analysis reports."""
+        # Import appropriate reporter based on format
+        if args.format == "enhanced":
+            from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
+            reporter = EnhancedSentimentReporter(db_repository)
+        else:
+            from modules.reporters.sentiment_report import SentimentReporter
+            reporter = SentimentReporter(db_repository)
+        """Handle 'sentiment' mode: generate sentiment analysis reports."""
         # Check if multi-view support is requested
         if args.views or args.view_names:
             return self._handle_multi_view_mode(args, zendesk_client, ai_analyzer, db_repository, 
                                               report_modules, use_enhanced, use_claude)
         
-        # Import the sentiment reporter
-        from modules.reporters.sentiment_report import SentimentReporter
-        
-        # Initialize the reporter
-        sentiment_reporter = SentimentReporter(db_repository)
+        # Reporter has already been initialized based on format
         
         # Determine the time period (default to week if not specified)
         time_period = "week"
@@ -917,7 +932,7 @@ class CommandLineInterface:
                 
                 # Generate report
                 title = f"Sentiment Analysis Report - {view_desc}"
-                report = sentiment_reporter.generate_report(analyses, title=title)
+                report = reporter.generate_report(analyses, title=title)
             else:
                 logger.error(f"No tickets found in {view_desc}")
                 return False
@@ -942,7 +957,7 @@ class CommandLineInterface:
                 
                 # Generate report
                 title = f"Sentiment Analysis Report - View: {args.view_name}"
-                report = sentiment_reporter.generate_report(analyses, title=title)
+                report = reporter.generate_report(analyses, title=title)
             else:
                 logger.error(f"No tickets found in view '{args.view_name}'")
                 return False
@@ -962,7 +977,7 @@ class CommandLineInterface:
                 logger.info(f"Found {len(analyses)} analyses in the database for the specified period")
                 # Generate report
                 title = f"Sentiment Analysis Report - Last {args.days} days"
-                report = sentiment_reporter.generate_report(analyses, title=title)
+                report = reporter.generate_report(analyses, title=title)
             else:
                 logger.error(f"No analyses found in the database for the last {args.days} days")
                 return False
@@ -972,11 +987,11 @@ class CommandLineInterface:
         
         # Optionally save to file
         if args.output:
-            sentiment_reporter.save_report(report, args.output)
+            reporter.save_report(report, args.output)
             logger.info(f"Sentiment analysis report saved to {args.output}")
         else:
             # Save with auto-generated filename
-            filename = sentiment_reporter.save_report(report)
+            filename = reporter.save_report(report)
             if filename:
                 logger.info(f"Sentiment analysis report saved to {filename}")
         

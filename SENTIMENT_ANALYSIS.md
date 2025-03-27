@@ -1,5 +1,7 @@
 # Sentiment Analysis Methodology
 
+> **Note**: Enhanced sentiment analysis is now the standard for all operations in this application. This document describes the comprehensive sentiment analysis methodology used throughout the system.
+
 This document explains the sentiment analysis approach used in our Zendesk AI Integration application.
 
 ## Overview

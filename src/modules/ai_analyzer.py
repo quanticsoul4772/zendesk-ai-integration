@@ -32,6 +32,7 @@ class AIAnalyzer:
     
     def analyze_ticket(self, ticket_id: str, subject: str, description: str, 
                       use_enhanced: bool = True, use_claude: bool = True) -> Dict[str, Any]:
+        """Enhanced sentiment analysis is now the standard, use_enhanced parameter kept for backwards compatibility"""
         """
         Analyze ticket content using AI.
         
@@ -49,19 +50,13 @@ class AIAnalyzer:
         
         # Perform analysis based on chosen method and service
         try:
-            # Choose between Claude and OpenAI
+            # Choose between Claude and OpenAI - always using enhanced sentiment
             if use_claude:
-                logger.info(f"Using Claude for analysis of ticket {ticket_id}")
-                if use_enhanced:
-                    analysis = claude_enhanced_analyze_ticket_content(content)
-                else:
-                    analysis = claude_analyze_ticket_content(content)
+                logger.info(f"Using Claude for enhanced analysis of ticket {ticket_id}")
+                analysis = claude_enhanced_analyze_ticket_content(content)
             else:
-                logger.info(f"Using OpenAI for analysis of ticket {ticket_id}")
-                if use_enhanced:
-                    analysis = openai_enhanced_analyze_ticket_content(content)
-                else:
-                    analysis = openai_analyze_ticket_content(content)
+                logger.info(f"Using OpenAI for enhanced analysis of ticket {ticket_id}")
+                analysis = openai_enhanced_analyze_ticket_content(content)
             
             # Add ticket reference to the analysis
             analysis["ticket_id"] = ticket_id
