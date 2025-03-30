@@ -53,6 +53,31 @@ class ZendeskClient:
         except ImportError:
             logger.error("Zenpy package not installed. Install with: pip install zenpy>=2.0.24")
             raise
+            
+    def get_ticket(self, ticket_id):
+        """
+        Get a specific ticket by ID.
+        
+        Args:
+            ticket_id: ID of the ticket to fetch
+            
+        Returns:
+            The Zendesk ticket or None if not found
+        """
+        logger.info(f"Fetching ticket with ID: {ticket_id}")
+        
+        try:
+            # Use the fetch_tickets method with a filter
+            tickets = self.fetch_tickets(filter_by={"id": ticket_id})
+            
+            if tickets and len(tickets) > 0:
+                return tickets[0]
+            else:
+                logger.warning(f"Ticket with ID {ticket_id} not found")
+                return None
+        except Exception as e:
+            logger.exception(f"Error fetching ticket {ticket_id}: {e}")
+            return None
 
     def fetch_tickets(self, status="open", limit=None, filter_by=None):
         """
@@ -83,12 +108,26 @@ class ZendeskClient:
                 return [ticket] if ticket else []
             elif status.lower() == "all":
                 # Fetch all tickets regardless of status
-                tickets = list(self.client.tickets())
+                try:
+                    tickets = list(self.client.tickets())
+                except Exception as e:
+                    logger.warning(f"Error using tickets() method, falling back to search: {e}")
+                    tickets = list(self.client.search("type:ticket"))
                 logger.info(f"Fetched {len(tickets)} tickets with any status")
             elif limit:
-                tickets = list(self.client.tickets(status=status))[:limit]
+                try:
+                    tickets = list(self.client.tickets(status=status))[:limit]
+                except Exception as e:
+                    logger.warning(f"Error using tickets() method, falling back to search: {e}")
+                    search_query = f"type:ticket status:{status}"
+                    tickets = list(self.client.search(search_query))[:limit]
             else:
-                tickets = list(self.client.tickets(status=status))
+                try:
+                    tickets = list(self.client.tickets(status=status))
+                except Exception as e:
+                    logger.warning(f"Error using tickets() method, falling back to search: {e}")
+                    search_query = f"type:ticket status:{status}"
+                    tickets = list(self.client.search(search_query))
             
             # Filter out closed tickets if we're fetching open tickets
             # This is a safeguard in case Zendesk API returns closed tickets
@@ -181,25 +220,29 @@ class ZendeskClient:
         
         # Try to get views from cache first
         cached_views = self.cache.get_views(cache_key)
-        if cached_views is not None:
+        if cached_views is not None and len(list(cached_views)) > 0:
             views = cached_views
             valid_view_ids = {view.id for view in views}
             logger.info(f"Using cached views, found {len(valid_view_ids)} available views")
         else:
-            # Get all available views for validation if not in cache
+            # Get all available views for validation if not in cache or cache is empty
             try:
+                logger.info("Cache empty or invalid, fetching views directly from Zendesk API")
                 views = self.client.views()
                 # Create a set of valid view IDs for fast lookup
                 valid_view_ids = {view.id for view in views}
                 logger.info(f"Found {len(valid_view_ids)} available views in Zendesk")
                 
-                # Cache the views
-                self.cache.set_views(cache_key, views)
-            
-        except Exception as e:
-            logger.error(f"Error fetching available views: {e}")
-            # If we can't fetch views, return empty list
-            return []
+                # Cache the views only if we got valid data
+                if views and len(list(views)) > 0:
+                    logger.info(f"Caching {len(list(views))} views from Zendesk API")
+                    self.cache.set_views(cache_key, views)
+                else:
+                    logger.warning("Received empty views list from Zendesk API, not caching")
+            except Exception as e:
+                logger.error(f"Error fetching available views: {e}")
+                # If we can't fetch views, return empty list
+                return []
             
         # Check for invalid view IDs
         invalid_views = [view_id for view_id in view_ids if view_id not in valid_view_ids]
@@ -211,6 +254,8 @@ class ZendeskClient:
         valid_views = [view_id for view_id in view_ids if view_id in valid_view_ids]
         if not valid_views:
             logger.warning("None of the specified views exist or are accessible")
+            # Force refresh the views cache for next time
+            self.cache.force_refresh_views()
             return []
             
         logger.info(f"Processing {len(valid_views)} valid views out of {len(view_ids)} requested")
@@ -387,6 +432,99 @@ class ZendeskClient:
             logger.exception(f"Error getting view names by IDs: {e}")
             return {}
 
+    def get_view_by_id(self, view_id):
+        """
+        Get a view by its ID.
+        
+        Args:
+            view_id: ID of the view to fetch
+            
+        Returns:
+            The view object or None if not found
+        """
+        # Create a cache key for this view
+        cache_key = f"view_{view_id}"
+        
+        # Try to get from cache first
+        cached_view = self.cache.get_views(cache_key)
+        if cached_view is not None:
+            logger.info(f"Using cached view with ID: {view_id}")
+            return cached_view
+            
+        try:
+            logger.info(f"Fetching view with ID: {view_id} (cache miss)")
+            view = self.client.views(id=view_id)
+            
+            # Cache the view
+            self.cache.set_views(cache_key, view)
+            return view
+        except Exception as e:
+            logger.error(f"Error fetching view by ID {view_id}: {e}")
+            return None
+            
+    def get_view_by_name(self, view_name):
+        """
+        Get a view by its name.
+        
+        Args:
+            view_name: Name of the view to fetch
+            
+        Returns:
+            The view object or None if not found
+        """
+        try:
+            # First try to get all views from cache
+            cached_views = self.cache.get_views("all_views")
+            
+            if cached_views is None:
+                # Fetch all views if not in cache
+                views = self.fetch_views()
+            else:
+                views = cached_views
+                
+            # Find the view with the matching name
+            for view in views:
+                if view.title.lower() == view_name.lower():
+                    return view
+                    
+            # Try partial matching if exact match not found
+            for view in views:
+                if view_name.lower() in view.title.lower():
+                    return view
+                    
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching view by name {view_name}: {e}")
+            return None
+            
+    def fetch_views(self):
+        """
+        Fetch all views from Zendesk.
+        
+        Returns:
+            List of Zendesk views.
+        """
+        # Create a cache key
+        cache_key = "all_views"
+        
+        # Try to get from cache first
+        cached_views = self.cache.get_views(cache_key)
+        if cached_views is not None:
+            logger.info("Using cached views")
+            return cached_views
+            
+        logger.info("Fetching all views (cache miss)")
+        try:
+            views = list(self.client.views())
+            logger.info(f"Fetched {len(views)} views")
+            
+            # Cache the views
+            self.cache.set_views(cache_key, views)
+            return views
+        except Exception as e:
+            logger.exception(f"Error fetching views: {e}")
+            return []
+            
     def _validate_view_ids(self, view_ids):
         """
         Validates which view IDs exist and are accessible.
@@ -400,17 +538,10 @@ class ZendeskClient:
         valid_views = set()
         
         try:
-            # Try to get from cache first
-            cached_views = self.cache.get_views("all_views")
-            if cached_views is not None:
-                all_views = cached_views
-            else:
-                # Get all available views if not in cache
-                all_views = self.client.views()
-                # Cache the views
-                self.cache.set_views("all_views", all_views)
-                
+            # Use fetch_views method to get all views
+            all_views = self.fetch_views()
             all_view_ids = {view.id for view in all_views}
+            logger.info(f"Found {len(all_view_ids)} view IDs in Zendesk")
             
             # Check which of the provided view IDs exist
             for view_id in view_ids:
@@ -423,7 +554,6 @@ class ZendeskClient:
         except Exception as e:
             logger.error(f"Error validating view IDs: {e}")
             return set()
-            
     def list_all_views(self):
         """
         List all available Zendesk views with their IDs and titles.

@@ -1,0 +1,77 @@
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
+  strict_yaml_branch: main
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...95"
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        base: auto
+        # Different targets for different components
+        paths:
+          - "src/modules/ai_analyzer.py"      # High-risk component
+          - "src/modules/cache_manager.py"    # High-risk component
+          - "src/modules/batch_processor.py"  # High-risk component
+          - "src/modules/db_repository.py"    # High-risk component
+        target: 90%
+
+      support:
+        paths:
+          - "src/modules/zendesk_client.py"  # Medium-risk component
+          - "src/modules/reporters/"         # Medium-risk component
+          - "src/modules/cli.py"             # Medium-risk component
+        target: 80%
+
+      utils:
+        paths:
+          - "src/modules/utils/"             # Lower-risk component
+        target: 70%
+
+      ai_services:
+        paths:
+          - "src/ai_service.py"              # AI service components
+          - "src/claude_service.py"
+          - "src/enhanced_sentiment.py"
+          - "src/claude_enhanced_sentiment.py"
+        target: 85%
+
+    patch:
+      default:
+        target: 85%
+        threshold: 5%
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: no
+  require_base: no
+  require_head: yes
+  after_n_builds: 1
+  show_carryforward_flags: true
+
+github_checks:
+  annotations: true
+
+ignore:
+  - "tests/"
+  - "tools/"
+  - "docs/"
+  - "**/__pycache__/"
+  - "**/*.pyc"
+  - "conftest.py"
+  - "conftest_parallel.py"

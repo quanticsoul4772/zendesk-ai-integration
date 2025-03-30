@@ -178,10 +178,79 @@ def enhanced_analyze_ticket_content(content: str) -> Dict[str, Any]:
         # Extract and normalize sentiment data
         sentiment_data = result.get("sentiment", {})
         
-        # Normalize sentiment polarity
+        # Normalize sentiment data - handle unusual formats
         if isinstance(sentiment_data, dict):
-            polarity = sentiment_data.get("polarity", "unknown").lower().replace(" ", "_")
-            sentiment_data["polarity"] = polarity
+            # Normalize polarity
+            if "polarity" in sentiment_data:
+                polarity = str(sentiment_data["polarity"]).lower().replace(" ", "_")
+                sentiment_data["polarity"] = polarity
+            else:
+                sentiment_data["polarity"] = "unknown"
+                
+            # Normalize urgency level
+            if "urgency_level" in sentiment_data:
+                try:
+                    urgency_level = int(float(str(sentiment_data["urgency_level"]).strip()))
+                    sentiment_data["urgency_level"] = max(1, min(5, urgency_level))  # Ensure range 1-5
+                except (ValueError, TypeError):
+                    sentiment_data["urgency_level"] = 1
+            else:
+                sentiment_data["urgency_level"] = 1
+                
+            # Normalize frustration level
+            if "frustration_level" in sentiment_data:
+                try:
+                    frustration_level = int(float(str(sentiment_data["frustration_level"]).strip()))
+                    sentiment_data["frustration_level"] = max(1, min(5, frustration_level))  # Ensure range 1-5
+                except (ValueError, TypeError):
+                    sentiment_data["frustration_level"] = 1
+            else:
+                sentiment_data["frustration_level"] = 1
+                
+            # Normalize technical expertise
+            if "technical_expertise" in sentiment_data:
+                try:
+                    technical_expertise = int(float(str(sentiment_data["technical_expertise"]).strip()))
+                    sentiment_data["technical_expertise"] = max(1, min(5, technical_expertise))  # Ensure range 1-5
+                except (ValueError, TypeError):
+                    sentiment_data["technical_expertise"] = 1
+            else:
+                sentiment_data["technical_expertise"] = 1
+                
+            # Normalize business impact
+            if "business_impact" in sentiment_data:
+                if not isinstance(sentiment_data["business_impact"], dict):
+                    # Convert boolean or other types to proper format
+                    is_detected = bool(sentiment_data["business_impact"])
+                    sentiment_data["business_impact"] = {
+                        "detected": is_detected,
+                        "description": "Business impact detected" if is_detected else ""
+                    }
+            else:
+                sentiment_data["business_impact"] = {"detected": False, "description": ""}
+                
+            # Normalize key phrases
+            if "key_phrases" in sentiment_data:
+                if isinstance(sentiment_data["key_phrases"], str):
+                    # Split comma-separated string into list
+                    sentiment_data["key_phrases"] = [phrase.strip() for phrase in sentiment_data["key_phrases"].split(",")]
+                elif not isinstance(sentiment_data["key_phrases"], list):
+                    sentiment_data["key_phrases"] = []
+            else:
+                sentiment_data["key_phrases"] = []
+                
+            # Normalize emotions
+            if "emotions" in sentiment_data:
+                if isinstance(sentiment_data["emotions"], str):
+                    # Split comma-separated string into list
+                    sentiment_data["emotions"] = [emotion.strip() for emotion in sentiment_data["emotions"].split(",")]
+                elif isinstance(sentiment_data["emotions"], list):
+                    # Ensure all emotions are strings and lowercase
+                    sentiment_data["emotions"] = [str(emotion).lower() for emotion in sentiment_data["emotions"]]
+                else:
+                    sentiment_data["emotions"] = []
+            else:
+                sentiment_data["emotions"] = []
         else:
             # Handle case where sentiment isn't a dictionary
             sentiment_data = {
@@ -208,8 +277,27 @@ def enhanced_analyze_ticket_content(content: str) -> Dict[str, Any]:
             component = str(component_value[0]).lower().replace(" ", "_")
         else:
             component = str(component_value).lower().replace(" ", "_")
-            
-        confidence = float(result.get("confidence", 0.9))
+        
+        # Handle confidence - convert text values to numeric
+        confidence_value = result.get("confidence", 0.9)
+        if isinstance(confidence_value, str):
+            # Map text confidence levels to numeric values
+            confidence_map = {
+                "high": 0.9,
+                "medium": 0.7,
+                "low": 0.5,
+                "veryhigh": 1.0,
+                "verylow": 0.3
+            }
+            # Convert to lowercase and remove spaces for matching
+            confidence_key = confidence_value.lower().replace(" ", "")
+            confidence = confidence_map.get(confidence_key, 0.9)
+        else:
+            # Try to convert to float, default to 0.9 if fails
+            try:
+                confidence = float(confidence_value)
+            except (ValueError, TypeError):
+                confidence = 0.9
         
         # Calculate priority score
         priority_score = calculate_priority_score(sentiment_data)

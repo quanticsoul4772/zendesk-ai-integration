@@ -9,15 +9,23 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import statistics
+from .reporter_base import ReporterBase
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
-class EnhancedSentimentReporter:
+# Import statistics module
+import statistics
+
+class EnhancedSentimentReporter(ReporterBase):
     """Generates enhanced reports focused on sentiment analysis results."""
     
     def __init__(self, db_repository=None):
         """Initialize the reporter."""
+        # Initialize the parent class
+        super().__init__()
+        
+        # Set db_repository
         self.db_repository = db_repository
         
         # Define descriptive labels for various scales
@@ -58,729 +66,448 @@ class EnhancedSentimentReporter:
             1: "Very Low Priority (Minor issue, can be deferred)"
         }
     
-    def generate_report(self, analyses: List[Dict], title: Optional[str] = None) -> str:
+    def generate_report(
+        self, analyses=None, zendesk_client=None, db_repository=None, days=None, view=None, views=None, 
+        status="all", output_file=None, format="enhanced", limit=None, 
+        view_name=None, view_names=None, title=None
+    ):
         """
-        Generate an enhanced sentiment analysis report with descriptive labels.
+        Generate an enhanced sentiment analysis report.
         
         Args:
-            analyses: List of analysis results
-            title: Optional title for the report
+            analyses: List of analysis results (optional)
+            zendesk_client: ZendeskClient instance (optional)
+            db_repository: DBRepository instance (optional)
+            days: Number of days to look back (optional)
+            view: View ID or name (optional)
+            views: List of view IDs or names (optional)
+            status: Ticket status (optional)
+            output_file: File to write the report to (optional)
+            format: Report format (enhanced or standard) (optional)
+            limit: Maximum number of tickets to include (optional)
+            view_name: View name (alternative to view) (optional)
+            view_names: List of view names (alternative to views) (optional)
+            title: Report title (optional)
             
         Returns:
-            Formatted report text.
+            The generated report as a string
         """
-        if not analyses:
-            return "No analyses found for reporting."
+        # Set up output file
+        self.output_file = output_file
         
+        # If direct analyses are provided, use them
+        if analyses:
+            report_title = title or "Enhanced Sentiment Analysis Report"
+            report_content = self._generate_full_report(analyses, report_title)
+            
+            # Output the report
+            self.output(report_content, output_file)
+            
+            return report_content
+        
+        # Get ticket analyses from database if available
+        if db_repository:
+            # Get ticket analyses based on parameters
+            start_date, time_period = self._calculate_time_period(days, view, views)
+            
+            # Find analyses in database
+            if days:
+                # Calculate date range
+                from datetime import datetime, timedelta
+                end_date = datetime.utcnow()
+                start_date = end_date - timedelta(days=days)
+                
+                # Find analyses in date range
+                fetched_analyses = db_repository.find_analyses_between(start_date, end_date)
+            else:
+                # Default to 7 days if not specified
+                from datetime import datetime, timedelta
+                end_date = datetime.utcnow()
+                start_date = end_date - timedelta(days=7)
+                fetched_analyses = db_repository.find_analyses_between(start_date, end_date)
+            
+            if fetched_analyses:
+                report_title = title or f"Enhanced Sentiment Analysis Report - {time_period}"
+                report_content = self._generate_full_report(fetched_analyses, report_title)
+                
+                # Output the report
+                self.output(report_content, output_file)
+                
+                return report_content
+        
+        # If no analyses were found or provided
+        report = "No analyses found for the specified time period."
+        self.output(report, output_file)
+        return report
+    
+    def _generate_full_report(self, analyses, title=None):
+        """Generate the full enhanced sentiment report."""
         now = datetime.now()
         report = f"\n{'='*60}\n"
         report += f"ENHANCED SENTIMENT ANALYSIS REPORT ({now.strftime('%Y-%m-%d %H:%M')})\n"
         report += f"{'='*60}\n\n"
         
-        # Executive Summary section
-        report += self._generate_executive_summary(analyses)
-        
         if title:
             report += f"{title}\n{'-' * len(title)}\n\n"
         
-        # Business impact first (since it's most critical)
-        business_impact_count = self._count_business_impact(analyses)
-        report += "BUSINESS IMPACT\n--------------\n"
-        report += "A ticket is flagged as having business impact when it indicates:\n"
-        report += "- Production system downtime (non-functional systems)\n"
-        report += "- Revenue loss (financial impact)\n"
-        report += "- Missed deadlines (time-sensitive deliverables at risk)\n"
-        report += "- Customer-facing issues (visible to clients)\n"
-        report += "- Contractual obligations at risk (legal/agreement compliance)\n\n"
-        report += f"Tickets with business impact: {business_impact_count}\n"
-        impact_percentage = (business_impact_count / len(analyses)) * 100
-        report += f"Percentage of total: {impact_percentage:.2f}%\n"
-        if impact_percentage > 75:
-            report += f"ALERT: High percentage of tickets have business impact!\n"
-            report += "This indicates a significant number of tickets are affecting core business operations.\n"
-        report += "\n"
+        # Count sentiment polarities for statistics
+        sentiment_distribution = self._count_sentiment_polarities(analyses)
         
-        # Priority score distribution with grouped scores
-        report += self._generate_priority_distribution(analyses)
-        
-        # Urgency distribution with descriptive labels
-        report += self._generate_urgency_distribution(analyses)
-        
-        # Frustration distribution with descriptive labels
-        report += self._generate_frustration_distribution(analyses)
-        
-        # Sentiment distribution
-        polarity_counts = self._count_sentiment_polarities(analyses)
-        report += "SENTIMENT DISTRIBUTION\n--------------------\n"
-        for polarity, count in sorted(polarity_counts.items()):
-            percentage = (count / len(analyses)) * 100
-            report += f"{polarity}: {count} ({percentage:.1f}%)\n"
-        report += "\n"
-        
-        # Component distribution (top first)
-        component_counts = self._count_components(analyses)
-        if component_counts:
-            report += "TOP AFFECTED COMPONENTS\n---------------------\n"
-            # Sort by count descending, exclude 'none'
-            sorted_components = {k: v for k, v in sorted(
-                component_counts.items(), 
-                key=lambda item: item[1], 
-                reverse=True
-            ) if k != "none"}
-            
-            # Calculate the total number of components (excluding 'none')
-            total_components = sum(sorted_components.values())
-            
-            # Show all components with percentages
-            for component, count in sorted_components.items():
-                if total_components > 0:
-                    percentage = (count / total_components) * 100
-                    report += f"{component}: {count} ({percentage:.1f}%)\n"
-            report += "\n"
-        
-        # Category distribution
-        category_counts = self._count_categories(analyses)
-        report += "CATEGORY DISTRIBUTION\n--------------------\n"
-        # Sort by count descending
-        sorted_categories = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)
-        total_tickets = len(analyses)
-        for category, count in sorted_categories:
-            percentage = (count / total_tickets) * 100
-            report += f"{category}: {count} ({percentage:.1f}%)\n"
-        report += "\n"
-        
-        # Calculate and show averages
-        avg_urgency = self._calculate_average_urgency(analyses)
-        avg_frustration = self._calculate_average_frustration(analyses)
-        avg_priority = self._calculate_average_priority(analyses)
-        
-        report += "AVERAGES\n--------\n"
-        
-        # For urgency, show average and interpretation
-        report += f"Average Urgency Level: {avg_urgency:.2f}/5"
-        if avg_urgency >= 4:
-            report += " (Requires Prompt Resolution)"
-        elif avg_urgency >= 3:
-            report += " (Moderately Urgent)"
-        else:
-            report += " (Low Urgency)"
-        report += "\n"
-        
-        # For frustration, show average and interpretation
-        report += f"Average Frustration Level: {avg_frustration:.2f}/5"
-        if avg_frustration >= 4:
-            report += " (High Customer Frustration)"
-        elif avg_frustration >= 3:
-            report += " (Noticeable Frustration)"
-        else:
-            report += " (Low Frustration)"
-        report += "\n"
-        
-        # For priority, show average and interpretation
-        report += f"Average Priority Score: {avg_priority:.2f}/10"
-        if avg_priority >= 8:
-            report += " (Critical Priority)"
-        elif avg_priority >= 6:
-            report += " (High Priority)"
-        elif avg_priority >= 4:
-            report += " (Medium Priority)"
-        else:
-            report += " (Low Priority)"
-        report += "\n\n"
-        
-        # Ticket age distribution (if available)
-        age_distribution = self._calculate_age_distribution(analyses)
-        if age_distribution:
-            report += "TICKET AGE DISTRIBUTION\n---------------------\n"
-            for age_range, count in age_distribution.items():
-                report += f"{age_range}: {count}\n"
-            report += "\n"
-        
-        # High priority tickets
-        high_priority_tickets = self._get_high_priority_tickets(analyses)
-        if high_priority_tickets:
-            report += "HIGH PRIORITY TICKETS\n-------------------\n"
-            report += "These tickets require immediate attention based on their priority score:\n\n"
-            for analysis in high_priority_tickets:
-                ticket_id = analysis.get("ticket_id", "Unknown")
-                subject = analysis.get("subject", "No Subject")
-                priority = analysis.get("priority_score", 0)
-                
-                # Determine priority label
-                priority_label = "Unknown"
-                for label, (min_val, max_val) in self.priority_groups.items():
-                    if min_val <= priority <= max_val:
-                        priority_label = label
-                        break
-                
-                report += f"#{ticket_id} - {subject} (Priority: {priority}/10 - {priority_label})\n"
-            report += "\n"
-        
-        # Business impact tickets
-        business_impact_tickets = self._get_business_impact_tickets(analyses)
-        if business_impact_tickets:
-            report += "BUSINESS IMPACT TICKETS\n----------------------\n"
-            report += "These tickets have critical business impact that may affect production systems, revenue, or deadlines:\n\n"
-            for analysis in business_impact_tickets:
-                ticket_id = analysis.get("ticket_id", "Unknown")
-                subject = analysis.get("subject", "No Subject")
-                sentiment = analysis.get("sentiment", {})
-                if isinstance(sentiment, dict):
-                    business_impact = sentiment.get("business_impact", {})
-                    description = business_impact.get("description", "Detected") if business_impact else "Detected"
-                    report += f"#{ticket_id} - {subject}\n"
-                    report += f"  Impact: {description}\n"
-            report += "\n"
-        
-        return report
-    
-    def _generate_executive_summary(self, analyses: List[Dict]) -> str:
-        """Generate an executive summary section for the report."""
-        business_impact_count = self._count_business_impact(analyses)
-        business_impact_percentage = (business_impact_count / len(analyses)) * 100
-        
-        # Count high priority tickets (7-10)
-        priority_counts = self._count_priority_scores(analyses)
-        high_priority_count = sum(count for score, count in priority_counts.items() if score >= 7)
-        high_priority_percentage = (high_priority_count / len(analyses)) * 100
-        
-        # Count high urgency tickets (4-5)
-        urgency_counts = self._count_urgency_levels(analyses)
-        high_urgency_count = sum(count for level, count in urgency_counts.items() if level >= 4)
-        high_urgency_percentage = (high_urgency_count / len(analyses)) * 100
-        
-        # Count high frustration tickets (4-5)
-        frustration_counts = self._count_frustration_levels(analyses)
-        high_frustration_count = sum(count for level, count in frustration_counts.items() if level >= 4)
-        high_frustration_percentage = (high_frustration_count / len(analyses)) * 100
-        
-        # Build the summary
-        summary = "EXECUTIVE SUMMARY\n----------------\n"
-        
-        if business_impact_count > 0:
-            summary += f"Business Impact: {business_impact_count} of {len(analyses)} tickets ({business_impact_percentage:.1f}%) affect business operations\n"
-            summary += "These tickets indicate system downtime, revenue impact, missed deadlines, or contract risks\n"
-        
-        if high_priority_count > 0:
-            summary += f"High Priority Items: {high_priority_count} tickets ({high_priority_percentage:.1f}%) are high priority (scores 7-10)\n"
-        
-        if high_urgency_count > 0:
-            summary += f"Urgency Alert: {high_urgency_count} tickets ({high_urgency_percentage:.1f}%) require prompt resolution (Levels 4-5)\n"
-        
-        if high_frustration_count > 0:
-            summary += f"Customer Satisfaction Risk: {high_frustration_count} customers ({high_frustration_percentage:.1f}%) are highly frustrated (Levels 4-5)\n"
-        
-        summary += "\n"
-        return summary
-    
-    def _generate_priority_distribution(self, analyses: List[Dict]) -> str:
-        """Generate a priority score distribution section with grouped scores."""
-        priority_counts = self._count_priority_scores(analyses)
-        
-        # Group scores
-        grouped_counts = {}
-        for group_name, (min_val, max_val) in self.priority_groups.items():
-            group_count = sum(count for score, count in priority_counts.items() if min_val <= score <= max_val)
-            grouped_counts[group_name] = group_count
-        
-        # Build the priority distribution section
-        section = "PRIORITY SCORE DISTRIBUTION\n--------------------------\n"
-        
-        # Add a priority scoring system explanation
-        section += "PRIORITY SCORING SYSTEM\n" + "-" * 22 + "\n"
-        section += "Our system scores tickets from 1-10 based on urgency, frustration, business impact and technical expertise:\n\n"
-        section += "10 = Critical Emergency (Immediate action required, major business impact)\n"
-        section += "8-9 = High Priority (Requires attention within 24 hours, significant impact)\n"
-        section += "6-7 = Medium-High Priority (Address within 48 hours)\n"
-        section += "4-5 = Medium Priority (Address within this week)\n"
-        section += "1-3 = Low Priority (Address when resources permit)\n\n"
-        
-        # First, show the grouped counts
-        section += "GROUPED PRIORITY LEVELS\n" + "-" * 22 + "\n"
-        for group_name, count in grouped_counts.items():
-            percentage = (count / len(analyses)) * 100 if len(analyses) > 0 else 0
-            section += f"{group_name}: {count} tickets ({percentage:.1f}%)\n"
-        
-        # Then provide a detailed breakdown sorted from highest to lowest priority
-        section += "\nDETAILED PRIORITY BREAKDOWN\n" + "-" * 26 + "\n"
-        
-        # Get all scores that have tickets
-        active_scores = [score for score, count in priority_counts.items() if count > 0]
-        
-        # Sort scores in descending order (highest priority first)
-        for score in sorted(active_scores, reverse=True):
-            count = priority_counts[score]
-            percentage = (count / len(analyses)) * 100 if len(analyses) > 0 else 0
-            description = self.priority_descriptions.get(score, "Unknown priority level")
-            section += f"Score {score} ({description}): {count} tickets ({percentage:.1f}%)\n"
-        
-        # Add explanation for missing scores
-        all_scores = set(range(1, 11))
-        missing_scores = all_scores - set(active_scores)
-        if missing_scores:
-            missing_str = ", ".join(str(s) for s in sorted(missing_scores))
-            section += f"\nNo tickets with scores {missing_str} in current dataset\n"
-        
-        # Add summary/alert if significant percentage is high priority
-        high_priority_count = grouped_counts.get("High Priority", 0) + grouped_counts.get("Critical Priority", 0)
-        high_priority_percentage = (high_priority_count / len(analyses)) * 100 if len(analyses) > 0 else 0
-        
-        if high_priority_percentage >= 50:
-            section += f"\nALERT: {high_priority_percentage:.1f}% of tickets are High or Critical Priority\n"
-            section += "This indicates a significant number of tickets requiring immediate attention.\n"
-        
-        section += "\n"
-        return section
-    
-    def _generate_urgency_distribution(self, analyses: List[Dict]) -> str:
-        """Generate an urgency level distribution section with descriptive labels."""
-        urgency_counts = self._count_urgency_levels(analyses)
-        
-        section = "URGENCY LEVEL DISTRIBUTION\n------------------------\n"
-        
-        for level, count in sorted(urgency_counts.items()):
-            label = self.urgency_labels.get(level, "Unknown level")
-            percentage = (count / len(analyses)) * 100 if len(analyses) > 0 else 0
-            section += f"Level {level} ({label}): {count} ({percentage:.1f}%)\n"
-        
-        # Add summary with highest urgency level
-        highest_urgency_level = max(urgency_counts.items(), key=lambda x: x[0] if x[1] > 0 else 0)[0] if urgency_counts else 0
-        if highest_urgency_level >= 4:
-            highest_count = urgency_counts.get(highest_urgency_level, 0)
-            highest_percentage = (highest_count / len(analyses)) * 100 if len(analyses) > 0 else 0
-            section += f"\nSUMMARY: {highest_percentage:.1f}% of tickets require PROMPT RESOLUTION (Level {highest_urgency_level})\n"
-        
-        section += "\n"
-        return section
-    
-    def _generate_frustration_distribution(self, analyses: List[Dict]) -> str:
-        """Generate a frustration level distribution section with descriptive labels."""
-        frustration_counts = self._count_frustration_levels(analyses)
-        
-        section = "FRUSTRATION LEVEL DISTRIBUTION\n----------------------------\n"
-        
-        for level, count in sorted(frustration_counts.items()):
-            label = self.frustration_labels.get(level, "Unknown level")
-            percentage = (count / len(analyses)) * 100 if len(analyses) > 0 else 0
-            section += f"Level {level} ({label}): {count} ({percentage:.1f}%)\n"
-        
-        # Add summary with highest frustration level
-        highest_frustration_level = max(frustration_counts.items(), key=lambda x: x[0] if x[1] > 0 else 0)[0] if frustration_counts else 0
-        if highest_frustration_level >= 4:
-            highest_count = frustration_counts.get(highest_frustration_level, 0)
-            highest_percentage = (highest_count / len(analyses)) * 100 if len(analyses) > 0 else 0
-            section += f"\nSUMMARY: {highest_percentage:.1f}% of customers are HIGHLY FRUSTRATED (Level {highest_frustration_level})\n"
-        
-        section += "\n"
-        return section
-    
-    def _calculate_age_distribution(self, analyses: List[Dict]) -> Dict[str, int]:
-        """Calculate the age distribution of tickets."""
-        # Skip if "created_at" is not available in the analyses
-        if not analyses or "created_at" not in analyses[0]:
-            return {}
-        
-        age_counts = {
-            "New (0-1 days)": 0,
-            "Active (2-7 days)": 0,
-            "Aging (8-14 days)": 0,
-            "At Risk (15+ days)": 0
+        # Create stats dictionary for executive summary
+        stats = {
+            "count": len(analyses),
+            "sentiment_distribution": sentiment_distribution,
+            "average_urgency": self._calculate_average_urgency(analyses),
+            "average_frustration": self._calculate_average_frustration(analyses),
+            "average_priority": self._calculate_average_priority(analyses),
+            "business_impact_count": self._count_business_impact(analyses),
+            "business_impact_percentage": (self._count_business_impact(analyses) / len(analyses) * 100) if len(analyses) > 0 else 0
         }
         
-        now = datetime.now()
-        
-        for analysis in analyses:
-            created_at = analysis.get("created_at")
+        # Add executive summary
+        report += self._generate_executive_summary(stats, analyses)
+        report += "\n"
             
-            # Skip if created_at is not available
-            if not created_at:
-                continue
+        # Add basic statistics
+        report += f"Total tickets analyzed: {len(analyses)}\n\n"
             
-            # Convert to datetime if it's a string
-            if isinstance(created_at, str):
-                try:
-                    created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                except (ValueError, TypeError):
-                    continue
-            
-            # Calculate age in days
-            delta = now - created_at
-            age_days = delta.days
-            
-            # Assign to appropriate bucket
-            if age_days <= 1:
-                age_counts["New (0-1 days)"] += 1
-            elif age_days <= 7:
-                age_counts["Active (2-7 days)"] += 1
-            elif age_days <= 14:
-                age_counts["Aging (8-14 days)"] += 1
-            else:
-                age_counts["At Risk (15+ days)"] += 1
-        
-        return age_counts
-    
-    def generate_multi_view_report(self, analyses: List[Dict], view_map: Dict = None, title: Optional[str] = None) -> str:
-        """
-        Generate an enhanced sentiment analysis report for tickets from multiple views.
-        
-        Args:
-            analyses: List of analysis results with source_view_id attributes
-            view_map: Dict mapping view IDs to view names
-            title: Optional title for the report
-            
-        Returns:
-            Formatted report text.
-        """
-        if not analyses:
-            return "No analyses found for reporting."
-        
-        # Group analyses by view
-        view_analyses = {}
-        for analysis in analyses:
-            view_id = analysis.get('source_view_id', 'unknown')
-            if view_id not in view_analyses:
-                view_analyses[view_id] = []
-            view_analyses[view_id].append(analysis)
-        
-        now = datetime.now()
-        report = f"\n{'='*60}\n"
-        report += f"ENHANCED MULTI-VIEW SENTIMENT ANALYSIS REPORT ({now.strftime('%Y-%m-%d %H:%M')})\n"
-        report += f"{'='*60}\n\n"
-        
-        # Executive Summary for all views combined
-        report += self._generate_executive_summary(analyses)
-        
-        if title:
-            report += f"{title}\n{'-' * len(title)}\n\n"
-        
-        # Overview section
-        report += "OVERVIEW\n--------\n"
-        report += f"Total Tickets Analyzed: {len(analyses)}\n"
-        report += f"Total Views: {len(view_analyses)}\n\n"
-        
-        # Views summary section with percentages
-        report += "TICKETS BY VIEW\n--------------\n"
-        for view_id, view_tickets in view_analyses.items():
-            view_name = view_map.get(view_id, f"View ID: {view_id}") if view_map else f"View ID: {view_id}"
-            percentage = (len(view_tickets) / len(analyses)) * 100
-            report += f"{view_name}: {len(view_tickets)} tickets ({percentage:.1f}%)\n"
+        # Add sentiment distribution with descriptive labels
+        report += "SENTIMENT DISTRIBUTION\n---------------------\n"
+        for sentiment, count in sorted(sentiment_distribution.items()):
+            percentage = (count / len(analyses)) * 100 if len(analyses) > 0 else 0
+            label = sentiment.capitalize()
+            report += f"{label}: {count} tickets ({percentage:.1f}%)\n"
         report += "\n"
         
-        # Combined sentiment analysis
-        report += "COMBINED SENTIMENT ANALYSIS\n-------------------------\n"
-        
-        # Business impact first
-        business_impact_count = self._count_business_impact(analyses)
-        report += "Business Impact:\n"
-        report += "A ticket is flagged as having business impact when it indicates:\n"
-        report += "- Production system downtime (non-functional systems)\n"
-        report += "- Revenue loss (financial impact)\n"
-        report += "- Missed deadlines (time-sensitive deliverables at risk)\n"
-        report += "- Customer-facing issues (visible to clients)\n"
-        report += "- Contractual obligations at risk (legal/agreement compliance)\n\n"
-        report += f"Tickets with business impact: {business_impact_count}\n"
-        impact_percentage = (business_impact_count / len(analyses)) * 100
-        report += f"Percentage of total: {impact_percentage:.2f}%\n"
-        if impact_percentage > 75:
-            report += f"ALERT: High percentage of tickets have business impact!\n"
-            report += "This indicates a significant number of tickets are affecting core business operations.\n"
+        # Add priority score distribution with descriptive labels
+        report += "PRIORITY DISTRIBUTION\n--------------------\n"
+        for category, (min_val, max_val) in self.priority_groups.items():
+            count = self._count_priority_range(analyses, min_val, max_val)
+            percentage = (count / len(analyses)) * 100 if len(analyses) > 0 else 0
+            report += f"{category} ({min_val}-{max_val}): {count} tickets ({percentage:.1f}%)\n"
         report += "\n"
         
-        # Sentiment distribution
-        polarity_counts = self._count_sentiment_polarities(analyses)
-        report += "Sentiment Distribution:\n"
-        for polarity, count in sorted(polarity_counts.items()):
-            percentage = (count / len(analyses)) * 100
-            report += f"{polarity}: {count} ({percentage:.1f}%)\n"
-        report += "\n"
+        # Business impact section
+        business_impact_tickets = self._filter_business_impact_tickets(analyses)
+        if business_impact_tickets:
+            report += "BUSINESS IMPACT DETECTED\n-----------------------\n"
+            report += f"Business impact detected in {len(business_impact_tickets)} tickets ({(len(business_impact_tickets) / len(analyses)) * 100:.1f}%)\n\n"
+            
+            # Add a few examples
+            report += "Examples:\n"
+            for i, analysis in enumerate(business_impact_tickets[:3]):
+                report += f"- Ticket #{analysis.get('ticket_id', 'Unknown')}: {analysis.get('subject', 'No Subject')}\n"
+                if 'sentiment' in analysis and isinstance(analysis['sentiment'], dict):
+                    business_impact = analysis['sentiment'].get('business_impact', {})
+                    if business_impact and business_impact.get('description'):
+                        report += f"  Impact: {business_impact.get('description')}\n"
+            report += "\n"
         
-        # Priority distribution with groups
-        report += "Priority Distribution:\n"
-        report += "Our system scores tickets from 1-10 based on urgency, frustration, business impact and technical expertise:\n"
-        priority_counts = self._count_priority_scores(analyses)
+        # High priority tickets section
+        high_priority_tickets = self._filter_high_priority_tickets(analyses)
+        if high_priority_tickets:
+            report += "HIGH PRIORITY TICKETS\n--------------------\n"
+            report += f"Found {len(high_priority_tickets)} high priority tickets (priority 7-10)\n\n"
+            
+            # Add details for up to 5 highest priority tickets
+            for i, analysis in enumerate(sorted(high_priority_tickets, key=lambda x: x.get('priority_score', 0), reverse=True)[:5]):
+                report += self._format_ticket_details(analysis) + "\n"
+            report += "\n"
         
-        # Group scores
-        grouped_counts = {}
-        for group_name, (min_val, max_val) in self.priority_groups.items():
-            group_count = sum(count for score, count in priority_counts.items() if min_val <= score <= max_val)
-            if group_count > 0:
-                percentage = (group_count / len(analyses)) * 100
-                grouped_counts[group_name] = (group_count, percentage)
-        
-        # Show grouped counts
-        for group_name, (count, percentage) in grouped_counts.items():
-            report += f"{group_name}: {count} tickets ({percentage:.1f}%)\n"
-        
-        # Get active scores
-        active_scores = [score for score, count in priority_counts.items() if count > 0]
-        
-        # Add details for highest priority scores (top 3)
-        if active_scores:
-            report += "\nHighest priority tickets:\n"
-            for score in sorted(active_scores, reverse=True)[:3]:  # Show top 3 highest priority scores
-                count = priority_counts[score]
-                percentage = (count / len(analyses)) * 100
-                description = self.priority_descriptions.get(score, "Unknown priority level")
-                report += f"Score {score} ({description}): {count} tickets ({percentage:.1f}%)\n"
-        report += "\n"
-        
-        # Calculate averages
+        # Add general statistics
         avg_urgency = self._calculate_average_urgency(analyses)
         avg_frustration = self._calculate_average_frustration(analyses)
         avg_priority = self._calculate_average_priority(analyses)
         
-        report += "Averages:\n"
-        report += f"Average Urgency Level: {avg_urgency:.2f}/5\n"
-        report += f"Average Frustration Level: {avg_frustration:.2f}/5\n"
-        report += f"Average Priority Score: {avg_priority:.2f}/10\n\n"
-        
-        # Component distribution (if available)
-        component_counts = self._count_components(analyses)
-        if component_counts:
-            sorted_components = {k: v for k, v in sorted(
-                component_counts.items(), 
-                key=lambda item: item[1], 
-                reverse=True
-            ) if k != "none" and v > 0}
-            
-            if sorted_components:
-                report += "Top Components:\n"
-                for component, count in list(sorted_components.items())[:5]:  # Show top 5
-                    percentage = (count / sum(sorted_components.values())) * 100
-                    report += f"{component}: {count} ({percentage:.1f}%)\n"
-                report += "\n"
-        
-        # Per-view sentiment analysis
-        report += "PER-VIEW SENTIMENT ANALYSIS\n--------------------------\n"
-        for view_id, view_tickets in view_analyses.items():
-            view_name = view_map.get(view_id, f"View ID: {view_id}") if view_map else f"View ID: {view_id}"
-            report += f"\n{view_name}\n{'-' * len(view_name)}\n"
-            
-            # Get sentiment distribution for this view
-            polarity_counts = self._count_sentiment_polarities(view_tickets)
-            report += "Sentiment Distribution:\n"
-            for polarity, count in sorted(polarity_counts.items()):
-                percentage = (count / len(view_tickets)) * 100 if view_tickets else 0
-                report += f"  {polarity}: {count} ({percentage:.1f}%)\n"
-            
-            # Get priority distribution for this view
-            priority_counts = self._count_priority_scores(view_tickets)
-            
-            # Group by priority levels
-            high_priority = sum(count for score, count in priority_counts.items() if score >= 7)
-            high_percentage = (high_priority / len(view_tickets)) * 100 if view_tickets else 0
-            report += f"High Priority Tickets (7-10): {high_priority} ({high_percentage:.1f}%)\n"
-            
-            # Get business impact for this view
-            business_impact_count = self._count_business_impact(view_tickets)
-            impact_percentage = (business_impact_count / len(view_tickets)) * 100 if view_tickets else 0
-            report += f"Business Impact Tickets: {business_impact_count} ({impact_percentage:.1f}%)\n"
-            
-            # Calculate averages for this view
-            avg_urgency = self._calculate_average_urgency(view_tickets)
-            avg_frustration = self._calculate_average_frustration(view_tickets)
-            avg_priority = self._calculate_average_priority(view_tickets)
-            
-            report += f"Average Urgency: {avg_urgency:.2f}/5\n"
-            report += f"Average Frustration: {avg_frustration:.2f}/5\n"
-            report += f"Average Priority: {avg_priority:.2f}/10\n"
-            
-            # Add high priority tickets for this view
-            high_priority_tickets = self._get_high_priority_tickets(view_tickets)
-            if high_priority_tickets:
-                report += "High Priority Tickets:\n"
-                for analysis in high_priority_tickets[:5]:  # Show only top 5 per view to keep report readable
-                    ticket_id = analysis.get("ticket_id", "Unknown")
-                    subject = analysis.get("subject", "No Subject")
-                    priority = analysis.get("priority_score", 0)
-                    report += f"  #{ticket_id} - {subject} (Priority: {priority}/10)\n"
-                
-                if len(high_priority_tickets) > 5:
-                    report += f"  ... and {len(high_priority_tickets) - 5} more\n"
+        report += f"AVERAGE METRICS\n--------------\n"
+        report += f"Urgency: {avg_urgency:.2f}/5\n"
+        report += f"Frustration: {avg_frustration:.2f}/5\n"
+        report += f"Priority: {avg_priority:.2f}/10\n\n"
         
         return report
     
-    def _count_sentiment_polarities(self, analyses: List[Dict]) -> Dict[str, int]:
-        """Count the distribution of sentiment polarities."""
-        counts = {}
-        for analysis in analyses:
-            sentiment = analysis.get("sentiment", {})
-            if isinstance(sentiment, dict):
-                polarity = sentiment.get("polarity", "unknown")
-            else:
-                polarity = sentiment
-            counts[polarity] = counts.get(polarity, 0) + 1
-        return counts
+    def _generate_executive_summary(self, stats, analyses=None):
+        """Generate an executive summary of the sentiment analysis."""
+        # Example implementation
+        summary = "EXECUTIVE SUMMARY\n"
+        summary += "=================\n\n"
+        
+        # Add overall stats
+        if hasattr(stats, 'get'):
+            total_tickets = stats.get('count', 0) if 'count' in stats else len(analyses) if analyses else 0
+            
+            # Calculate high priority tickets
+            high_priority = sum(1 for a in analyses if a.get('priority_score', 0) >= 7) if analyses else stats.get('high_priority_count', 0)
+            
+            # Calculate business impact
+            business_impact = sum(1 for a in analyses if 'sentiment' in a and isinstance(a['sentiment'], dict) 
+                              and a['sentiment'].get('business_impact', {}).get('detected', False)) \
+                              if analyses else stats.get('business_impact_count', 0)
+            
+            # Add statistics
+            summary += f"Total Tickets Analyzed: {total_tickets}\n"
+            summary += f"High Priority Tickets: {high_priority} ({self._format_percentage(high_priority, total_tickets)})\n"
+            summary += f"Business Impact Detected: {business_impact} ({self._format_percentage(business_impact, total_tickets)})\n\n"
+            
+            # Add key insights
+            if high_priority > 0:
+                summary += "Key Insights:\n"
+                summary += "- High priority tickets should be addressed immediately\n"
+                
+            if business_impact > 0:
+                summary += "- {0} of tickets indicate business impact\n".format(self._format_percentage(business_impact, total_tickets))
+        
+        return summary
     
-    def _count_urgency_levels(self, analyses: List[Dict]) -> Dict[int, int]:
-        """Count the distribution of urgency levels."""
-        counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-        for analysis in analyses:
-            sentiment = analysis.get("sentiment", {})
-            if isinstance(sentiment, dict):
-                level = sentiment.get("urgency_level", 1)
-                counts[level] = counts.get(level, 0) + 1
-        return counts
+    def _format_urgency_level(self, level):
+        """Format urgency level with descriptive label."""
+        if not level:
+            return "Unknown"
+            
+        try:
+            level = int(level)
+        except (ValueError, TypeError):
+            return str(level)
+            
+        # Descriptive labels for levels
+        labels = {
+            1: "Very Low",
+            2: "Low",
+            3: "Medium",
+            4: "High",
+            5: "Critical"
+        }
+        
+        # Calculate percentage
+        percentage = (level / 5) * 100
+        
+        return f"{level} - {labels.get(level, 'Unknown')} ({percentage:.0f}%)"
     
-    def _count_frustration_levels(self, analyses: List[Dict]) -> Dict[int, int]:
-        """Count the distribution of frustration levels."""
-        counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-        for analysis in analyses:
-            sentiment = analysis.get("sentiment", {})
-            if isinstance(sentiment, dict):
-                level = sentiment.get("frustration_level", 1)
-                counts[level] = counts.get(level, 0) + 1
-        return counts
+    def _format_frustration_level(self, level):
+        """Format frustration level with descriptive label."""
+        if not level:
+            return "Unknown"
+            
+        try:
+            level = int(level)
+        except (ValueError, TypeError):
+            return str(level)
+            
+        # Descriptive labels for levels
+        labels = {
+            1: "None",
+            2: "Slight",
+            3: "Moderate",
+            4: "High",
+            5: "Extreme"
+        }
+        
+        # Calculate percentage
+        percentage = (level / 5) * 100
+        
+        return f"{level} - {labels.get(level, 'Unknown')} ({percentage:.0f}%)"
     
-    def _count_business_impact(self, analyses: List[Dict]) -> int:
-        """Count tickets with business impact detected."""
+    def _extract_emotions(self, analyses):
+        """Extract and count emotions from analyses."""
+        emotions_counter = {}
+        
+        for analysis in analyses:
+            if 'sentiment' in analysis and isinstance(analysis['sentiment'], dict):
+                emotions = analysis['sentiment'].get('emotions', [])
+                if emotions:
+                    for emotion in emotions:
+                        emotions_counter[emotion] = emotions_counter.get(emotion, 0) + 1
+        
+        return emotions_counter
+
+    def _extract_key_phrases(self, analyses):
+        """Extract key phrases from analyses."""
+        phrases = []
+        
+        for analysis in analyses:
+            if 'sentiment' in analysis and isinstance(analysis['sentiment'], dict):
+                key_phrases = analysis['sentiment'].get('key_phrases', [])
+                if key_phrases:
+                    phrases.extend(key_phrases)
+        
+        # Return top phrases
+        return phrases[:10]
+    
+    def _count_sentiment_polarities(self, analyses):
+        """Count sentiment polarities in analyses."""
+        polarity_counts = {}
+        
+        for analysis in analyses:
+            if 'sentiment' in analysis:
+                if isinstance(analysis['sentiment'], dict):
+                    # Enhanced sentiment
+                    polarity = analysis['sentiment'].get('polarity', 'unknown')
+                else:
+                    # Basic sentiment
+                    polarity = analysis['sentiment'] or 'unknown'
+                    
+                # Increment the count for this polarity
+                polarity_counts[polarity] = polarity_counts.get(polarity, 0) + 1
+        
+        return polarity_counts
+        
+    def _count_priority_range(self, analyses, min_val, max_val):
+        """Count priority scores within a specific range."""
         count = 0
+        
         for analysis in analyses:
-            sentiment = analysis.get("sentiment", {})
-            if isinstance(sentiment, dict):
-                business_impact = sentiment.get("business_impact", {})
-                if business_impact and business_impact.get("detected", False):
+            score = analysis.get('priority_score')
+            if score is not None and min_val <= score <= max_val:
+                count += 1
+                
+        return count
+
+    def _filter_business_impact_tickets(self, analyses):
+        """Filter tickets with business impact."""
+        business_impact = []
+        
+        for analysis in analyses:
+            if 'sentiment' in analysis and isinstance(analysis['sentiment'], dict):
+                impact = analysis['sentiment'].get('business_impact', {})
+                if impact and impact.get('detected', False):
+                    business_impact.append(analysis)
+                
+        return business_impact
+
+    def _filter_high_priority_tickets(self, analyses, threshold=7):
+        """Filter tickets with priority scores above the threshold."""
+        high_priority = []
+        
+        for analysis in analyses:
+            score = analysis.get('priority_score')
+            if score is not None and score >= threshold:
+                high_priority.append(analysis)
+                
+        return high_priority
+
+    def _format_ticket_details(self, analysis):
+        """Format details for a single ticket with enhanced descriptive labels."""
+        ticket_id = analysis.get('ticket_id', 'Unknown')
+        subject = analysis.get('subject', 'No Subject')
+        
+        # Format basic ticket info
+        ticket_info = f"#{ticket_id} - {subject}\n"
+        
+        # Add priority score with description
+        priority = analysis.get('priority_score')
+        if priority:
+            desc = self.priority_descriptions.get(priority, "")
+            ticket_info += f"  Priority: {priority}/10 - {desc}\n"
+        
+        # Add sentiment information with enhanced labels
+        sentiment = analysis.get('sentiment')
+        if isinstance(sentiment, dict):
+            # Enhanced sentiment
+            polarity = sentiment.get('polarity', 'unknown')
+            ticket_info += f"  Sentiment: {polarity.capitalize()}\n"
+            
+            # Add urgency and frustration with descriptive labels
+            if 'urgency_level' in sentiment:
+                urgency = sentiment['urgency_level']
+                label = self.urgency_labels.get(urgency, "")
+                ticket_info += f"  Urgency: {urgency}/5 - {label}\n"
+                
+            if 'frustration_level' in sentiment:
+                frustration = sentiment['frustration_level']
+                label = self.frustration_labels.get(frustration, "")
+                ticket_info += f"  Frustration: {frustration}/5 - {label}\n"
+                
+            # Add business impact if detected
+            business_impact = sentiment.get('business_impact', {})
+            if business_impact and business_impact.get('detected', False):
+                description = business_impact.get('description', 'Business impact detected')
+                ticket_info += f"  Business Impact: {description}\n"
+                
+            # Add emotions if available
+            emotions = sentiment.get('emotions', [])
+            if emotions:
+                ticket_info += f"  Emotions: {', '.join(emotions)}\n"
+        else:
+            # Basic sentiment
+            ticket_info += f"  Sentiment: {sentiment}\n"
+        
+        # Add component if available
+        component = analysis.get('component')
+        if component and component != "none":
+            ticket_info += f"  Component: {component}\n"
+        
+        # Add category
+        category = analysis.get('category', 'uncategorized')
+        ticket_info += f"  Category: {category}\n"
+        
+        return ticket_info
+
+    def _calculate_average_urgency(self, analyses):
+        """Calculate average urgency level."""
+        urgency_levels = []
+        
+        for analysis in analyses:
+            if 'sentiment' in analysis and isinstance(analysis['sentiment'], dict):
+                urgency = analysis['sentiment'].get('urgency_level')
+                if urgency is not None:
+                    urgency_levels.append(urgency)
+        
+        if urgency_levels:
+            return sum(urgency_levels) / len(urgency_levels)
+        return 0
+    
+    def _calculate_average_frustration(self, analyses):
+        """Calculate average frustration level."""
+        frustration_levels = []
+        
+        for analysis in analyses:
+            if 'sentiment' in analysis and isinstance(analysis['sentiment'], dict):
+                frustration = analysis['sentiment'].get('frustration_level')
+                if frustration is not None:
+                    frustration_levels.append(frustration)
+        
+        if frustration_levels:
+            return sum(frustration_levels) / len(frustration_levels)
+        return 0
+    
+    def _calculate_average_priority(self, analyses):
+        """Calculate average priority score."""
+        priority_scores = []
+        
+        for analysis in analyses:
+            priority = analysis.get('priority_score')
+            if priority is not None:
+                priority_scores.append(priority)
+        
+        if priority_scores:
+            return sum(priority_scores) / len(priority_scores)
+        return 0
+    
+    def _count_business_impact(self, analyses):
+        """Count analyses with business impact."""
+        count = 0
+        
+        for analysis in analyses:
+            if 'sentiment' in analysis and isinstance(analysis['sentiment'], dict):
+                business_impact = analysis['sentiment'].get('business_impact', {})
+                if business_impact and business_impact.get('detected', False):
                     count += 1
+        
         return count
     
-    def _count_priority_scores(self, analyses: List[Dict]) -> Dict[int, int]:
-        """Count the distribution of priority scores."""
-        counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
-        for analysis in analyses:
-            score = analysis.get("priority_score", 1)
-            counts[score] = counts.get(score, 0) + 1
-        return counts
-    
-    def _count_categories(self, analyses: List[Dict]) -> Dict[str, int]:
-        """Count the distribution of categories."""
-        counts = {}
-        for analysis in analyses:
-            category = analysis.get("category", "uncategorized")
-            counts[category] = counts.get(category, 0) + 1
-        return counts
-    
-    def _count_components(self, analyses: List[Dict]) -> Dict[str, int]:
-        """Count the distribution of hardware components."""
-        counts = {}
-        for analysis in analyses:
-            component = analysis.get("component", "none")
-            counts[component] = counts.get(component, 0) + 1
-        return counts
-    
-    def _calculate_average_urgency(self, analyses: List[Dict]) -> float:
-        """Calculate the average urgency level."""
-        urgency_levels = []
-        for analysis in analyses:
-            sentiment = analysis.get("sentiment", {})
-            if isinstance(sentiment, dict):
-                level = sentiment.get("urgency_level", 1)
-                urgency_levels.append(level)
-        return statistics.mean(urgency_levels) if urgency_levels else 0
-    
-    def _calculate_average_frustration(self, analyses: List[Dict]) -> float:
-        """Calculate the average frustration level."""
-        frustration_levels = []
-        for analysis in analyses:
-            sentiment = analysis.get("sentiment", {})
-            if isinstance(sentiment, dict):
-                level = sentiment.get("frustration_level", 1)
-                frustration_levels.append(level)
-        return statistics.mean(frustration_levels) if frustration_levels else 0
-    
-    def _calculate_average_priority(self, analyses: List[Dict]) -> float:
-        """Calculate the average priority score."""
-        priority_scores = []
-        for analysis in analyses:
-            score = analysis.get("priority_score", 1)
-            priority_scores.append(score)
-        return statistics.mean(priority_scores) if priority_scores else 0
-    
-    def _get_high_priority_tickets(self, analyses: List[Dict], threshold: int = 7) -> List[Dict]:
-        """Get high priority tickets above the threshold."""
-        high_priority = []
-        for analysis in analyses:
-            score = analysis.get("priority_score", 0)
-            if score >= threshold:
-                high_priority.append(analysis)
-        return sorted(high_priority, key=lambda x: x.get("priority_score", 0), reverse=True)
-    
-    def _get_business_impact_tickets(self, analyses: List[Dict]) -> List[Dict]:
-        """Get tickets with business impact detected."""
-        impact_tickets = []
-        for analysis in analyses:
-            sentiment = analysis.get("sentiment", {})
-            if isinstance(sentiment, dict):
-                business_impact = sentiment.get("business_impact", {})
-                if business_impact and business_impact.get("detected", False):
-                    impact_tickets.append(analysis)
-        return impact_tickets
-    
-    def save_report(self, report: str, filename: Optional[str] = None) -> Optional[str]:
-        """
-        Save the report to a file.
-        
-        Args:
-            report: Report content to save
-            filename: Filename to use (if None, generates a timestamp-based name)
-            
-        Returns:
-            Path to the saved file
-        """
-        if not filename:
+    def save_report(self, report, output_file=None):
+        """Save the report to a file."""
+        if not output_file:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M')
-            filename = f"enhanced_sentiment_report_{timestamp}.txt"
+            output_file = f"sentiment_analysis_report_{timestamp}.txt"
         
-        try:
-            with open(filename, "w") as file:
-                file.write(report)
-            logger.info(f"Enhanced sentiment analysis report saved to {filename}")
-            return filename
-        except Exception as e:
-            logger.error(f"Error saving report to file: {e}")
-            return None
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(report)
+        
+        return output_file
     
-    def generate_time_period_report(self, time_period: str = "week", title: Optional[str] = None) -> str:
-        """
-        Generate a report for a specific time period.
-        
-        Args:
-            time_period: Time period to analyze ('day', 'week', 'month', 'year')
-            title: Optional title for the report
-            
-        Returns:
-            Formatted report text.
-        """
-        if not self.db_repository:
-            return "Error: No database repository available for time period reporting."
-        
-        # Calculate the date range
-        from datetime import timedelta
-        end_date = datetime.utcnow()
-        
-        if time_period == "day":
-            start_date = end_date - timedelta(days=1)
-            period_name = "Last 24 Hours"
-        elif time_period == "week":
-            start_date = end_date - timedelta(days=7)
-            period_name = "Last 7 Days"
-        elif time_period == "month":
-            start_date = end_date - timedelta(days=30)
-            period_name = "Last 30 Days"
-        elif time_period == "year":
-            start_date = end_date - timedelta(days=365)
-            period_name = "Last 365 Days"
-        else:
-            start_date = end_date - timedelta(days=7)
-            period_name = "Last 7 Days"
-        
-        # Get analyses for the time period
-        analyses = self.db_repository.find_analyses_between(start_date, end_date)
-        
-        if not analyses:
-            return f"No analyses found for the {period_name}."
-        
-        # Use the regular report generator with the time period analyses
-        if not title:
-            title = f"Enhanced Sentiment Analysis Report - {period_name}"
-            
-        return self.generate_report(analyses, title)
+    def _format_percentage(self, part, total):
+        """Format a percentage with 1 decimal place."""
+        if total == 0:
+            return "0.0%"
+        return f"{(part / total) * 100:.1f}%"

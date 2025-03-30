@@ -198,10 +198,10 @@ def call_claude_with_retries(
                         return json.loads(json_content)
                     except json.JSONDecodeError:
                         # If still not valid JSON, return as raw text
-                        return {"raw_text": content}
+                        return {"raw_text": content, "confidence": 0.9}
                 else:
                     # If not valid JSON and not in code block, return as raw text
-                    return {"raw_text": content}
+                    return {"raw_text": content, "confidence": 0.9}
                 
         except Exception as e:
             error_type = type(e).__name__

@@ -41,6 +41,18 @@ class ZendeskCache:
         with self._lock:
             value = self._views_cache.get(key)
             if value is not None:
+                # Check if value is empty collection
+                if isinstance(value, (list, dict, set)) and len(value) == 0:
+                    logger.warning(f"Cached value for {key} is empty, returning None to force refresh")
+                    return None
+                # For iterable objects like Zendesk API results, check if they're empty
+                try:
+                    if hasattr(value, '__iter__') and not isinstance(value, (str, dict)) and len(list(value)) == 0:
+                        logger.warning(f"Cached iterable for {key} is empty, returning None to force refresh")
+                        return None
+                except Exception as e:
+                    logger.warning(f"Error checking cached value length: {e}, will use cache anyway")
+                
                 logger.debug(f"Cache hit for views cache: {key}")
             return value
             
@@ -54,7 +66,13 @@ class ZendeskCache:
         """Invalidate all views cache."""
         with self._lock:
             self._views_cache.clear()
-            logger.debug("Invalidated views cache")
+            logger.info("Invalidated views cache")
+            
+    def force_refresh_views(self) -> None:
+        """Force refresh the views cache."""
+        with self._lock:
+            self._views_cache.clear()
+            logger.info("Forced refresh of views cache")
             
     # Tickets cache methods
     
@@ -84,6 +102,12 @@ class ZendeskCache:
             keys_to_remove = [k for k in self._tickets_cache.keys() 
                              if str(ticket_id) in str(k)]
             
+            # If no specific keys contain the ticket ID, invalidate all tickets
+            if not keys_to_remove:
+                logger.debug(f"No specific cache keys found for ticket {ticket_id}, invalidating all tickets")
+                self.invalidate_tickets()
+                return
+                
             for key in keys_to_remove:
                 del self._tickets_cache[key]
                 logger.debug(f"Invalidated cache entry for ticket {ticket_id}: {key}")

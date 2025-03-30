@@ -1,5 +1,10 @@
 # Zendesk AI Integration
 
+[![Python Tests](https://github.com/yourusername/zendesk-ai-integration/actions/workflows/python-tests.yml/badge.svg)](https://github.com/yourusername/zendesk-ai-integration/actions/workflows/python-tests.yml)
+[![codecov](https://codecov.io/gh/yourusername/zendesk-ai-integration/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/zendesk-ai-integration)
+[![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black)](https://github.com/pycqa/flake8)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
 This application integrates Zendesk support tickets with AI services (OpenAI and Anthropic Claude) to provide automated sentiment analysis, categorization, and reporting while maintaining a read-only approach to customer tickets.
 
 ## Features
@@ -7,7 +12,7 @@ This application integrates Zendesk support tickets with AI services (OpenAI and
 - **Read-only sentiment analysis** - analyzes tickets without modifying them
 - **Multi-LLM Support**:
   - OpenAI's advanced GPT-4o model
-  - Anthropic's Claude models
+  - Anthropic's Claude 3 models (Haiku, Sonnet)
 - **Enhanced sentiment analysis** with urgency, frustration, and business impact detection:
   - Contextual examples for better sentiment classification
   - Temperature-controlled variance for more nuanced analysis
@@ -31,8 +36,9 @@ This application integrates Zendesk support tickets with AI services (OpenAI and
   - HMAC signature verification
   - Robust error handling
 - **Performance optimizations**:
-  - Caching system for Zendesk data with TTL
+  - Caching system for Zendesk data with TTL and intelligent cache validation
   - Parallel batch processing for ticket analysis
+  - Self-healing cache with automatic refresh mechanism
   - See [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md) for details
 - **Multiple operation modes**:
   - One-time batch analysis
@@ -54,6 +60,7 @@ This application integrates Zendesk support tickets with AI services (OpenAI and
 4. Install dependencies: `pip install -r requirements.txt`
 5. Set up MongoDB database
 6. Configure environment variables in `.env` file
+7. Set up pre-commit hooks: `pre-commit install` (see [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) for details)
 
 ## Configuration
 
@@ -236,6 +243,57 @@ python src/zendesk_ai_app.py --mode sentiment --view-names "Support :: Pending C
 
 See [MULTI_VIEW.md](MULTI_VIEW.md) for detailed documentation on multi-view analysis.
 
+### Cache Reliability
+
+The application includes intelligent cache validation to prevent issues with stale data:
+
+```bash
+# Force refresh views cache if you suspect outdated cache data
+python src/zendesk_ai_app.py --mode list-views
+python src/zendesk_ai_app.py --mode multi-view --views VIEW_IDS
+```
+
+The multi-view mode automatically refreshes the views cache before processing, ensuring fresh data is used. If you encounter any cache-related issues, running the `list-views` command first can help refresh the cache.
+
+## Development
+
+### Testing
+
+The project includes comprehensive test coverage. To run tests:
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=src --cov-report=html
+
+# Run specific test categories
+pytest tests/unit
+pytest tests/integration
+pytest tests/functional
+pytest tests/performance
+```
+
+See [TESTING.md](TESTING.md) for detailed testing information.
+
+### Pre-commit Hooks
+
+We use pre-commit hooks to ensure code quality. To set up:
+
+```bash
+pre-commit install
+```
+
+See [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) for more details.
+
+### Continuous Integration
+
+This project uses GitHub Actions for continuous integration:
+- Automated tests run on every push to main and pull requests
+- Test coverage reports are uploaded to Codecov
+- Multiple Python versions are tested in parallel
+
 ## Documentation
 
 - [README.md](README.md) - Main documentation
@@ -246,6 +304,8 @@ See [MULTI_VIEW.md](MULTI_VIEW.md) for detailed documentation on multi-view anal
 - [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
 - [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting documentation
 - [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md) - Performance optimization features
+- [TESTING.md](TESTING.md) - Testing strategy and instructions
+- [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) - Pre-commit hooks setup guide
 
 ## Architecture and Project Structure
 
@@ -275,6 +335,33 @@ The application follows the Single Responsibility Principle, with each module ha
 - `src/claude_enhanced_sentiment.py` - Enhanced Claude sentiment analysis implementation
 - `src/security.py` - Security-related functions and decorators
 
+## LLM Version Support
+
+### OpenAI Models
+- Primary: GPT-4o (latest)
+- Fallback: GPT-3.5 Turbo
+
+### Anthropic Claude Models
+- Primary: Claude-3-Haiku-20240307
+- Fallbacks:
+  - Claude-3-Haiku
+  - Claude-3-Sonnet-20240229
+  - Claude-3-Sonnet
+  - Claude-2.1
+  - Claude-Instant-1.2
+
+## Dependencies
+
+This project requires Python 3.9+ and the following key dependencies:
+- zenpy>=2.0.56
+- openai>=1.63.0
+- anthropic>=0.49.0
+- pymongo>=4.11.3
+- flask>=3.0.0
+- requests>=2.32.0
+
+See [requirements.txt](requirements.txt) for the complete list of dependencies.
+
 ## Design Philosophy
 
 This application follows a read-only design philosophy where tickets are analyzed but never modified. All analysis results are stored in the database for reporting and analytics purposes. This approach provides:
@@ -289,3 +376,7 @@ By keeping the system read-only, it can safely be used in production environment
 ## License
 
 MIT
+
+## Last Updated
+
+March 30, 2025

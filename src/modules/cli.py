@@ -51,14 +51,12 @@ class CommandLineInterface:
         
         self.parser.add_argument(
             "--days", 
-            type=int, 
-            default=30, 
+            type=int,
             help="Number of days back to include in summary"
         )
         
         self.parser.add_argument(
             "--view", 
-            type=int, 
             help="Zendesk view ID to analyze"
         )
         
@@ -304,6 +302,10 @@ class CommandLineInterface:
             return False
             
         logger.info(f"Analyzing tickets from {len(view_ids)} views: {view_ids}")
+        
+        # Force refresh the views cache to ensure we have fresh data
+        zendesk_client.cache.force_refresh_views()
+        logger.info("Forced refresh of views cache before fetching tickets")
         
         # Get view names for better reporting
         view_map = zendesk_client.get_view_names_by_ids(view_ids)
@@ -832,10 +834,10 @@ class CommandLineInterface:
         # Import appropriate reporter based on format
         if args.format == "enhanced":
             from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
-            reporter = EnhancedSentimentReporter(db_repository)
+            reporter = report_modules.get('sentiment_enhanced') or EnhancedSentimentReporter()
         else:
             from modules.reporters.sentiment_report import SentimentReporter
-            reporter = SentimentReporter(db_repository)
+            reporter = report_modules.get('sentiment') or SentimentReporter()
         """Handle 'sentiment' mode: generate sentiment analysis reports."""
         # Check if multi-view support is requested
         if args.views or args.view_names:
@@ -921,7 +923,10 @@ class CommandLineInterface:
             # Calculate date range
             from datetime import datetime, timedelta
             end_date = datetime.utcnow()
-            start_date = end_date - timedelta(days=args.days)
+            
+            # Use a default of 7 days if days parameter is None
+            days_value = args.days if args.days is not None else 7
+            start_date = end_date - timedelta(days=days_value)
             
             # Find analyses in date range
             analyses = db_repository.find_analyses_between(start_date, end_date)
@@ -929,10 +934,10 @@ class CommandLineInterface:
             if analyses:
                 logger.info(f"Found {len(analyses)} analyses in the database for the specified period")
                 # Generate report
-                title = f"Sentiment Analysis Report - Last {args.days} days"
+                title = f"Sentiment Analysis Report - Last {days_value} days"
                 report = reporter.generate_report(analyses, title=title)
             else:
-                logger.error(f"No analyses found in the database for the last {args.days} days")
+                logger.error(f"No analyses found in the database for the last {days_value} days")
                 return False
         
         # Output the report

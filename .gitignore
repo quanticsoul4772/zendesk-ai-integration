@@ -2,6 +2,9 @@
 venv/
 env/
 ENV/
+.venv/
+.env/
+.python-version
 
 # Python cache files
 __pycache__/
@@ -9,28 +12,55 @@ __pycache__/
 *$py.class
 *.so
 .Python
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
 
 # Distribution / packaging
 dist/
 build/
 *.egg-info/
+eggs/
+.eggs/
+wheels/
+*.egg
 
 # Environment variables
 .env
+.env.local
+.env.development
+.env.test
+.env.production
 
 # Database
 *.db
 *.sqlite3
+*.sqlite
 
 # Logs
 logs/
 *.log
+log/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # IDE specific files
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
 
 # OS generated files
 .DS_Store
@@ -40,6 +70,8 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+Icon?
+Desktop.ini
 
 # Report output files
 *_report.txt
@@ -48,3 +80,38 @@ pending_support_report_*.txt
 sentiment_analysis_report_*.txt
 hardware_report_*.txt
 multi_view_report_*.txt
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# profiling data
+.prof/
+prof/
+
+# Documentation builds
+/site
+docs/_build/
+docs/api/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.pid
+*~
+
+# Dependencies
+node_modules/
+jspm_packages/
+web_modules/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.npm/
+.yarn/

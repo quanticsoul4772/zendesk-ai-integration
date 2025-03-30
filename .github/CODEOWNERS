@@ -1,0 +1,32 @@
+# This file defines code ownership for the zendesk-ai-integration project
+# Each line is a file pattern followed by one or more owners
+# Order is important; the last matching pattern takes the most precedence
+
+# Default owners for everything in the repo
+* @yourusername
+
+# Core AI services
+/src/ai_service.py @yourusername
+/src/claude_service.py @yourusername
+/src/enhanced_sentiment.py @yourusername
+/src/claude_enhanced_sentiment.py @yourusername
+
+# Zendesk integration
+/src/modules/zendesk_client.py @yourusername
+
+# Database and caching
+/src/modules/db_repository.py @yourusername
+/src/modules/cache_manager.py @yourusername
+
+# Batch processing
+/src/modules/batch_processor.py @yourusername
+
+# Reporting components
+/src/modules/reporters/ @yourusername
+
+# Testing infrastructure
+/tests/ @yourusername
+/.github/workflows/ @yourusername
+
+# Documentation
+*.md @yourusername

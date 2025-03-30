@@ -78,6 +78,10 @@ class TaskScheduler:
             logger.exception(f"Error sending Slack notification: {e}")
             return False
     
+    def daily_summary_task(self):
+        """Task for generating daily summary (for test compatibility)."""
+        return self.generate_daily_summary()
+        
     def generate_daily_summary(self):
         """Generate and send a daily summary of ticket analysis."""
         logger.info("Generating daily summary...")
@@ -144,6 +148,10 @@ class TaskScheduler:
         except Exception as e:
             logger.exception(f"Error generating daily summary: {e}")
     
+    def weekly_summary_task(self):
+        """Task for generating weekly summary (for test compatibility)."""
+        return self.generate_weekly_summary()
+        
     def generate_weekly_summary(self):
         """Generate and send a weekly summary of ticket analysis."""
         logger.info("Generating weekly summary...")
@@ -216,6 +224,29 @@ class TaskScheduler:
         except Exception as e:
             logger.exception(f"Error generating weekly summary: {e}")
     
+    def add_daily_task(self, task_function, time):
+        """
+        Add a daily scheduled task.
+        
+        Args:
+            task_function: Function to execute
+            time: Time to run task (HH:MM format)
+        """
+        schedule.every().day.at(time).do(task_function)
+        logger.info(f"Scheduled daily task at {time}")
+    
+    def add_weekly_task(self, task_function, day, time):
+        """
+        Add a weekly scheduled task.
+        
+        Args:
+            task_function: Function to execute
+            day: Day of week to run task
+            time: Time to run task (HH:MM format)
+        """
+        getattr(schedule.every(), day).at(time).do(task_function)
+        logger.info(f"Scheduled weekly task on {day} at {time}")
+    
     def setup_schedules(self, daily_time="09:00", weekly_day="monday", weekly_time="09:00"):
         """
         Set up scheduled tasks.
@@ -225,13 +256,11 @@ class TaskScheduler:
             weekly_day: Day of week to run weekly summary
             weekly_time: Time to run weekly summary (HH:MM format)
         """
-        # Schedule daily summary
-        schedule.every().day.at(daily_time).do(self.generate_daily_summary)
-        logger.info(f"Scheduled daily summary at {daily_time}")
+        # Schedule daily summary using the daily task method
+        self.add_daily_task(self.daily_summary_task, daily_time)
         
-        # Schedule weekly summary
-        getattr(schedule.every(), weekly_day).at(weekly_time).do(self.generate_weekly_summary)
-        logger.info(f"Scheduled weekly summary on {weekly_day} at {weekly_time}")
+        # Schedule weekly summary using the weekly task method
+        self.add_weekly_task(self.weekly_summary_task, weekly_day, weekly_time)
     
     def run(self):
         """Run the scheduler loop."""
@@ -245,3 +274,6 @@ class TaskScheduler:
             logger.info("Scheduler stopped by user.")
         except Exception as e:
             logger.exception(f"Error in scheduler loop: {e}")
+
+# For backwards compatibility with tests
+Scheduler = TaskScheduler

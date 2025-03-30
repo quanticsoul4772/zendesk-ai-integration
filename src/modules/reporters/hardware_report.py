@@ -1,245 +1,256 @@
 """
-Hardware Component Reporter Module
+Hardware Reporter Module
 
-This module is responsible for generating reports about hardware components
-mentioned in support tickets.
+Generates reports about hardware components mentioned in tickets.
 """
 
 import logging
-from typing import List, Dict, Any, Optional
-from datetime import datetime
-from zenpy.lib.api_objects import Ticket
+from datetime import datetime, timedelta
+from typing import Dict, List, Any, Optional
+from collections import Counter
+from .reporter_base import ReporterBase
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
-class HardwareReporter:
-    """Generates reports about hardware components in tickets."""
+class HardwareReporter(ReporterBase):
+    """
+    Generates reports focused on hardware components mentioned in tickets.
+    """
     
     def __init__(self):
-        """Initialize the reporter."""
-        self.hardware_terms = {
-            "gpu": ["gpu", "graphics card", "video card", "rtx", "gtx", "quadro", "nvidia", "radeon"],
-            "cpu": ["cpu", "processor", "intel", "amd", "ryzen", "xeon", "threadripper", "core"],
-            "memory": ["memory", "ram", "ddr", "dimm"],
-            "drive": ["drive", "ssd", "hdd", "nvme", "storage", "disk"],
-            "power_supply": ["power supply", "psu"],
-            "motherboard": ["motherboard", "mobo", "mainboard"],
-            "cooling": ["cooling", "fan", "heat sink", "thermal"],
-            "display": ["display", "monitor", "screen"],
-            "network": ["network", "ethernet", "wifi", "wireless", "lan"],
-            "ipmi": ["ipmi", "remote management", "bmc"],
-            "bios": ["bios", "uefi"],
-            "boot": ["boot", "startup", "post"]
+        """Initialize the hardware reporter."""
+        # Initialize the parent class
+        super().__init__()
+        
+        # Define component categories
+        self.component_categories = {
+            'gpu': 'Graphics Processing',
+            'cpu': 'Processing',
+            'memory': 'Memory',
+            'ram': 'Memory',
+            'drive': 'Storage',
+            'ssd': 'Storage',
+            'hdd': 'Storage',
+            'nvme': 'Storage',
+            'motherboard': 'System Board',
+            'power_supply': 'Power',
+            'psu': 'Power',
+            'cooling': 'Thermal',
+            'fan': 'Thermal',
+            'display': 'Display',
+            'monitor': 'Display',
+            'network': 'Connectivity',
+            'ethernet': 'Connectivity',
+            'keyboard': 'Input',
+            'mouse': 'Input'
         }
     
-    def extract_hardware_components(self, text: str) -> List[str]:
-        """
-        Extract hardware components from text based on keyword matching.
-        
-        Args:
-            text: Text to analyze for hardware component mentions
+    def generate_report(self, tickets=None, **kwargs):
+        """Generate a hardware component report."""
+        # Check if we're being called with tickets directly
+        if tickets and isinstance(tickets, list):
+            # Process tickets directly
+            return self._generate_hardware_report_from_tickets(tickets)
             
-        Returns:
-            List of identified component types
-        """
-        if not text:
-            return []
-        
-        components = []
-        text_lower = text.lower()
-        
-        for component, terms in self.hardware_terms.items():
-            for term in terms:
-                if term in text_lower:
-                    components.append(component)
-                    break
-        
-        return list(set(components))
+        # For backwards compatibility - just return a placeholder
+        return "No hardware component data found."
     
-    def generate_report(self, tickets: List[Ticket]) -> str:
-        """
-        Generate hardware component report for a set of tickets.
-        
-        Args:
-            tickets: List of Zendesk tickets to analyze
-            
-        Returns:
-            String containing the formatted report
-        """
-        if not tickets:
-            return "No tickets to analyze"
-        
-        # Count component mentions
-        component_counts = {}
-        ticket_details = []
-        
-        for ticket in tickets:
-            # Extract components from ticket subject and description
-            description = ticket.description or ""
-            subject = ticket.subject or ""
-            components = self.extract_hardware_components(subject + " " + description)
-            
-            # Track component counts
-            for component in components:
-                component_counts[component] = component_counts.get(component, 0) + 1
-            
-            # Add ticket details
-            if components:
-                ticket_details.append({
-                    "id": ticket.id,
-                    "subject": subject,
-                    "components": ", ".join(components)
-                })
-        
-        # Generate report
-        report = "HARDWARE COMPONENT REPORT\n"
-        report += "=======================\n\n"
-        report += f"Total tickets analyzed: {len(tickets)}\n"
-        report += f"Tickets with hardware components: {len(ticket_details)}\n\n"
-        
-        report += "COMPONENT DISTRIBUTION\n"
-        report += "---------------------\n"
-        for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True):
-            report += f"{component}: {count}\n"
-        
-        report += "\nTICKET DETAILS\n"
-        report += "-------------\n"
-        for detail in ticket_details:
-            report += f"#{detail['id']} - {detail['subject']}\n"
-            report += f"Components: {detail['components']}\n\n"
-        
-        return report
-    
-    def generate_multi_view_report(self, tickets: List[Ticket], view_map: Optional[Dict] = None) -> str:
-        """
-        Generate hardware component report for tickets from multiple views.
-        
-        Args:
-            tickets: List of Zendesk tickets to analyze
-            view_map: Dictionary mapping view IDs to view names
-            
-        Returns:
-            String containing the formatted report
-        """
-        if not tickets:
-            return "No tickets to analyze"
-        
-        # Group tickets by view
-        view_tickets = {}
-        for ticket in tickets:
-            if hasattr(ticket, 'source_view_id'):
-                view_id = getattr(ticket, 'source_view_id')
-                if view_id not in view_tickets:
-                    view_tickets[view_id] = []
-                view_tickets[view_id].append(ticket)
-            else:
-                # If no view information, put in unknown category
-                if 'unknown' not in view_tickets:
-                    view_tickets['unknown'] = []
-                view_tickets['unknown'].append(ticket)
-        
-        # Count component mentions overall
-        overall_component_counts = {}
-        view_component_counts = {}
-        all_ticket_details = []
-        
-        for view_id, tickets_in_view in view_tickets.items():
-            view_component_counts[view_id] = {}
-            
-            for ticket in tickets_in_view:
-                # Extract components from ticket subject and description
-                description = ticket.description or ""
-                subject = ticket.subject or ""
-                components = self.extract_hardware_components(subject + " " + description)
-                
-                # Add view information to ticket details
-                view_name = view_map.get(view_id, f"View ID: {view_id}") if view_map else f"View ID: {view_id}"
-                
-                # Track component counts overall
-                for component in components:
-                    overall_component_counts[component] = overall_component_counts.get(component, 0) + 1
-                    view_component_counts[view_id][component] = view_component_counts[view_id].get(component, 0) + 1
-                
-                # Add ticket details
-                if components:
-                    all_ticket_details.append({
-                        "id": ticket.id,
-                        "subject": subject,
-                        "components": ", ".join(components),
-                        "view_id": view_id,
-                        "view_name": view_name
-                    })
-        
-        # Generate report
-        now = datetime.now()
+    def _generate_report_content(self, analyses, title=None):
+        """Generate the hardware report content."""
+        # Create the report header
         report = f"\n{'='*60}\n"
-        report += f"MULTI-VIEW HARDWARE COMPONENT REPORT ({now.strftime('%Y-%m-%d %H:%M')})\n"
+        report += f"HARDWARE COMPONENT REPORT - {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
         report += f"{'='*60}\n\n"
         
-        report += "OVERVIEW\n"
-        report += "--------\n"
-        report += f"Total tickets analyzed: {len(tickets)}\n"
-        report += f"Tickets with hardware components: {len(all_ticket_details)}\n"
-        report += f"Total views: {len(view_tickets)}\n\n"
+        if title:
+            report += f"{title}\n{'-' * len(title)}\n\n"
         
-        report += "TICKETS BY VIEW\n"
-        report += "--------------\n"
-        for view_id, tickets_in_view in view_tickets.items():
-            view_name = view_map.get(view_id, f"View ID: {view_id}") if view_map else f"View ID: {view_id}"
-            report += f"{view_name}: {len(tickets_in_view)} tickets\n"
-        report += "\n"
+        # Analyze component distribution
+        component_distribution = self._analyze_component_distribution(analyses)
         
-        report += "OVERALL COMPONENT DISTRIBUTION\n"
-        report += "-----------------------------\n"
-        for component, count in sorted(overall_component_counts.items(), key=lambda x: x[1], reverse=True):
-            report += f"{component}: {count}\n"
-        report += "\n"
+        # Format component distribution section
+        report += self._format_component_distribution(component_distribution)
         
-        report += "COMPONENT DISTRIBUTION BY VIEW\n"
-        report += "------------------------------\n"
-        for view_id, components in view_component_counts.items():
-            view_name = view_map.get(view_id, f"View ID: {view_id}") if view_map else f"View ID: {view_id}"
-            report += f"\n{view_name}\n{'-' * len(view_name)}\n"
-            for component, count in sorted(components.items(), key=lambda x: x[1], reverse=True):
-                report += f"{component}: {count}\n"
-        
-        report += "\nTICKET DETAILS\n"
-        report += "-------------\n"
-        
-        # Group ticket details by view for better readability
-        for view_id in view_tickets.keys():
-            view_name = view_map.get(view_id, f"View ID: {view_id}") if view_map else f"View ID: {view_id}"
-            tickets_in_view = [t for t in all_ticket_details if t["view_id"] == view_id]
-            
-            if tickets_in_view:
-                report += f"\n{view_name}\n{'-' * len(view_name)}\n"
-                for detail in tickets_in_view:
-                    report += f"#{detail['id']} - {detail['subject']}\n"
-                    report += f"Components: {detail['components']}\n\n"
+        # Add ticket details section
+        report += "\nTICKET DETAILS\n-------------\n"
+        for analysis in analyses:
+            report += self._format_ticket_details(analysis) + "\n"
         
         return report
     
-    def save_report(self, report: str, filename: str = None) -> str:
-        """
-        Save the report to a file.
+    def _analyze_component_distribution(self, analyses):
+        """Count hardware components mentioned in analyses."""
+        components = {}
+        total_tickets = len(analyses)
         
-        Args:
-            report: Report content to save
-            filename: Filename to use (if None, generates a timestamp-based name)
+        # Count component mentions
+        for analysis in analyses:
+            component = analysis.get('component', 'none')
+            if component != 'none':
+                components[component] = components.get(component, 0) + 1
+                
+        # Calculate percentages
+        component_percentages = {}
+        for component, count in components.items():
+            component_percentages[component] = (count / total_tickets) * 100
             
-        Returns:
-            Path to the saved file
-        """
-        if not filename:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M')
-            filename = f"hardware_report_{timestamp}.txt"
+        return {
+            'counts': components,
+            'percentages': component_percentages,
+            'total_tickets': total_tickets
+        }
+    
+    def _format_component_distribution(self, distribution):
+        """Format the component distribution section."""
+        section = "COMPONENT DISTRIBUTION\n---------------------\n"
         
-        try:
-            with open(filename, "w") as file:
-                file.write(report)
-            logger.info(f"Hardware component report saved to {filename}")
-            return filename
-        except Exception as e:
-            logger.error(f"Error saving report to file: {e}")
-            return None
+        # If no components found
+        if not distribution['counts']:
+            section += "No hardware components detected in ticket analyses.\n"
+            return section
+            
+        # Sort components by count (descending)
+        sorted_components = sorted(
+            distribution['counts'].items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+        
+        # Format each component with count and percentage
+        for component, count in sorted_components:
+            percentage = distribution['percentages'][component]
+            # Get category if available
+            category = self.component_categories.get(component, 'Other')
+            section += f"{component} ({category}): {count} tickets ({percentage:.1f}%)\n"
+            
+        return section
+    
+    def _format_ticket_details(self, analysis):
+        """Format details for a single ticket."""
+        ticket_id = analysis.get('ticket_id', 'Unknown')
+        subject = analysis.get('subject', 'No Subject')
+        component = analysis.get('component', 'none')
+        category = analysis.get('category', 'uncategorized')
+        
+        # Format basic ticket info
+        ticket_info = f"#{ticket_id} - {subject}\n"
+        
+        # Add component if available
+        if component != 'none':
+            component_category = self.component_categories.get(component, 'Other')
+            ticket_info += f"  Component: {component} ({component_category})\n"
+            
+        # Add category
+        ticket_info += f"  Category: {category}\n"
+        
+        return ticket_info
+        
+    def _generate_hardware_report_from_tickets(self, tickets):
+        """Generate a hardware report directly from a list of tickets."""
+        # Create the report header
+        report = f"\n{'='*60}\n"
+        report += f"HARDWARE COMPONENT REPORT - {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
+        report += f"{'='*60}\n\n"
+        
+        # Add ticket count
+        report += f"Analyzed {len(tickets)} tickets\n\n"
+        
+        # Simple component distribution based on ticket descriptions
+        component_counts = {}
+        for ticket in tickets:
+            description = ticket.description or ""
+            subject = ticket.subject or ""
+            text = (description + " " + subject).lower()
+            
+            # Check for hardware components
+            for component in self.component_categories.keys():
+                if component in text:
+                    if component not in component_counts:
+                        component_counts[component] = 0
+                    component_counts[component] += 1
+        
+        # Add component distribution section
+        report += "COMPONENT DISTRIBUTION\n---------------------\n"
+        if component_counts:
+            for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True):
+                category = self.component_categories.get(component, 'Other')
+                percentage = (count / len(tickets)) * 100
+                report += f"{component} ({category}): {count} tickets ({percentage:.1f}%)\n"
+        else:
+            report += "No hardware components detected in tickets.\n"
+            
+        return report
+
+    def generate_multi_view_report(self, tickets, view_map=None):
+        """Generate a hardware report for tickets from multiple views."""
+        # Create the report header
+        report = f"\n{'='*60}\n"
+        report += f"MULTI-VIEW HARDWARE COMPONENT REPORT - {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
+        report += f"{'='*60}\n\n"
+        
+        # Add ticket count
+        report += f"Analyzed {len(tickets)} tickets from {len(view_map) if view_map else 'multiple'} views\n\n"
+        
+        # Group tickets by view
+        tickets_by_view = {}
+        for ticket in tickets:
+            view_id = getattr(ticket, 'source_view_id', 'unknown')
+            if view_id not in tickets_by_view:
+                tickets_by_view[view_id] = []
+            tickets_by_view[view_id].append(ticket)
+        
+        # Get overall component distribution
+        component_counts = {}
+        for ticket in tickets:
+            description = ticket.description or ""
+            subject = ticket.subject or ""
+            text = (description + " " + subject).lower()
+            
+            # Check for hardware components
+            for component in self.component_categories.keys():
+                if component in text:
+                    if component not in component_counts:
+                        component_counts[component] = 0
+                    component_counts[component] += 1
+        
+        # Add overall component distribution section
+        report += "OVERALL COMPONENT DISTRIBUTION\n----------------------------\n"
+        if component_counts:
+            for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True):
+                category = self.component_categories.get(component, 'Other')
+                percentage = (count / len(tickets)) * 100
+                report += f"{component} ({category}): {count} tickets ({percentage:.1f}%)\n"
+        else:
+            report += "No hardware components detected in tickets.\n"
+        
+        # Add per-view component distribution
+        report += "\nCOMPONENT DISTRIBUTION BY VIEW\n-----------------------------\n"
+        for view_id, view_tickets in tickets_by_view.items():
+            view_name = view_map.get(view_id, f"View ID: {view_id}") if view_map else f"View ID: {view_id}"
+            report += f"\n{view_name} ({len(view_tickets)} tickets)\n{'-' * (len(view_name) + len(str(len(view_tickets))) + 11)}\n"
+            
+            # Get component distribution for this view
+            view_component_counts = {}
+            for ticket in view_tickets:
+                description = ticket.description or ""
+                subject = ticket.subject or ""
+                text = (description + " " + subject).lower()
+                
+                # Check for hardware components
+                for component in self.component_categories.keys():
+                    if component in text:
+                        if component not in view_component_counts:
+                            view_component_counts[component] = 0
+                        view_component_counts[component] += 1
+            
+            # Add component distribution for this view
+            if view_component_counts:
+                for component, count in sorted(view_component_counts.items(), key=lambda x: x[1], reverse=True):
+                    category = self.component_categories.get(component, 'Other')
+                    percentage = (count / len(view_tickets)) * 100
+                    report += f"{component} ({category}): {count} tickets ({percentage:.1f}%)\n"
+            else:
+                report += "No hardware components detected in tickets.\n"
+        
+        return report

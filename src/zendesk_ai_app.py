@@ -43,11 +43,15 @@ def main():
         ai_analyzer = AIAnalyzer()
         db_repository = DBRepository()
         
-        # Initialize report modules
+        # Initialize report modules and import SentimentReporter
+        from modules.reporters.sentiment_report import SentimentReporter
+        from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
+        
         report_modules = {
             "hardware": HardwareReporter(),
             "pending": PendingReporter(),
-            "sentiment": None  # Will be initialized on demand
+            "sentiment": SentimentReporter(),
+            "sentiment_enhanced": EnhancedSentimentReporter()
         }
         
         # Register function to close MongoDB connections on exit

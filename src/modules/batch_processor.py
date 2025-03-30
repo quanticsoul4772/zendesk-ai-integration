@@ -119,6 +119,6 @@ class BatchProcessor:
                     results.append(result)
                 except Exception as e:
                     logger.error(f"Error processing item {item}: {e}", exc_info=True)
-                    # Could add a placeholder for failed items here if needed
+                    # Skip this item - don't add it to results
         
         return results

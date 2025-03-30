@@ -99,3 +99,43 @@ When analyzing multiple views with many tickets, the process may take longer due
 3. Report generation across all tickets
 
 For large views, consider using the `--limit` parameter to restrict the number of tickets processed per view.
+
+## Cache Reliability Features
+
+The multi-view analysis mode includes improved cache handling to prevent stale data issues:
+
+### Automatic Cache Refresh
+
+When running in multi-view mode, the system automatically refreshes the views cache before fetching tickets:
+
+```python
+# Force refresh the views cache to ensure we have fresh data
+zendesk_client.cache.force_refresh_views()
+logger.info("Forced refresh of views cache before fetching tickets")
+```
+
+### Empty View Detection and Recovery
+
+If no valid views are found, the system will automatically refresh the cache for next time:
+
+```python
+if not valid_views:
+    logger.warning("None of the specified views exist or are accessible")
+    # Force refresh the views cache for next time
+    self.cache.force_refresh_views()
+    return []
+```
+
+### Troubleshooting Cache Issues
+
+If you encounter persistent cache issues, try running these commands in sequence:
+
+```bash
+# First list views to refresh the cache
+python src/zendesk_ai_app.py --mode list-views
+
+# Then run your multi-view analysis
+python src/zendesk_ai_app.py --mode multi-view --views VIEW_IDS
+```
+
+This sequence ensures the system has fresh view data before attempting to fetch tickets from multiple views.

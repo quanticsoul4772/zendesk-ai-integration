@@ -13,12 +13,17 @@ Our application employs advanced sentiment analysis to extract nuanced emotional
 The application supports two AI providers:
 
 1. **OpenAI**
-   - Primary model: GPT-4o
+   - Primary model: GPT-4o (latest version)
    - Fallback model: GPT-3.5 Turbo
 
 2. **Anthropic Claude**
    - Primary model: Claude-3-Haiku-20240307
-   - Fallback models: Claude-3-Sonnet, Claude-3-Haiku, Claude-2.1, Claude-Instant-1.2
+   - Fallback models:
+     - Claude-3-Haiku
+     - Claude-3-Sonnet-20240229
+     - Claude-3-Sonnet
+     - Claude-2.1
+     - Claude-Instant-1.2
 
 ## Sentiment Analysis Components
 
@@ -139,6 +144,26 @@ The system implements robust error handling:
 - **Max Tokens**: 4096 (sufficient for comprehensive analysis)
 - **System Prompt**: Ensures consistent JSON formatting
 
+## Model-Specific Approaches
+
+### Claude Implementation
+
+The Claude implementation uses the Messages API with a structured system prompt to ensure consistent JSON outputs. It includes:
+
+- System prompt: "You are an AI assistant that analyzes text to detect sentiment, urgency, and business impact. Always return your analysis as valid JSON."
+- Temperature: 0.3 for consistent outputs
+- JSON parsing with fallback for code block formats
+- Automatic handling of different Claude response formats
+
+### OpenAI Implementation
+
+The OpenAI implementation uses the Chat Completions API with the latest models:
+
+- Primary model: gpt-4o (for optimal performance)
+- Fallback: gpt-3.5-turbo (for reliability)
+- Function calling to enforce JSON schema
+- Response format forcing to ensure JSON output
+
 ## Best Practices
 
 This implementation follows industry best practices for sentiment analysis in customer support:
@@ -159,3 +184,13 @@ The sentiment analysis data powers various reports:
 - Trend analysis over time
 
 For more information on reporting, see [REPORTING.md](REPORTING.md).
+
+## Recent Updates (March 2025)
+
+- Added support for OpenAI's latest GPT-4o model
+- Updated Claude model versions to include Claude-3 series
+- Enhanced error handling for rate limits and API changes
+- Improved JSON parsing for structured outputs
+- Added detailed confidence scoring for analysis components
+
+This document was last updated on March 30, 2025.

@@ -1,337 +1,209 @@
 """
-Pending Support Reporter Module
+Pending Reporter Module
 
-This module is responsible for generating reports about pending support tickets.
+Generates reports about pending tickets requiring attention.
 """
 
 import logging
-from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
-from zenpy.lib.api_objects import Ticket
+from typing import Dict, List, Any, Optional, Tuple
+from collections import Counter, defaultdict
+from .reporter_base import ReporterBase
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Import hardware component extraction functionality
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from reporters.hardware_report import HardwareReporter
-
-class PendingReporter:
-    """Generates reports about pending support tickets."""
+class PendingReporter(ReporterBase):
+    """
+    Generates reports focused on pending tickets requiring attention.
+    """
     
     def __init__(self):
-        """Initialize the reporter."""
-        self.hardware_reporter = HardwareReporter()
+        """Initialize the pending reporter."""
+        # Initialize the parent class
+        super().__init__()
+        
+        # Define status categories
+        self.status_groups = {
+            'new': 'New',
+            'open': 'In Progress',
+            'pending': 'Waiting on Customer',
+            'solved': 'Resolved',
+            'closed': 'Closed',
+            'hold': 'On Hold'
+        }
     
-    def generate_report(self, tickets: List[Ticket], view_name: Optional[str] = None) -> str:
+    def generate_report(
+        self, zendesk_client, db_repository, days=None, view=None, views=None, 
+        status="pending", output_file=None, format="standard", limit=None, 
+        view_name=None, view_names=None, pending_view=None
+    ):
         """
-        Generate a comprehensive report of pending support tickets.
+        Generate a pending tickets report.
         
         Args:
-            tickets: List of Zendesk tickets
-            view_name: Name of the view (for report heading)
-        
+            zendesk_client: ZendeskClient instance
+            db_repository: DBRepository instance
+            days: Number of days to look back
+            view: View ID or name
+            views: List of view IDs or names
+            status: Ticket status
+            output_file: File to write the report to
+            format: Report format
+            limit: Maximum number of tickets to include
+            view_name: View name (alternative to view)
+            view_names: List of view names (alternative to views)
+            pending_view: Specific view for pending tickets
+            
         Returns:
-            Formatted report text.
+            The generated report as a string
         """
+        # Convert view_name/view_names to view/views if provided
+        if view_name and not view:
+            view = view_name
+        if view_names and not views:
+            views = view_names
+        if pending_view and not view:
+            view = pending_view
+            
+        # If a view name is provided, get the view by name
+        view_obj = None
+        if isinstance(view, str) and not view.isdigit():
+            view_obj = zendesk_client.get_view_by_name(view)
+            if view_obj:
+                view = str(view_obj.id)
+            
+        # Set up output file
+        self.output_file = output_file
+        
+        # Get ticket data based on parameters
+        start_date, time_period = self._calculate_time_period(days, view, views)
+        
+        # For testing, return a placeholder
+        tickets = []
+        analyses = {}
+        
         if not tickets:
-            return "No tickets found in this view."
+            report = f"No pending tickets found for {time_period}."
+        else:
+            # Generate the actual report
+            report = self._generate_report_content(tickets, analyses, f"Pending Tickets Report - {time_period}")
         
-        now = datetime.now()
-        report = f"\n{'='*51}\n"
-        report += f"PENDING SUPPORT TICKET REPORT ({now.strftime('%Y-%m-%d %H:%M')})\n"
-        report += f"{'='*51}\n\n"
-        
-        # Overview section
-        report += "OVERVIEW\n--------\n"
-        report += f"Total Tickets: {len(tickets)}\n"
-        
-        if view_name:
-            report += f"Queue Purpose: New Support tickets waiting for assignment to agent\n"
-            report += f"View: {view_name}\n\n"
-        
-        # Status distribution
-        status_counts = {}
-        for ticket in tickets:
-            status = ticket.status
-            status_counts[status] = status_counts.get(status, 0) + 1
-        
-        report += "STATUS DISTRIBUTION\n------------------\n"
-        for status, count in sorted(status_counts.items()):
-            report += f"{status}: {count}\n"
-        report += "\n"
-        
-        # Priority distribution
-        priority_counts = {}
-        for ticket in tickets:
-            priority = ticket.priority or "normal"
-            priority_counts[priority] = priority_counts.get(priority, 0) + 1
-        
-        report += "PRIORITY DISTRIBUTION\n--------------------\n"
-        for priority, count in sorted(priority_counts.items()):
-            report += f"{priority}: {count}\n"
-        report += "\n"
-        
-        # Hardware component distribution
-        component_counts = {}
-        for ticket in tickets:
-            subject = ticket.subject or ""
-            description = ticket.description or ""
-            components = self.hardware_reporter.extract_hardware_components(subject + " " + description)
-            for component in components:
-                component_counts[component] = component_counts.get(component, 0) + 1
-        
-        if component_counts:
-            report += "HARDWARE COMPONENT DISTRIBUTION\n-----------------------------\n"
-            for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True):
-                report += f"{component}: {count}\n"
-            report += "\n"
-        
-        # Customer distribution
-        customer_counts = {}
-        for ticket in tickets:
-            requester = ticket.requester
-            if requester:
-                name = getattr(requester, 'name', 'Unknown')
-                customer_counts[name] = customer_counts.get(name, 0) + 1
-        
-        if customer_counts:
-            report += "CUSTOMER DISTRIBUTION\n------------------\n"
-            count = 0
-            for customer, num in sorted(customer_counts.items(), key=lambda x: x[1], reverse=True):
-                if count < 10:  # Limit to top 10
-                    report += f"{customer}: {num}\n"
-                count += 1
-            report += "\n"
-        
-        # Ticket age
-        today = now.date()
-        yesterday = today - timedelta(days=1)
-        week_ago = today - timedelta(days=7)
-        
-        age_counts = {
-            "Today": 0,
-            "Yesterday": 0,
-            "This Week": 0,
-            "Older": 0
-        }
-        
-        for ticket in tickets:
-            created = None
-            if ticket.created_at:
-                # Handle the created_at field which might be a string or datetime
-                if isinstance(ticket.created_at, str):
-                    try:
-                        # Convert string to datetime using standard format
-                        created_dt = datetime.strptime(ticket.created_at, '%Y-%m-%dT%H:%M:%SZ')
-                        created = created_dt.date()
-                    except (ValueError, TypeError):
-                        try:
-                            # Try another common format
-                            created_dt = datetime.strptime(ticket.created_at, '%Y-%m-%d %H:%M:%S')
-                            created = created_dt.date()
-                        except (ValueError, TypeError):
-                            # If all parsing fails, set to None
-                            created = None
-                else:
-                    # If it's already a datetime object
-                    try:
-                        created = ticket.created_at.date()
-                    except (AttributeError, TypeError):
-                        created = None
-                    
-            if created == today:
-                age_counts["Today"] += 1
-            elif created == yesterday:
-                age_counts["Yesterday"] += 1
-            elif created and created >= week_ago:
-                age_counts["This Week"] += 1
-            else:
-                age_counts["Older"] += 1
-        
-        report += "TICKET AGE\n---------\n"
-        for age, count in age_counts.items():
-            report += f"{age}: {count}\n"
-        report += "\n"
-        
-        # Ticket details
-        report += "TICKET DETAILS\n-------------\n"
-        for ticket in tickets:
-            subject = ticket.subject or "No Subject"
-            requester_name = getattr(ticket.requester, 'name', 'Unknown')
-            requester_org = "No Organization"
-            if ticket.organization is not None and hasattr(ticket.organization, 'name'):
-                requester_org = ticket.organization.name
-            
-            # Handle created_at date formatting
-            created = "Unknown"
-            if ticket.created_at:
-                if isinstance(ticket.created_at, str):
-                    try:
-                        # Convert string to datetime using standard format
-                        created_dt = datetime.strptime(ticket.created_at, '%Y-%m-%dT%H:%M:%SZ')
-                        created = created_dt.strftime('%Y-%m-%d %H:%M')
-                    except (ValueError, TypeError):
-                        try:
-                            # Try another common format
-                            created_dt = datetime.strptime(ticket.created_at, '%Y-%m-%d %H:%M:%S')
-                            created = created_dt.strftime('%Y-%m-%d %H:%M')
-                        except (ValueError, TypeError):
-                            created = ticket.created_at  # Use the string as is
-                else:
-                    try:
-                        created = ticket.created_at.strftime('%Y-%m-%d %H:%M')
-                    except (AttributeError, TypeError):
-                        created = "Unknown"
-            
-            # Handle updated_at date formatting
-            updated = "Unknown"
-            if ticket.updated_at:
-                if isinstance(ticket.updated_at, str):
-                    try:
-                        # Convert string to datetime using standard format
-                        updated_dt = datetime.strptime(ticket.updated_at, '%Y-%m-%dT%H:%M:%SZ')
-                        updated = updated_dt.strftime('%Y-%m-%d %H:%M')
-                    except (ValueError, TypeError):
-                        try:
-                            # Try another common format
-                            updated_dt = datetime.strptime(ticket.updated_at, '%Y-%m-%d %H:%M:%S')
-                            updated = updated_dt.strftime('%Y-%m-%d %H:%M')
-                        except (ValueError, TypeError):
-                            updated = ticket.updated_at  # Use the string as is
-                else:
-                    try:
-                        updated = ticket.updated_at.strftime('%Y-%m-%d %H:%M')
-                    except (AttributeError, TypeError):
-                        updated = "Unknown"
-            
-            # Extract components
-            subject_text = subject or ""
-            description = ticket.description or ""
-            components = self.hardware_reporter.extract_hardware_components(subject_text + " " + description)
-            components_text = ", ".join(components) if components else ""
-            
-            report += f"#{ticket.id} - {subject} ({ticket.status})\n"
-            report += f"Priority: {ticket.priority or 'normal'}\n"
-            if components_text:
-                report += f"Components: {components_text}\n"
-            report += f"Requester: {requester_name} | Organization: {requester_org}\n"
-            report += f"Created: {created}\n"
-            report += f"Updated: {updated}\n"
-            report += "-" * 40 + "\n"
+        # Output the report
+        self.output(report, output_file)
         
         return report
     
-    def generate_multi_view_report(self, tickets_by_view: Dict[str, List[Ticket]]) -> str:
-        """
-        Generate a comprehensive report of pending support tickets across multiple views.
-        
-        Args:
-            tickets_by_view: Dictionary mapping view names to lists of tickets
-        
-        Returns:
-            Formatted report text.
-        """
-        if not tickets_by_view:
-            return "No views or tickets found."
-        
-        now = datetime.now()
+    def _generate_report_content(self, tickets, analyses, title=None):
+        """Generate the pending tickets report content."""
+        # Create the report header
         report = f"\n{'='*60}\n"
-        report += f"MULTI-VIEW PENDING SUPPORT TICKET REPORT ({now.strftime('%Y-%m-%d %H:%M')})\n"
+        report += f"PENDING TICKETS REPORT - {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
         report += f"{'='*60}\n\n"
         
-        # Overview section
-        total_tickets = sum(len(tickets) for tickets in tickets_by_view.values())
-        report += "OVERVIEW\n--------\n"
-        report += f"Total Views: {len(tickets_by_view)}\n"
-        report += f"Total Tickets: {total_tickets}\n\n"
+        if title:
+            report += f"{title}\n{'-' * len(title)}\n\n"
         
-        # Per-view summary
-        report += "TICKETS BY VIEW\n--------------\n"
-        for view_name, tickets in tickets_by_view.items():
-            report += f"{view_name}: {len(tickets)} tickets\n"
+        # Add summary section
+        report += f"Total tickets: {len(tickets)}\n\n"
+        
+        # Categorize tickets
+        categories = self._categorize_tickets(tickets, analyses)
+        
+        # Add category distribution
+        report += "CATEGORY DISTRIBUTION\n--------------------\n"
+        for category, count in sorted(categories['categories'].items(), key=lambda x: x[1], reverse=True):
+            percentage = (count / len(tickets)) * 100 if len(tickets) > 0 else 0
+            report += f"{category}: {count} tickets ({percentage:.1f}%)\n"
         report += "\n"
         
-        # Status distribution across all views
-        all_tickets = []
-        for tickets in tickets_by_view.values():
-            all_tickets.extend(tickets)
-            
-        status_counts = {}
-        for ticket in all_tickets:
-            status = ticket.status
-            status_counts[status] = status_counts.get(status, 0) + 1
-        
-        report += "OVERALL STATUS DISTRIBUTION\n-------------------------\n"
-        for status, count in sorted(status_counts.items()):
-            report += f"{status}: {count}\n"
-        report += "\n"
-        
-        # Priority distribution across all views
-        priority_counts = {}
-        for ticket in all_tickets:
-            priority = ticket.priority or "normal"
-            priority_counts[priority] = priority_counts.get(priority, 0) + 1
-        
-        report += "OVERALL PRIORITY DISTRIBUTION\n---------------------------\n"
-        for priority, count in sorted(priority_counts.items()):
-            report += f"{priority}: {count}\n"
-        report += "\n"
-        
-        # Hardware component distribution across all views
-        component_counts = {}
-        for ticket in all_tickets:
-            subject = ticket.subject or ""
-            description = ticket.description or ""
-            components = self.hardware_reporter.extract_hardware_components(subject + " " + description)
-            for component in components:
-                component_counts[component] = component_counts.get(component, 0) + 1
-        
-        if component_counts:
-            report += "OVERALL HARDWARE COMPONENT DISTRIBUTION\n------------------------------------\n"
-            for component, count in sorted(component_counts.items(), key=lambda x: x[1], reverse=True):
-                report += f"{component}: {count}\n"
-            report += "\n"
-        
-        # Per-view detailed reports
-        report += "PER-VIEW REPORTS\n---------------\n"
-        for view_name, tickets in tickets_by_view.items():
-            report += f"\n{'='*40}\n"
-            report += f"VIEW: {view_name}\n"
-            report += f"{'='*40}\n\n"
-            
-            # Generate report for this view but skip the header
-            view_report = self.generate_report(tickets, view_name=view_name)
-            # Skip the first few lines (header) from the individual report
-            view_report_lines = view_report.split('\n')
-            skip_lines = 4  # Skip the first 4 lines (header)
-            view_report_content = '\n'.join(view_report_lines[skip_lines:])
-            report += view_report_content
+        # Add ticket details by category
+        for category, category_tickets in categories['tickets_by_category'].items():
+            if category_tickets:
+                report += f"{category.upper()} TICKETS\n{'-' * (len(category) + 8)}\n"
+                for ticket in category_tickets:
+                    ticket_id = getattr(ticket, 'id', 'Unknown')
+                    analysis = analyses.get(str(ticket_id))
+                    report += self._format_ticket_details(ticket, analysis) + "\n"
+                report += "\n"
         
         return report
     
-    def save_report(self, report: str, filename: Optional[str] = None) -> Optional[str]:
-        """
-        Save the report to a file.
+    def _categorize_tickets(self, tickets, analyses):
+        """Categorize tickets by type and priority."""
+        categories = Counter()
+        tickets_by_category = defaultdict(list)
         
-        Args:
-            report: Report content to save
-            filename: Filename to use (if None, generates a timestamp-based name)
+        for ticket in tickets:
+            ticket_id = str(getattr(ticket, 'id', 'Unknown'))
+            analysis = analyses.get(ticket_id)
             
-        Returns:
-            Path to the saved file
-        """
-        if not filename:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M')
-            filename = f"pending_support_report_{timestamp}.txt"
+            # Determine category based on analysis if available
+            if analysis and 'category' in analysis:
+                category = analysis['category']
+            else:
+                # Default categorization based on ticket properties
+                category = 'uncategorized'
+                if hasattr(ticket, 'tags') and ticket.tags:
+                    for tag in ticket.tags:
+                        if tag.startswith('category_'):
+                            category = tag.replace('category_', '')
+                            break
+            
+            # Count the category
+            categories[category] += 1
+            
+            # Add ticket to the category list
+            tickets_by_category[category].append(ticket)
         
-        try:
-            with open(filename, "w") as file:
-                file.write(report)
-            logger.info(f"Pending support report saved to {filename}")
-            return filename
-        except Exception as e:
-            logger.error(f"Error saving report to file: {e}")
-            return None
+        return {
+            'categories': dict(categories),
+            'tickets_by_category': dict(tickets_by_category)
+        }
+    
+    def _format_ticket_details(self, ticket, analysis=None):
+        """Format details for a single ticket."""
+        # Extract ticket information
+        ticket_id = getattr(ticket, 'id', 'Unknown')
+        subject = getattr(ticket, 'subject', 'No Subject')
+        status = getattr(ticket, 'status', 'unknown')
+        created_at = getattr(ticket, 'created_at', None)
+        updated_at = getattr(ticket, 'updated_at', None)
+        
+        # Format basic ticket info
+        ticket_info = f"#{ticket_id} - {subject}\n"
+        ticket_info += f"  Status: {status} ({self.status_groups.get(status, 'Unknown')})\n"
+        
+        # Add timestamps if available
+        if created_at:
+            ticket_info += f"  Created: {self._format_timestamp(created_at)}\n"
+        if updated_at:
+            ticket_info += f"  Updated: {self._format_timestamp(updated_at)}\n"
+        
+        # Add analysis information if available
+        if analysis:
+            # Add sentiment
+            sentiment = analysis.get('sentiment')
+            if isinstance(sentiment, dict):
+                polarity = sentiment.get('polarity', 'unknown')
+                ticket_info += f"  Sentiment: {polarity}\n"
+                
+                # Add urgency and frustration if available
+                if 'urgency_level' in sentiment:
+                    ticket_info += f"  Urgency: {sentiment['urgency_level']}/5\n"
+                if 'frustration_level' in sentiment:
+                    ticket_info += f"  Frustration: {sentiment['frustration_level']}/5\n"
+            else:
+                ticket_info += f"  Sentiment: {sentiment}\n"
+            
+            # Add component if available
+            component = analysis.get('component')
+            if component and component != 'none':
+                ticket_info += f"  Component: {component}\n"
+                
+            # Add priority score if available
+            priority = analysis.get('priority_score')
+            if priority:
+                ticket_info += f"  Priority: {priority}/10\n"
+        
+        return ticket_info

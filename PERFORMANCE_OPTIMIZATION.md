@@ -20,6 +20,9 @@ The application uses a sophisticated caching system to reduce the number of API 
 - **Separate Cache Stores**: Different data types (views, tickets, users) have their own cache with appropriate TTLs
 - **Granular Cache Invalidation**: API provides methods to invalidate specific items or entire caches
 - **Cache Statistics**: Methods for tracking cache usage and performance
+- **Intelligent Cache Validation**: Detection of empty or invalid cache entries to prevent using stale data
+- **Self-healing Mechanism**: Automatic cache refresh when empty or invalid data is detected
+- **Force Refresh API**: Methods to explicitly refresh cache data before critical operations
 
 ### Cache TTL Values
 
@@ -149,3 +152,52 @@ Batch Processing Performance: 42.37% improvement
 ```
 
 As shown in this test, caching provides nearly instant access to previously fetched data, while batch processing provides significant speedup for AI analysis operations.
+
+## Cache Validation and Self-healing
+
+The caching system includes intelligent validation and self-healing capabilities to prevent issues with empty or invalid cached data:
+
+### Empty Cache Detection
+
+The system automatically detects and handles empty cache entries:
+
+```python
+# Check if value is empty collection
+if isinstance(value, (list, dict, set)) and len(value) == 0:
+    logger.warning(f"Cached value for {key} is empty, returning None to force refresh")
+    return None
+```
+
+### Force Refresh Mechanism
+
+Critical operations like multi-view analysis automatically refresh the cache before execution:
+
+```python
+# Force refresh the views cache to ensure we have fresh data
+zendesk_client.cache.force_refresh_views()
+logger.info("Forced refresh of views cache before fetching tickets")
+```
+
+### API Failure Handling
+
+The system validates API responses before caching to prevent caching of invalid data:
+
+```python
+# Cache the views only if we got valid data
+if all_views and len(list(all_views)) > 0:
+    logger.info(f"Caching {len(list(all_views))} views from Zendesk API")
+    self.cache.set_views(cache_key, all_views)
+else:
+    logger.warning("Received empty views list from Zendesk API, not caching")
+```
+
+### Comprehensive Logging
+
+Detailled logging helps diagnose and debug cache-related issues:
+
+```python
+logger.info(f"Using cached views, found {len(list(all_views))} available views")
+logger.info("Cache empty or invalid, fetching views directly from Zendesk API")
+```
+
+These improvements ensure that the caching system is resilient to edge cases and provides consistent performance benefits without introducing unexpected behavior.

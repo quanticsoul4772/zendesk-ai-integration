@@ -13,7 +13,7 @@ import json
 from typing import Dict, Any, Optional, List, Union
 
 # Import the base AI service functionality
-from ai_service import call_openai_with_retries, AIServiceError
+from src.ai_service import call_openai_with_retries, AIServiceError
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -169,6 +169,12 @@ def enhanced_analyze_ticket_content(content: str) -> Dict[str, Any]:
         )
         
         # Extract and normalize sentiment data
+        if 'raw_text' in result:
+            # Handle non-JSON response
+            error_response = create_default_sentiment_response("Invalid response format")
+            error_response["error"] = f"Invalid response format: {result.get('raw_text')[:100]}..."
+            return error_response
+            
         sentiment_data = result.get("sentiment", {})
         
         # Normalize sentiment polarity
