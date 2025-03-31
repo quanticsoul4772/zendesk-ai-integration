@@ -322,25 +322,30 @@ class TestEndToEndFlows:
             # assert mock_all_components["claude_direct"].call_count == 0  # Claude direct not called
         
         # Step 3: Generate comprehensive report covering all analyses
-        with patch.object(sys, 'argv', ['zendesk_ai_app.py', '--mode', 'sentiment', '--days', '30']):
-            # Redirect stdout
-            captured_output = io.StringIO()
-            sys.stdout = sys.__stdout__  # Reset first
-            sys.stdout = captured_output
-            
-            try:
+        # Create a temporary file to save the report
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp_file:
+            report_path = tmp_file.name
+        
+        try:
+            # Run with output file explicitly specified
+            with patch.object(sys, 'argv', ['zendesk_ai_app.py', '--mode', 'sentiment', '--days', '30', '--output', report_path]):
                 # Execute the main function
                 exit_code = main()
                 assert exit_code == 0
-                
-                # Check output includes data from both analyses
-                output = captured_output.getvalue()
-                assert "SENTIMENT ANALYSIS REPORT" in output
-                assert "Last 30 days" in output
-                
-                # Should include data from all analyses
-                doc_count = len(mock_all_components["inserted_documents"])
-                assert f"Total tickets analyzed: {doc_count}" in output or f"Analyzed {doc_count} tickets" in output
-            finally:
-                # Restore stdout
-                sys.stdout = sys.__stdout__
+            
+            # Now read the report file
+            assert os.path.exists(report_path), f"Report file was not created at {report_path}"
+            with open(report_path, 'r', encoding='utf-8') as f:
+                report_content = f.read()
+            
+            # Check report content
+            assert "ENHANCED SENTIMENT ANALYSIS REPORT" in report_content, "Report header not found in output"
+            assert "Last 30 days" in report_content, "Time period not found in output"
+            
+            # Should include data from all analyses
+            doc_count = len(mock_all_components["inserted_documents"])
+            assert f"Total Tickets Analyzed: {doc_count}" in report_content or f"Total tickets analyzed: {doc_count}" in report_content, f"Expected ticket count {doc_count} not found in output"
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(report_path):
+                os.unlink(report_path)

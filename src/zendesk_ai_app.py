@@ -10,6 +10,8 @@ import os
 import logging
 import atexit
 import sys
+import time
+import random
 from dotenv import load_dotenv
 
 # Set up logging
@@ -26,6 +28,55 @@ load_dotenv()
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
+
+# Create a function to get a Zendesk client instance
+def get_zendesk_client():
+    """
+    Get a Zendesk client instance for use outside the main function.
+    
+    Returns:
+        A ZendeskClient instance
+    """
+    from modules.zendesk_client import ZendeskClient
+    return ZendeskClient().client
+
+# Add a utility function for exponential backoff retries
+def exponential_backoff_retry(func, *args, max_retries=5, base_delay=2.0, max_delay=30.0, **kwargs):
+    """
+    Retry a function with exponential backoff.
+    
+    Args:
+        func: The function to retry
+        *args: Arguments to pass to the function
+        max_retries: Maximum number of retries
+        base_delay: Base delay in seconds
+        max_delay: Maximum delay in seconds
+        **kwargs: Keyword arguments to pass to the function
+        
+    Returns:
+        The result of the function call
+    
+    Raises:
+        The last exception encountered if all retries fail
+    """
+    last_exception = None
+    
+    for retry in range(max_retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            last_exception = e
+            
+            # Calculate delay with jitter to avoid thundering herd
+            delay = min(max_delay, base_delay * (2 ** retry))
+            jitter = random.uniform(0, delay / 2)
+            total_delay = delay + jitter
+            
+            logger.warning(f"Retry {retry+1}/{max_retries} after {total_delay:.2f}s due to: {e}")
+            time.sleep(total_delay)
+    
+    # If we've exhausted all retries, raise the last exception
+    raise last_exception
 
 def main():
     """Main entry point for the application."""

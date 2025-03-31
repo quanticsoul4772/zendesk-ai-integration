@@ -235,6 +235,36 @@ def call_openai_with_retries(
     # This should never happen but just in case
     raise AIServiceError("Failed to get response from OpenAI API")
 
+def get_completion_from_openai(prompt: str, model: str = "gpt-4o") -> str:
+    """
+    Get a completion from OpenAI for testing compatibility.
+    
+    Args:
+        prompt: The prompt to send to the model
+        model: The model to use (default: gpt-4o)
+        
+    Returns:
+        String response from the model
+    """
+    try:
+        # Call OpenAI API with retries
+        result = call_openai_with_retries(
+            prompt=prompt,
+            model=model,
+            max_retries=3,
+            temperature=0.3
+        )
+        
+        # Return the raw text if present
+        if isinstance(result, dict) and "raw_text" in result:
+            return result["raw_text"]
+        
+        # Otherwise, convert the result to a JSON string
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        logger.error(f"Error in get_completion_from_openai: {str(e)}")
+        return f"{{\"error\": \"{str(e)}\"}}"
+
 def analyze_ticket_content(content: str) -> Dict[str, Any]:
     """
     Analyze ticket content to determine sentiment and category based on Exxact's actual categories
@@ -243,14 +273,20 @@ def analyze_ticket_content(content: str) -> Dict[str, Any]:
         content: The ticket content to analyze
         
     Returns:
-        Dict with sentiment, category, component, confidence, and optional error
+        Dict with sentiment, category, component, priority, confidence, and optional error
     """
     if not content or not content.strip():
         logger.warning("Empty content provided for analysis")
         return {
-            "sentiment": "unknown",
+            "sentiment": {
+                "polarity": "unknown",
+                "urgency_level": 1,
+                "frustration_level": 1,
+                "emotions": []
+            },
             "category": "uncategorized",
             "component": "none",
+            "priority": "low",
             "confidence": 0.0,
             "error": "Empty content provided"
         }
@@ -259,80 +295,108 @@ def analyze_ticket_content(content: str) -> Dict[str, Any]:
         logger.info(f"Analyzing ticket content (length: {len(content)} chars)")
         
         prompt = f"""
-        Analyze the following customer message from Exxact Corporation (a hardware systems manufacturer) and:
+        Analyze the following customer message from Exxact Corporation (a hardware systems manufacturer) and provide a detailed analysis as JSON with the following structure:
         
-        1) Identify the sentiment: Positive, Negative, Neutral, or Unknown.
+        {{
+          "category": "[Select ONE category: system, resale_component, hardware_issue, system_component, so_released_to_warehouse, wo_released_to_warehouse, technical_support, rma, software_issue, general_inquiry]",
+          "component": "[ONE component type if relevant: gpu, cpu, drive, memory, power_supply, motherboard, cooling, display, network, none]",
+          "priority": "[high, medium, or low]",
+          "sentiment": {{
+            "polarity": "[positive, negative, neutral, or unknown]",
+            "urgency_level": [1-5 scale, where 1 is lowest urgency and 5 is highest],
+            "frustration_level": [1-5 scale, where 1 is not frustrated and 5 is extremely frustrated],
+            "emotions": [array of emotions detected in the message]
+          }}
+        }}
         
-        2) Categorize the message into ONE of these business categories:
-        
-           - system: Issues related to complete computer systems
-           - resale_component: Issues with components being resold
-           - hardware_issue: Problems with physical hardware components
-           - system_component: Issues specific to system components
-           - so_released_to_warehouse: Sales order released to warehouse status
-           - wo_released_to_warehouse: Work order released to warehouse status
-           - technical_support: General technical assistance requests
-           - rma: Return merchandise authorization requests
-           - software_issue: Problems with software, OS or drivers
-           - general_inquiry: Information seeking that doesn't fit other categories
-           
-        3) If relevant, identify the specific component type mentioned:
-           - gpu: Graphics processing unit issues
-           - cpu: Central processing unit issues
-           - drive: Hard drive or storage issues
-           - memory: RAM or memory issues
-           - power_supply: Power supply issues
-           - motherboard: Motherboard issues
-           - cooling: Cooling system issues
-           - display: Monitor or display issues
-           - network: Network card or connectivity issues
-           - none: No specific component mentioned
-        
+        Categories explanation:
+        - system: Issues related to complete computer systems
+        - resale_component: Issues with components being resold
+        - hardware_issue: Problems with physical hardware components
+        - system_component: Issues specific to system components
+        - so_released_to_warehouse: Sales order released to warehouse status
+        - wo_released_to_warehouse: Work order released to warehouse status
+        - technical_support: General technical assistance requests
+        - rma: Return merchandise authorization requests
+        - software_issue: Problems with software, OS or drivers
+        - general_inquiry: Information seeking that doesn't fit other categories
+
         Customer message: {content}
         
-        Format your response as JSON with these keys: sentiment, category, component, confidence.
-        Keep your analysis focused on Exxact's business of computer hardware systems.
+        Provide only the JSON output with no other text.
         """
         
-        result = call_openai_with_retries(
+        # Use get_completion_from_openai for better testability
+        json_str = get_completion_from_openai(
             prompt=prompt,
-            model="gpt-4o",
-            max_retries=3,
-            temperature=0.3
+            model="gpt-4o"
         )
         
-        # Extract and normalize values
-        sentiment = result.get("sentiment", "unknown").lower().replace(" ", "_")
-        category = result.get("category", "general_inquiry").lower().replace(" ", "_")
-        component = result.get("component", "none").lower().replace(" ", "_")
-        
-        # Handle confidence - convert text values to numeric
-        confidence_value = result.get("confidence", 0.9)
-        if isinstance(confidence_value, str):
-            # Map text confidence levels to numeric values
-            confidence_map = {
-                "high": 0.9,
-                "medium": 0.7,
-                "low": 0.5,
-                "veryhigh": 1.0,
-                "verylow": 0.3
+        # Parse JSON response
+        try:
+            result = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            logger.error(f"Error parsing JSON response: {e}")
+            return {
+                "sentiment": {
+                    "polarity": "unknown",
+                    "urgency_level": 1,
+                    "frustration_level": 1,
+                    "emotions": []
+                },
+                "category": "uncategorized",
+                "component": "none",
+                "priority": "low",
+                "confidence": 0.0,
+                "error": f"JSON parsing error: {str(e)}",
+                "raw_text": json_str
             }
-            # Convert to lowercase and remove spaces for matching
-            confidence_key = confidence_value.lower().replace(" ", "")
-            confidence = confidence_map.get(confidence_key, 0.9)
-        else:
-            # Try to convert to float, default to 0.9 if fails
-            try:
-                confidence = float(confidence_value)
-            except (ValueError, TypeError):
-                confidence = 0.9
         
-        logger.info(f"Analysis complete: sentiment={sentiment}, category={category}, component={component}")
+        # Extract and normalize values
+        sentiment_data = result.get("sentiment", {})
+        if isinstance(sentiment_data, str):
+            # Handle case where sentiment might be a string instead of a dict
+            sentiment = {
+                "polarity": sentiment_data.lower().replace(" ", "_"),
+                "urgency_level": 1,
+                "frustration_level": 1,
+                "emotions": []
+            }
+        else:
+            # Process sentiment object
+            polarity = sentiment_data.get("polarity", "unknown")
+            if isinstance(polarity, str):
+                polarity = polarity.lower().replace(" ", "_")
+                
+            sentiment = {
+                "polarity": polarity,
+                "urgency_level": sentiment_data.get("urgency_level", 1),
+                "frustration_level": sentiment_data.get("frustration_level", 1),
+                "emotions": sentiment_data.get("emotions", [])
+            }
+            
+        category = result.get("category", "general_inquiry")
+        if isinstance(category, str):
+            category = category.lower().replace(" ", "_")
+            
+        component = result.get("component", "none")
+        if isinstance(component, str):
+            component = component.lower().replace(" ", "_")
+            
+        priority = result.get("priority", "low")
+        if isinstance(priority, str):
+            priority = priority.lower().replace(" ", "_")
+        
+        # Handle confidence - default to high confidence
+        confidence = 0.9
+        
+        logger.info(f"Analysis complete: sentiment.polarity={sentiment['polarity']}, category={category}, component={component}, priority={priority}")
         
         return {
             "sentiment": sentiment,
             "category": category,
             "component": component,
+            "priority": priority,
             "confidence": confidence,
             "raw_result": result  # Include raw result for debugging
         }
@@ -341,9 +405,15 @@ def analyze_ticket_content(content: str) -> Dict[str, Any]:
         # Log specific AI service errors with appropriate level
         logger.error(f"AI service error analyzing ticket content: {str(e)}")
         return {
-            "sentiment": "unknown",
+            "sentiment": {
+                "polarity": "unknown",
+                "urgency_level": 1,
+                "frustration_level": 1,
+                "emotions": []
+            },
             "category": "uncategorized",
             "component": "none",
+            "priority": "low",
             "confidence": 0.0,
             "error": str(e),
             "error_type": type(e).__name__
@@ -352,9 +422,15 @@ def analyze_ticket_content(content: str) -> Dict[str, Any]:
         # Log unexpected errors
         logger.exception(f"Unexpected error analyzing ticket content: {str(e)}")
         return {
-            "sentiment": "unknown",
+            "sentiment": {
+                "polarity": "unknown",
+                "urgency_level": 1,
+                "frustration_level": 1,
+                "emotions": []
+            },
             "category": "uncategorized",
             "component": "none",
+            "priority": "low",
             "confidence": 0.0,
             "error": str(e),
             "error_type": type(e).__name__

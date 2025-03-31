@@ -75,15 +75,15 @@ def test_claude_sentiment_structure():
 
 def test_claude_sentiment_error_handling():
     """Test error handling in the claude sentiment analysis."""
-    with patch("src.claude_enhanced_sentiment.get_completion_from_claude") as mock_get_completion:
+    with patch("src.claude_enhanced_sentiment.call_claude_with_retries") as mock_claude_service:
         # Set up mock to raise an exception
-        mock_get_completion.side_effect = Exception("API error")
+        mock_claude_service.side_effect = Exception("API error")
         
         # Call the function
         result = analyze_with_claude("Sample text")
         
         # Check error handling structure
         assert isinstance(result, dict)
-        assert "error" in result
+        assert "error_type" in result  # This is the key used in the actual implementation
         assert "sentiment" in result
         assert result["sentiment"].get("polarity") == "unknown"

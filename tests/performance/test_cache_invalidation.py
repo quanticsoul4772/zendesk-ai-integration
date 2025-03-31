@@ -10,7 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def test_cache_invalidation(zendesk_client):
+def test_cache_invalidation(zendesk_client, cache):
     """Test that cache invalidation works correctly."""
     # First fetch will be a cache miss
     logger.info("First fetch (cache miss)...")

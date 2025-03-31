@@ -3,22 +3,18 @@ Function to analyze and update a Zendesk ticket with AI analysis results.
 This modified version DOES NOT add comments to tickets, only tags.
 """
 
-from typing import Dict, Any
 import logging
 from zenpy.lib.api_objects import Ticket
 
 # Import AI services
 from ai_service import analyze_ticket_content as basic_analyze_ticket_content
-from enhanced_sentiment import (
-    enhanced_analyze_ticket_content, 
-    calculate_priority_score
-)
+from enhanced_sentiment import enhanced_analyze_ticket_content
 
 # MongoDB support
 from mongodb_helper import insert_ticket_analysis
 
-# Exponential backoff for API retries
-from zendesk_ai_app import exponential_backoff_retry
+# Exponential backoff for API retries and Zendesk client
+from zendesk_ai_app import exponential_backoff_retry, get_zendesk_client
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -100,6 +96,7 @@ def analyze_and_update_ticket(ticket: Ticket, use_enhanced_sentiment=True):
             # NO COMMENTS ADDED TO TICKET
             
             # Update the ticket in Zendesk
+            zenpy_client = get_zendesk_client()
             exponential_backoff_retry(zenpy_client.tickets.update, ticket)
             logger.info(f"Updated ticket #{ticket.id} with enhanced sentiment analysis - priority={priority_score}/10")
             
@@ -152,6 +149,7 @@ def analyze_and_update_ticket(ticket: Ticket, use_enhanced_sentiment=True):
             # NO COMMENTS ADDED TO TICKET
             
             # Update the ticket in Zendesk
+            zenpy_client = get_zendesk_client()
             exponential_backoff_retry(zenpy_client.tickets.update, ticket)
             logger.info(f"Updated ticket #{ticket.id} - category={category}, component={component}, sentiment={sentiment}")
             

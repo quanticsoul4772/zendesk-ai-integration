@@ -22,6 +22,32 @@ except ImportError:
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from claude_service import call_claude_with_retries, ClaudeServiceError
 
+# Create a mock function for testing compatibility
+def get_completion_from_claude(prompt, model=None):
+    """
+    Wrapper around call_claude_with_retries for backward compatibility with tests.
+    
+    Args:
+        prompt: The prompt to send to Claude
+        model: Optional model name
+        
+    Returns:
+        Response object with content attribute
+    """
+    from collections import namedtuple
+    Response = namedtuple('Response', ['content'])
+    
+    result = call_claude_with_retries(prompt=prompt, model=model or "claude-3-haiku-20240307")
+    
+    # Convert the result to a string for the mock response format
+    if isinstance(result, dict):
+        import json
+        content = json.dumps(result, indent=2)
+    else:
+        content = str(result)
+    
+    return Response(content=content)
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -325,3 +351,6 @@ def enhanced_analyze_ticket_content(content: str) -> Dict[str, Any]:
         error_response = create_default_sentiment_response(str(e))
         error_response["error_type"] = type(e).__name__
         return error_response
+
+# Create an alias for backward compatibility with tests
+analyze_with_claude = enhanced_analyze_ticket_content

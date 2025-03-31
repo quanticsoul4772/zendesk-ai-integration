@@ -12,10 +12,7 @@ logger = logging.getLogger(__name__)
 
 def test_full_ticket_analysis_workflow(zendesk_client, ai_analyzer):
     """Test the complete workflow from fetching tickets to generating analysis."""
-    # Skip if API keys are not set for integration test
-    if not os.getenv("ZENDESK_API_KEY") or not os.getenv("OPENAI_API_KEY"):
-        pytest.skip("API keys not set, skipping integration test")
-    
+    # We've already mocked the necessary components, so we don't need to skip
     # Fetch a small number of tickets for testing
     tickets = zendesk_client.fetch_tickets(status="open", limit=2)
     
@@ -57,9 +54,7 @@ def test_full_ticket_analysis_workflow(zendesk_client, ai_analyzer):
 
 def test_report_generation(zendesk_client, ai_analyzer):
     """Test the report generation functionality."""
-    # Skip if API keys are not set for integration test
-    if not os.getenv("ZENDESK_API_KEY"):
-        pytest.skip("Zendesk API key not set, skipping integration test")
+    # We've already mocked the necessary components, so we don't need to skip
     
     # Import the report generator (assuming it exists)
     try:
