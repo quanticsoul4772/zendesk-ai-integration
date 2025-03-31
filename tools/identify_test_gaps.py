@@ -334,7 +334,7 @@ def generate_gap_report(gaps, output_file="test_gaps_report.md"):
     ])
     
     # Write report to file
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write("\n".join(report))
     
     print(f"Test gap analysis report generated: {output_file}")

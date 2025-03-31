@@ -1,10 +1,10 @@
 # Zendesk AI Integration
 
-[![Python Tests](https://github.com/yourusername/zendesk-ai-integration/actions/workflows/python-tests.yml/badge.svg)](https://github.com/yourusername/zendesk-ai-integration/actions/workflows/python-tests.yml)
-[![codecov](https://codecov.io/gh/yourusername/zendesk-ai-integration/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/zendesk-ai-integration)
+[![Python Tests](https://github.com/exxactcorp/zendesk-ai-integration/actions/workflows/python-tests.yml/badge.svg)](https://github.com/exxactcorp/zendesk-ai-integration/actions/workflows/python-tests.yml)
+[![codecov](https://codecov.io/gh/exxactcorp/zendesk-ai-integration/branch/main/graph/badge.svg)](https://codecov.io/gh/exxactcorp/zendesk-ai-integration)
 [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black)](https://github.com/pycqa/flake8)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-[![Version: 1.0.0](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/zendesk-ai-integration/blob/main/VERSION.md)
+[![Version: 1.1.0](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/exxactcorp/zendesk-ai-integration/blob/main/VERSION.md)
 
 This application integrates Zendesk support tickets with AI services (OpenAI and Anthropic Claude) to provide automated sentiment analysis, categorization, and reporting while maintaining a read-only approach to customer tickets.
 
@@ -16,7 +16,7 @@ Run the universal installer script which works on Windows, macOS, and Linux:
 
 ```bash
 # Download the installer
-curl -o install.py https://raw.githubusercontent.com/yourusername/zendesk-ai-integration/main/install.py
+curl -o install.py https://raw.githubusercontent.com/exxactcorp/zendesk-ai-integration/main/install.py
 
 # Run the installer
 python install.py
@@ -24,11 +24,13 @@ python install.py
 
 The installer will:
 1. Check if your system meets all requirements
-2. Download necessary files
+2. Download necessary files with integrity verification (SHA-256 checksums)
 3. Set up a Python virtual environment
 4. Install all dependencies
 5. Guide you through configuration
 6. Create OS-specific convenience scripts
+
+The installer features robust error handling with automatic retries, progress visualization for larger downloads, and customization options through environment variables.
 
 After installation, you can run the application using:
 
@@ -43,6 +45,27 @@ run_zendesk_ai.bat --mode list-views
 ```
 
 For detailed installation instructions, see [INSTALLATION.md](INSTALLATION.md).
+
+### Installation Customization
+
+The installer supports several environment variables for customization:
+
+| Variable | Description | Default |
+|----------|-------------|--------|
+| `ZENDESK_AI_ORG` | GitHub organization name | `exxactcorp` |
+| `ZENDESK_AI_REPO` | GitHub repository name | `zendesk-ai-integration` |
+| `ZENDESK_AI_BRANCH` | GitHub branch name | `main` |
+| `SKIP_CHECKSUM_VERIFY` | Skip checksum verification | `false` |
+
+**Examples:**
+
+```bash
+# Using a development branch
+ZENDESK_AI_BRANCH=dev python install.py
+
+# Using a fork with checksum verification disabled
+ZENDESK_AI_ORG=your-username SKIP_CHECKSUM_VERIFY=true python install.py
+```
 
 ## Features
 
@@ -278,6 +301,7 @@ For more usage examples, see:
 - **Mar 26:** Added Claude AI integration and multi-view analysis
 - **Mar 27:** Implemented performance optimizations and caching
 - **Mar 30:** Added cross-platform installation scripts and enhanced documentation
+- **Mar 31:** Enhanced installer with file integrity verification and retry capabilities
 
 For full commit history, see [VERSION.md](VERSION.md).
 
@@ -321,9 +345,11 @@ The application follows the Single Responsibility Principle, with each module ha
 - `src/security.py` - Security-related functions and decorators
 
 ### Installation Components
-- `install.py` - Universal installer script for all platforms
+- `install.py` - Universal installer script with checksum verification and retry capabilities
 - `check_prerequisites.py` - System requirements checker
 - `setup.py` - Guided installation and configuration script
+- `test_download_logic.py` - Test script for verifying download functionality
+- `update_checksums.py` - Utility for updating file checksums when repository files change
 
 ## Dependencies
 
@@ -347,6 +373,19 @@ If you encounter any issues:
 4. See [INSTALLATION.md](INSTALLATION.md) for common issues and solutions
 5. Open an issue on the GitHub repository with detailed information
 
+### Download and Checksum Issues
+
+If you encounter issues during installation due to download failures or checksum verification errors:
+
+1. **Connection Issues**: The installer automatically retries downloads up to 3 times with increasing delays. If all retries fail, check your internet connection or try again later.
+
+2. **Checksum Verification Failures**: This could indicate file corruption during download or repository updates without updated checksums. Try running with checksum verification disabled:
+   ```bash
+   SKIP_CHECKSUM_VERIFY=true python install.py
+   ```
+
+3. **Manual Downloads**: If automated downloads fail, you can manually download the required files from the GitHub repository and place them in the same directory as `install.py`. The installer will use existing files if they pass checksum verification or if verification is skipped.
+
 ## Design Philosophy
 
 This application follows a read-only design philosophy where tickets are analyzed but never modified. All analysis results are stored in the database for reporting and analytics purposes. This approach provides:
@@ -364,4 +403,4 @@ MIT
 
 ## Last Updated
 
-March 30, 2025
+March 31, 2025

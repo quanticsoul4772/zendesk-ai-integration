@@ -387,7 +387,7 @@ def demo_workflow():
         timestamp = datetime.now().strftime('%Y%m%d_%H%M')
         output_file = f"workflow_demo_{timestamp}.txt"
         
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             f.write(f"WORKFLOW INTEGRATION DEMO - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("="*50 + "\n\n")
             

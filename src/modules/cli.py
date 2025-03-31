@@ -238,7 +238,7 @@ class CommandLineInterface:
                         timestamp = datetime.now().strftime('%Y%m%d_%H%M')
                         report_filename = f"hardware_report_{timestamp}.txt"
                     
-                    with open(report_filename, "w") as f:
+                    with open(report_filename, "w", encoding="utf-8") as f:
                         f.write(report)
                     
                     logger.info(f"Hardware component report generated with {len(tickets)} tickets and saved to {report_filename}")
@@ -332,7 +332,7 @@ class CommandLineInterface:
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M')
                     report_filename = f"multi_view_hardware_report_{timestamp}.txt"
                 
-                with open(report_filename, "w") as f:
+                with open(report_filename, "w", encoding="utf-8") as f:
                     f.write(report)
                 
                 logger.info(f"Multi-view hardware report generated with {len(tickets)} tickets and saved to {report_filename}")
@@ -371,14 +371,14 @@ class CommandLineInterface:
         
         # Optionally save to file
         if args.output:
-            with open(args.output, "w") as f:
+            with open(args.output, "w", encoding="utf-8") as f:
                 f.write(report)
             logger.info(f"Multi-view report saved to {args.output}")
         else:
             # Save with auto-generated filename
             timestamp = datetime.now().strftime('%Y%m%d_%H%M')
             filename = f"multi_view_report_{timestamp}.txt"
-            with open(filename, "w") as f:
+            with open(filename, "w", encoding="utf-8") as f:
                 f.write(report)
             logger.info(f"Multi-view report saved to {filename}")
         
@@ -450,14 +450,14 @@ class CommandLineInterface:
         
         # Optionally save to file
         if args.output:
-            with open(args.output, "w") as f:
+            with open(args.output, "w", encoding="utf-8") as f:
                 f.write(report)
             logger.info(f"Multi-view report saved to {args.output}")
         else:
             # Save with auto-generated filename
             timestamp = datetime.now().strftime('%Y%m%d_%H%M')
             filename = f"multi_view_report_{timestamp}.txt"
-            with open(filename, "w") as f:
+            with open(filename, "w", encoding="utf-8") as f:
                 f.write(report)
             logger.info(f"Multi-view report saved to {filename}")
         
@@ -535,8 +535,12 @@ class CommandLineInterface:
                 report += f"  {polarity}: {count}\n"
             
             # Get priority distribution for this view
-            priority_counts = reporter._count_priority_scores(view_tickets)
-            high_priority = sum(count for score, count in priority_counts.items() if score >= 7)
+            if hasattr(reporter, '_count_priority_scores'):
+                priority_counts = reporter._count_priority_scores(view_tickets)
+                high_priority = sum(count for score, count in priority_counts.items() if score >= 7)
+            else:
+                # Use _count_priority_range for EnhancedSentimentReporter
+                high_priority = reporter._count_priority_range(view_tickets, 7, 10)
             report += f"High Priority Tickets (7-10): {high_priority}\n"
             
             # Get business impact for this view
@@ -632,7 +636,7 @@ class CommandLineInterface:
                         timestamp = datetime.now().strftime('%Y%m%d_%H%M')
                         report_filename = f"multi_view_hardware_report_{timestamp}.txt"
                     
-                    with open(report_filename, "w") as f:
+                    with open(report_filename, "w", encoding="utf-8") as f:
                         f.write(report)
                     
                     logger.info(f"Multi-view hardware component report generated with {len(tickets)} tickets and saved to {report_filename}")
@@ -659,7 +663,7 @@ class CommandLineInterface:
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M')
                     report_filename = f"hardware_report_{timestamp}.txt"
                 
-                with open(report_filename, "w") as f:
+                with open(report_filename, "w", encoding="utf-8") as f:
                     f.write(report)
                 
                 logger.info(f"Hardware component report generated with {len(tickets)} tickets and saved to {report_filename}")
@@ -704,7 +708,7 @@ class CommandLineInterface:
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M')
                     report_filename = f"multi_view_pending_report_{timestamp}.txt"
                 
-                with open(report_filename, "w") as f:
+                with open(report_filename, "w", encoding="utf-8") as f:
                     f.write(report)
                 
                 logger.info(f"Multi-view pending report generated and saved to {report_filename}")
@@ -734,7 +738,7 @@ class CommandLineInterface:
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M')
                     report_filename = f"pending_support_report_{timestamp}.txt"
                 
-                with open(report_filename, "w") as f:
+                with open(report_filename, "w", encoding="utf-8") as f:
                     f.write(report)
                 
                 logger.info(f"Pending Support report generated with {len(tickets)} tickets and saved to {report_filename}")
@@ -753,7 +757,7 @@ class CommandLineInterface:
         
         # Optionally save to file
         if args.output:
-            with open(args.output, "w") as f:
+            with open(args.output, "w", encoding="utf-8") as f:
                 f.write(views_list)
             logger.info(f"Views list saved to {args.output}")
         

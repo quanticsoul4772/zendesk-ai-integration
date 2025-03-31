@@ -269,7 +269,7 @@ def generate_html_report(coverage_data, output_file="coverage_analysis.html"):
         "</html>"
     ])
     
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write("\n".join(html))
     
     print(f"HTML report generated: {output_file}")
@@ -290,7 +290,7 @@ def main():
     
     # Generate text report
     text_report = generate_text_report(coverage_data)
-    with open(args.text_output, "w") as f:
+    with open(args.text_output, "w", encoding="utf-8") as f:
         f.write(text_report)
     print(f"Text report generated: {args.text_output}")
     

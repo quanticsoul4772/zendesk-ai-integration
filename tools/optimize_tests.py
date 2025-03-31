@@ -30,7 +30,7 @@ def run_pytest_with_timing(test_paths=None, verbose=True, output_file=None):
     print(f"Command: {' '.join(cmd)}")
     
     if output_file:
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             result = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, text=True)
     else:
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -315,7 +315,7 @@ def generate_optimization_report(analysis, output_file="test_optimization.md"):
     ])
     
     # Write report to file
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write("\n".join(report))
     
     print(f"Optimization report generated: {output_file}")
@@ -356,7 +356,7 @@ def main():
     # Output JSON if requested
     if args.json:
         json_file = args.output.replace('.md', '.json')
-        with open(json_file, "w") as f:
+        with open(json_file, "w", encoding="utf-8") as f:
             json.dump(analysis, f, indent=2)
         print(f"JSON analysis saved to: {json_file}")
     

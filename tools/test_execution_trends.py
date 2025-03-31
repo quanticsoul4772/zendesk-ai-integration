@@ -113,7 +113,7 @@ def load_history():
 
 def save_history(history):
     """Save test execution history to file."""
-    with open(HISTORY_FILE, 'w') as f:
+    with open(HISTORY_FILE, 'w', encoding="utf-8") as f:
         json.dump(history, f, indent=2)
 
 def record_test_run(test_paths=None):
@@ -305,7 +305,7 @@ def generate_trend_report(output_file="test_execution_trends.md"):
     ])
     
     # Write report to file
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write("\n".join(report))
     
     print(f"Trend report generated: {output_file}")

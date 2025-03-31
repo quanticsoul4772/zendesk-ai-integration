@@ -1,6 +1,6 @@
 # Zendesk AI Integration - Installation Guide
 
-**Last Updated: March 30, 2025**
+**Last Updated: March 31, 2025**
 
 This guide provides step-by-step instructions for installing and running the Zendesk AI Integration application on Windows, macOS, and Linux systems.
 
@@ -15,12 +15,21 @@ Before installing the application, ensure you have the following prerequisites:
 
 ## Quick Installation (Automated Setup)
 
-For an automated installation experience, use the included setup script.
+For an automated installation experience, use the universal installer script which features integrity verification, automatic retries, and progress visualization.
 
 ### Automated Setup
 
-1. Download the setup files (setup.py and check_prerequisites.py)
-2. Run the setup script:
+1. Download the installer script:
+   ```bash
+   curl -o install.py https://raw.githubusercontent.com/exxactcorp/zendesk-ai-integration/main/install.py
+   ```
+
+2. Run the installer which will download and verify all necessary files:
+   ```bash
+   python install.py
+   ```
+
+3. Or for more advanced usage, you can download and run the setup components directly:
 
 ```bash
 python check_prerequisites.py  # Check if your system meets requirements
@@ -57,7 +66,7 @@ If you prefer to install the application manually, follow these steps:
 **Option A: Clone the Repository (if you have Git installed)**
 
 ```bash
-git clone https://github.com/yourusername/zendesk-ai-integration.git
+git clone https://github.com/exxactcorp/zendesk-ai-integration.git
 cd zendesk-ai-integration
 ```
 
@@ -256,6 +265,33 @@ To upgrade to a newer version of the application:
    ```
 4. Restore your custom settings from the backup `.env` if needed
 
+## Customizing Installation
+
+The installer supports several environment variables to customize the installation process:
+
+| Variable | Description | Default |
+|----------|-------------|--------|
+| `ZENDESK_AI_ORG` | GitHub organization name | `exxactcorp` |
+| `ZENDESK_AI_REPO` | GitHub repository name | `zendesk-ai-integration` |
+| `ZENDESK_AI_BRANCH` | GitHub branch name | `main` |
+| `SKIP_CHECKSUM_VERIFY` | Skip checksum verification | `false` |
+
+### Using Environment Variables
+
+#### On Windows:
+
+```cmd
+set ZENDESK_AI_ORG=your-org-name
+set ZENDESK_AI_BRANCH=dev
+python install.py
+```
+
+#### On macOS/Linux:
+
+```bash
+ZENDESK_AI_ORG=your-org-name ZENDESK_AI_BRANCH=dev python install.py
+```
+
 ## Common Issues and Solutions
 
 ### MongoDB Connection Issues
@@ -267,6 +303,16 @@ To upgrade to a newer version of the application:
 - Check your connection string in the `.env` file
 - For MongoDB Atlas, ensure your IP is allowed in the network access settings
 - Check that your username and password are correct
+
+### Download and Checksum Issues
+
+**Symptoms**: Errors during download or checksum verification failures
+
+**Solutions**:
+- Check your internet connection and try again
+- For checksum failures, try skipping verification: `SKIP_CHECKSUM_VERIFY=true python install.py`
+- Download files manually from the GitHub repository if automated downloads fail
+- If using a custom branch or fork, ensure the checksums in `install.py` match the actual files
 
 ### API Key Issues
 
