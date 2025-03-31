@@ -24,12 +24,17 @@ from pathlib import Path
 def supports_color():
     """Check if the terminal supports ANSI colors"""
     plat = platform.system()
-    supported_platform = plat != 'Windows' or 'ANSICON' in os.environ
     
-    # isatty is not always implemented
+    # Windows terminal detection (modern Windows Terminal support)
+    if plat == 'Windows':
+        if 'ANSICON' in os.environ or 'WT_SESSION' in os.environ or os.environ.get('TERM_PROGRAM') == 'vscode':
+            return True
+        return False
+    
+    # Unix systems (macOS and Linux)
     is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-    
-    return supported_platform and is_a_tty
+    term = os.environ.get('TERM', '')
+    return is_a_tty and term != 'dumb'
 
 if supports_color():
     GREEN = '\033[92m'
@@ -75,30 +80,38 @@ def download_files():
     """Download required installer files"""
     print_header("Downloading Setup Files")
     
+    # Update with the actual repository URL
+    repo_url = "https://raw.githubusercontent.com/yourusername/zendesk-ai-integration/main"
+    
     files_to_download = {
-        "check_prerequisites.py": "https://raw.githubusercontent.com/yourusername/zendesk-ai-integration/main/check_prerequisites.py",
-        "setup.py": "https://raw.githubusercontent.com/yourusername/zendesk-ai-integration/main/setup.py",
-        ".env.example": "https://raw.githubusercontent.com/yourusername/zendesk-ai-integration/main/.env.example"
+        "check_prerequisites.py": f"{repo_url}/check_prerequisites.py",
+        "setup.py": f"{repo_url}/setup.py",
+        ".env.example": f"{repo_url}/.env.example"
     }
     
     success = True
     for filename, url in files_to_download.items():
+        file_path = Path(filename)
         print(f"Downloading {filename}...", end=" ")
         try:
-            # This is a placeholder URL - in a real implementation, use the actual repository URLs
-            # For demo purposes, we'll create the files instead of downloading them
-            if not Path(filename).exists():
-                # In a real implementation, use: urllib.request.urlretrieve(url, filename)
-                # For this demo, we'll copy from the project files if they exist or create placeholders
-                if Path(f"../artifacts/{filename}").exists():
-                    shutil.copy(f"../artifacts/{filename}", filename)
-                elif Path(f"../backup/{filename}").exists():
-                    shutil.copy(f"../backup/{filename}", filename)
-                else:
-                    # Create empty placeholder files
-                    with open(filename, 'w') as f:
-                        f.write(f"# Placeholder for {filename}\n")
-            print(f"{GREEN}Done{END}")
+            # Skip download if file already exists
+            if file_path.exists():
+                print(f"{GREEN}Already exists{END}")
+                continue
+                
+            # Download the file with proper error handling
+            try:
+                with urllib.request.urlopen(url, timeout=30) as response, open(file_path, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+                print(f"{GREEN}Done{END}")
+            except urllib.error.URLError as e:
+                print(f"{RED}Failed{END}")
+                print(f"  Error: {e.reason}")
+                success = False
+            except Exception as e:
+                print(f"{RED}Failed{END}")
+                print(f"  Error: {e}")
+                success = False
         except Exception as e:
             print(f"{RED}Failed{END}")
             print(f"  Error: {e}")
@@ -110,13 +123,13 @@ def run_prerequisites_check():
     """Run the prerequisites checker"""
     print_header("Checking Prerequisites")
     
-    prereq_script = "check_prerequisites.py"
-    if not Path(prereq_script).exists():
+    prereq_script = Path("check_prerequisites.py")
+    if not prereq_script.exists():
         print_status(f"{prereq_script} not found", "error")
         return False
     
     try:
-        subprocess.run([sys.executable, prereq_script], check=True)
+        subprocess.run([sys.executable, str(prereq_script)], check=True)
         return True
     except subprocess.CalledProcessError:
         print_status("Prerequisite check failed", "error")
@@ -126,13 +139,13 @@ def run_setup():
     """Run the main setup script"""
     print_header("Running Setup")
     
-    setup_script = "setup.py"
-    if not Path(setup_script).exists():
+    setup_script = Path("setup.py")
+    if not setup_script.exists():
         print_status(f"{setup_script} not found", "error")
         return False
     
     try:
-        subprocess.run([sys.executable, setup_script], check=True)
+        subprocess.run([sys.executable, str(setup_script)], check=True)
         return True
     except subprocess.CalledProcessError:
         print_status("Setup failed", "error")

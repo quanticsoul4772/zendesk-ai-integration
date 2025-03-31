@@ -69,7 +69,7 @@ def check_prerequisites():
         print("Please download the check_prerequisites.py script first.")
         return False
     
-    success, output = run_command([sys.executable, "check_prerequisites.py"])
+    success, output = run_command([sys.executable, str(prereq_script)])
     print(output)
     
     # Check if critical prerequisites are missing
@@ -94,7 +94,7 @@ def setup_virtual_environment():
             print_status("Using existing virtual environment", "INFO")
             return True
     
-    success, output = run_command([sys.executable, "-m", "venv", "venv"])
+    success, output = run_command([sys.executable, "-m", "venv", str(venv_dir)])
     
     if success:
         print_status("Virtual environment created successfully", "SUCCESS")
@@ -106,14 +106,17 @@ def setup_virtual_environment():
 
 def activate_virtual_environment():
     """Activate the virtual environment and return the Python path"""
-    if platform.system() == "Windows":
-        python_path = os.path.abspath("venv/Scripts/python.exe")
-        pip_path = os.path.abspath("venv/Scripts/pip.exe")
-    else:
-        python_path = os.path.abspath("venv/bin/python")
-        pip_path = os.path.abspath("venv/bin/pip")
+    # Use pathlib for consistent path handling across platforms
+    venv_dir = Path("venv")
     
-    return python_path, pip_path
+    if platform.system() == "Windows":
+        python_path = (venv_dir / "Scripts" / "python.exe").absolute()
+        pip_path = (venv_dir / "Scripts" / "pip.exe").absolute()
+    else:
+        python_path = (venv_dir / "bin" / "python").absolute()
+        pip_path = (venv_dir / "bin" / "pip").absolute()
+    
+    return str(python_path), str(pip_path)
 
 def install_dependencies(pip_path):
     """Install dependencies from requirements.txt"""
@@ -125,7 +128,7 @@ def install_dependencies(pip_path):
         return False
     
     print("Installing dependencies (this may take a few minutes)...")
-    success, output = run_command([pip_path, "install", "-r", "requirements.txt"])
+    success, output = run_command([pip_path, "-m", "pip", "install", "-r", str(req_file)])
     
     if success:
         print_status("Dependencies installed successfully", "SUCCESS")
@@ -139,15 +142,15 @@ def verify_installation(python_path):
     """Verify the installation by running a simple test"""
     print_step(5, "Verifying installation")
     
-    # Check if the main application file exists
-    app_file = Path("src/zendesk_ai_app.py")
+    # Check if the main application file exists using Path
+    app_file = Path("src") / "zendesk_ai_app.py"
     if not app_file.exists():
         print_status("Main application file not found", "ERROR")
         return False
     
     # Try running the list-views command
     print("Testing the application by listing Zendesk views...")
-    success, output = run_command([python_path, "src/zendesk_ai_app.py", "--mode", "list-views"])
+    success, output = run_command([python_path, str(app_file), "--mode", "list-views"])
     
     if success:
         print_status("Installation verified successfully", "SUCCESS")
@@ -176,8 +179,8 @@ def setup_configuration():
             print_status("Using existing configuration", "INFO")
             return True
     
-    # Read the example env file
-    with open(example_env, "r") as f:
+    # Read the example env file with explicit encoding
+    with open(example_env, "r", encoding="utf-8") as f:
         env_content = f.read()
     
     # Get user input for configuration
@@ -236,8 +239,8 @@ def setup_configuration():
     env_content = re.sub(r'MONGODB_DB_NAME=.*', f'MONGODB_DB_NAME={mongodb_db_name}', env_content)
     env_content = re.sub(r'WEBHOOK_SECRET_KEY=.*', f'WEBHOOK_SECRET_KEY={webhook_key}', env_content)
     
-    # Write the updated env content
-    with open(env_file, "w") as f:
+    # Write the updated env content with explicit encoding
+    with open(env_file, "w", encoding="utf-8") as f:
         f.write(env_content)
     
     print_status("Configuration file created successfully", "SUCCESS")
@@ -247,32 +250,40 @@ def create_run_scripts():
     """Create OS-specific run scripts for easy execution"""
     print_step(6, "Creating helper scripts")
     
+    # Use Path for cross-platform path handling
+    venv_dir = Path("venv")
+    src_dir = Path("src")
+    app_file = src_dir / "zendesk_ai_app.py"
+    
     # Create Windows batch script
     if platform.system() == "Windows":
-        with open("run_zendesk_ai.bat", "w") as f:
+        batch_file = Path("run_zendesk_ai.bat")
+        with open(batch_file, "w", encoding="utf-8") as f:
             f.write("@echo off\n")
             f.write("echo Activating virtual environment...\n")
-            f.write("call venv\\Scripts\\activate\n")
+            f.write(f"call {venv_dir / 'Scripts' / 'activate'}\n")
             f.write("echo Starting Zendesk AI Integration...\n")
-            f.write("python src\\zendesk_ai_app.py %*\n")
+            f.write(f"python {app_file} %*\n")
             f.write("pause\n")
-        print_status("Created run_zendesk_ai.bat", "SUCCESS")
+        print_status(f"Created {batch_file}", "SUCCESS")
     
     # Create Unix shell script
     else:
-        with open("run_zendesk_ai.sh", "w") as f:
+        shell_file = Path("run_zendesk_ai.sh")
+        with open(shell_file, "w", encoding="utf-8") as f:
             f.write("#!/bin/bash\n")
             f.write("echo 'Activating virtual environment...'\n")
-            f.write("source venv/bin/activate\n")
+            f.write(f"source {venv_dir / 'bin' / 'activate'}\n")
             f.write("echo 'Starting Zendesk AI Integration...'\n")
-            f.write("python src/zendesk_ai_app.py \"$@\"\n")
+            f.write(f"python {app_file} \"$@\"\n")
         
         # Make the shell script executable
-        os.chmod("run_zendesk_ai.sh", 0o755)
-        print_status("Created run_zendesk_ai.sh", "SUCCESS")
+        os.chmod(shell_file, 0o755)
+        print_status(f"Created {shell_file}", "SUCCESS")
     
     # Create a config script
-    with open("configure_zendesk_ai.py", "w") as f:
+    config_script = Path("configure_zendesk_ai.py")
+    with open(config_script, "w", encoding="utf-8") as f:
         f.write("""#!/usr/bin/env python3
 """
 Configuration Tool for Zendesk AI Integration
@@ -294,8 +305,8 @@ def main():
         print("Error: .env file not found. Please run setup.py first.")
         return
     
-    # Read the current configuration
-    with open(env_file, "r") as f:
+    # Read the current configuration with explicit encoding
+    with open(env_file, "r", encoding="utf-8") as f:
         env_content = f.read()
     
     # Get user input for configuration
@@ -333,8 +344,8 @@ def main():
     if mongodb_db_name:
         env_content = re.sub(r'MONGODB_DB_NAME=.*', f'MONGODB_DB_NAME={mongodb_db_name}', env_content)
     
-    # Write the updated env content
-    with open(env_file, "w") as f:
+    # Write the updated env content with explicit encoding
+    with open(env_file, "w", encoding="utf-8") as f:
         f.write(env_content)
     
     print("\\nConfiguration updated successfully!")
@@ -345,9 +356,9 @@ if __name__ == "__main__":
     
     # Make the config script executable
     if platform.system() != "Windows":
-        os.chmod("configure_zendesk_ai.py", 0o755)
+        os.chmod(config_script, 0o755)
     
-    print_status("Created configure_zendesk_ai.py", "SUCCESS")
+    print_status(f"Created {config_script}", "SUCCESS")
     return True
 
 def save_installation_info():
@@ -360,11 +371,12 @@ def save_installation_info():
         "system": platform.system(),
         "python_version": platform.python_version(),
         "platform": platform.platform(),
-        "installation_path": os.path.abspath(".")
+        "installation_path": str(Path(".").absolute())
     }
     
-    # Save to file
-    with open("installation_info.json", "w") as f:
+    # Save to file using Path and explicit encoding
+    info_file = Path("installation_info.json")
+    with open(info_file, "w", encoding="utf-8") as f:
         json.dump(info, f, indent=2)
     
     print_status("Installation information saved", "SUCCESS")
@@ -405,10 +417,12 @@ def main():
     # Final message
     print(f"\n{Colors.GREEN}{Colors.BOLD}Installation completed!{Colors.END}")
     print("\nTo run the application, use:")
+    
+    # Use Path for displaying the correct run command
     if platform.system() == "Windows":
-        print("  run_zendesk_ai.bat --mode list-views")
+        print(f"  {Path('run_zendesk_ai.bat')} --mode list-views")
     else:
-        print("  ./run_zendesk_ai.sh --mode list-views")
+        print(f"  ./{Path('run_zendesk_ai.sh')} --mode list-views")
     
     print("\nFor more options, refer to the README.md file.")
 

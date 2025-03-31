@@ -17,6 +17,7 @@ import subprocess
 import shutil
 from pathlib import Path
 import urllib.request
+import glob
 
 # Terminal colors for better readability
 class Colors:
@@ -116,16 +117,28 @@ def check_mongodb():
     mongodb_installed = False
     
     if platform.system() == "Windows":
+        # Use Path and glob for Windows path handling
         mongo_paths = [
-            r"C:\Program Files\MongoDB\Server\*\bin\mongod.exe",
-            r"C:\Program Files\MongoDB\*\bin\mongod.exe"
+            Path("C:/Program Files/MongoDB/Server").glob("*/bin/mongod.exe"),
+            Path("C:/Program Files/MongoDB").glob("*/bin/mongod.exe")
         ]
         for path_pattern in mongo_paths:
-            import glob
-            if glob.glob(path_pattern):
+            if any(path_pattern):
                 mongodb_installed = True
                 break
-    else:  # macOS and Linux
+    elif platform.system() == "Darwin":  # macOS
+        # Check common macOS MongoDB installations
+        mac_mongo_paths = [
+            Path("/usr/local/bin/mongod"),
+            Path("/opt/homebrew/bin/mongod"),
+            Path("/usr/local/mongodb/bin/mongod"),
+            Path(os.path.expanduser("~/mongodb/bin/mongod"))
+        ]
+        for path in mac_mongo_paths:
+            if path.exists():
+                mongodb_installed = True
+                break
+    else:  # Linux
         if shutil.which("mongod"):
             mongodb_installed = True
     
@@ -138,7 +151,7 @@ def check_mongodb():
     example_env = Path(".env.example")
     
     if env_file.exists():
-        with open(env_file, "r") as f:
+        with open(env_file, "r", encoding="utf-8") as f:
             env_content = f.read()
             if "MONGODB_URI=" in env_content and "mongodb+srv://" in env_content:
                 print_status("MongoDB does not appear to be installed locally, but remote MongoDB URI found in .env", "PASS",
@@ -162,7 +175,7 @@ def check_zendesk_api_credentials():
     example_env = Path(".env.example")
     
     if env_file.exists():
-        with open(env_file, "r") as f:
+        with open(env_file, "r", encoding="utf-8") as f:
             env_content = f.read()
             
             # Basic check for Zendesk credentials
@@ -190,7 +203,7 @@ def check_ai_api_keys():
     env_file = Path(".env")
     
     if env_file.exists():
-        with open(env_file, "r") as f:
+        with open(env_file, "r", encoding="utf-8") as f:
             env_content = f.read()
             
             has_openai = "OPENAI_API_KEY=" in env_content and "your_openai_api_key" not in env_content
@@ -223,7 +236,8 @@ def check_network_connectivity():
     all_ok = True
     for host, service_name in services:
         try:
-            urllib.request.urlopen(f"https://{host}", timeout=5)
+            # Increase timeout from 5 to 10 seconds for more reliable checks
+            urllib.request.urlopen(f"https://{host}", timeout=10)
             print_status(f"Connection to {service_name} ({host})", "PASS")
         except Exception as e:
             print_status(f"Connection to {service_name} ({host})", "WARN", 
