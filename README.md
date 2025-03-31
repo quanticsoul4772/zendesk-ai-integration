@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/yourusername/zendesk-ai-integration/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/zendesk-ai-integration)
 [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black)](https://github.com/pycqa/flake8)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-[![Version: 1.5.0](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/yourusername/zendesk-ai-integration/blob/main/VERSION.md)
+[![Version: 1.0.0](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/zendesk-ai-integration/blob/main/VERSION.md)
 
 This application integrates Zendesk support tickets with AI services (OpenAI and Anthropic Claude) to provide automated sentiment analysis, categorization, and reporting while maintaining a read-only approach to customer tickets.
 
@@ -270,25 +270,17 @@ For more usage examples, see:
 
 ## Version History
 
-### v1.5.0 (Current - March 30, 2025)
-- Added support for OpenAI's GPT-4o model
-- Updated to Claude 3 models (Haiku, Sonnet)
-- Added cross-platform installation scripts
-- Enhanced error handling and resilience
-- Updated dependencies to latest versions
+### v1.0.0 (Current)
+- Initial release with core functionality
+- Support for OpenAI's GPT-4o model
+- Integration with Claude 3 models (Haiku, Sonnet)
+- Cross-platform installation scripts
+- Multi-view analysis support
+- Enhanced reporting capabilities
+- Hardware component detection
+- Caching system with intelligent validation
 
-### v1.4.0 (September 2024)
-- Added multi-view analysis support
-- Enhanced reporting with descriptive labels
-- Improved hardware component detection
-- Added parallel batch processing
-
-### v1.3.0 (May 2024)
-- Added Claude integration for sentiment analysis
-- Enhanced sentiment analysis with business impact detection
-- Implemented caching system for Zendesk data
-
-For complete version history, see [VERSION.md](VERSION.md).
+For release details, see [VERSION.md](VERSION.md).
 
 ## Documentation
 
