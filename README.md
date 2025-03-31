@@ -4,55 +4,125 @@
 [![codecov](https://codecov.io/gh/yourusername/zendesk-ai-integration/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/zendesk-ai-integration)
 [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black)](https://github.com/pycqa/flake8)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![Version: 1.5.0](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/yourusername/zendesk-ai-integration/blob/main/VERSION.md)
 
 This application integrates Zendesk support tickets with AI services (OpenAI and Anthropic Claude) to provide automated sentiment analysis, categorization, and reporting while maintaining a read-only approach to customer tickets.
 
+## Quick Start
+
+### One-Step Installation
+
+Run the universal installer script which works on Windows, macOS, and Linux:
+
+```bash
+# Download the installer
+curl -o install.py https://raw.githubusercontent.com/yourusername/zendesk-ai-integration/main/install.py
+
+# Run the installer
+python install.py
+```
+
+The installer will:
+1. Check if your system meets all requirements
+2. Download necessary files
+3. Set up a Python virtual environment
+4. Install all dependencies
+5. Guide you through configuration
+6. Create OS-specific convenience scripts
+
+After installation, you can run the application using:
+
+**Windows**:
+```
+run_zendesk_ai.bat --mode list-views
+```
+
+**macOS/Linux**:
+```
+./run_zendesk_ai.sh --mode list-views
+```
+
+For detailed installation instructions, see [INSTALLATION.md](INSTALLATION.md).
+
 ## Features
 
-- **Read-only sentiment analysis** - analyzes tickets without modifying them
+### AI Integration
 - **Multi-LLM Support**:
-  - OpenAI's advanced GPT-4o model
-  - Anthropic's Claude 3 models (Haiku, Sonnet)
-- **Enhanced sentiment analysis** with urgency, frustration, and business impact detection:
+  - **OpenAI**: Advanced GPT-4o model with GPT-3.5 Turbo fallback
+  - **Anthropic Claude**: Claude 3 models (Haiku, Sonnet) with multiple fallbacks
+  - Seamless switching between AI providers
+  - Automatic error handling and retry logic
+
+### Enhanced Sentiment Analysis
+- **Nuanced Analysis**:
   - Contextual examples for better sentiment classification
-  - Temperature-controlled variance for more nuanced analysis
+  - Temperature-controlled variance for nuanced analysis
+  - Sentiment polarity detection (positive, negative, neutral)
+- **Support Metrics**:
   - Urgency level detection (1-5 scale)
   - Frustration level detection (1-5 scale)
-  - Business impact assessment
   - Technical expertise estimation
   - Priority score calculation (1-10 scale)
+- **Business Intelligence**:
+  - Business impact assessment
   - Key phrase extraction
   - Emotion detection
-- **Intuitive reporting** with descriptive labels and contextual information:
+
+### Reporting Capabilities
+- **Intuitive Reporting** with descriptive labels and contextual information
   - Executive summary highlighting critical issues
   - Descriptive labels for numerical scales
   - Percentage values for all metrics
   - Summaries and alerts for significant findings
-  - Top components analysis
-- **Hardware component detection** in tickets
-- **MongoDB database** for analytics and reporting
-- **Enhanced security features**:
-  - IP whitelisting for webhook endpoints
-  - HMAC signature verification
-  - Robust error handling
-- **Performance optimizations**:
-  - Caching system for Zendesk data with TTL and intelligent cache validation
-  - Parallel batch processing for ticket analysis
-  - Self-healing cache with automatic refresh mechanism
-  - See [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md) for details
-- **Multiple operation modes**:
-  - One-time batch analysis
-  - Real-time webhook analysis
-  - Scheduled daily/weekly analysis
-  - View-based reporting and analytics
-  - Multi-view aggregated analysis
-- **Comprehensive sentiment reporting**:
+- **Specialized Reports**:
+  - Hardware component detection and analysis
+  - Multi-view aggregated analytics
   - Sentiment distribution analysis
-  - Urgency and frustration level reporting
-  - Business impact assessment
   - High-priority ticket identification
 
+### Performance & Security
+- **Read-only Design** - analyzes tickets without modifying them
+- **Performance Optimizations**:
+  - Caching system with TTL and intelligent cache validation
+  - Parallel batch processing for ticket analysis
+  - Self-healing cache with automatic refresh mechanism
+- **Enhanced Security**:
+  - IP whitelisting for webhook endpoints
+  - HMAC signature verification
+  - Robust error handling and input validation
+
+### Multiple Operation Modes
+- One-time batch analysis
+- Real-time webhook analysis
+- Scheduled daily/weekly analysis
+- View-based reporting and analytics
+- Multi-view aggregated analysis
+
 ## Installation
+
+### Automated Installation (Recommended)
+
+The project includes several automated installation options:
+
+1. **Universal Installer (Easiest)**:
+   ```bash
+   python install.py
+   ```
+
+2. **Step-by-Step Setup**:
+   ```bash
+   python check_prerequisites.py  # Check system requirements
+   python setup.py                # Run guided setup
+   ```
+
+3. **Configuration Helper**:
+   ```bash
+   python configure_zendesk_ai.py  # Update configuration
+   ```
+
+### Manual Installation
+
+For manual installation:
 
 1. Clone this repository
 2. Create a virtual environment: `python -m venv venv`
@@ -62,9 +132,11 @@ This application integrates Zendesk support tickets with AI services (OpenAI and
 6. Configure environment variables in `.env` file
 7. Set up pre-commit hooks: `pre-commit install` (see [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) for details)
 
+See [INSTALLATION.md](INSTALLATION.md) for detailed OS-specific instructions for Windows, macOS, and Linux.
+
 ## Configuration
 
-Create a `.env` file with the following variables:
+Create a `.env` file with your configuration (or copy and modify `.env.example`):
 
 ```
 # Zendesk API credentials
@@ -89,15 +161,16 @@ WEBHOOK_SECRET_KEY=your_secure_random_key_here
 ALLOWED_IPS=127.0.0.1,10.0.0.0/24
 
 # Feature flags
-DISABLE_TAG_UPDATES=false
+DISABLE_TAG_UPDATES=true
 ```
 
-### Security Configuration
+The `.env.example` file includes additional configuration options for:
+- Caching settings
+- Performance tuning parameters
+- Logging configuration
+- Report settings
 
-- **WEBHOOK_SECRET_KEY**: A secure random key used to verify webhook signatures from Zendesk
-- **ALLOWED_IPS**: Comma-separated list of IP addresses or CIDR ranges allowed to access the webhook
-
-You can generate a secure webhook key with this command:
+Generate a secure webhook key with:
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
@@ -126,8 +199,6 @@ To reanalyze existing tickets with the improved sentiment model:
 python src/zendesk_ai_app.py --mode run --reanalyze --days 7
 ```
 
-This will reprocess all tickets from the last 7 days with the enhanced sentiment model.
-
 ### Sentiment Analysis Reporting
 
 Generate detailed sentiment analysis reports:
@@ -155,6 +226,20 @@ Or output to a file:
 python src/zendesk_ai_app.py --mode sentiment --days 30 --output sentiment_report.txt
 ```
 
+### View-Based Reporting
+
+Generate a report for a specific Zendesk view:
+
+```bash
+python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support"
+```
+
+For multi-view enhanced reports:
+
+```bash
+python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172823 --format enhanced
+```
+
 ### Webhook Server
 
 Start a webhook server for real-time analysis:
@@ -171,46 +256,6 @@ Run daily and weekly summaries automatically:
 python src/zendesk_ai_app.py --mode schedule
 ```
 
-### Generate Summary
-
-Create a summary of ticket data:
-
-```bash
-python src/zendesk_ai_app.py --mode summary --status solved --days 7
-```
-
-### View-Based Reporting
-
-Generate a report for a specific Zendesk view:
-
-```bash
-python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support"
-```
-
-### Enhanced Reporting
-
-Generate reports with descriptive labels and more intuitive formatting:
-
-```bash
-python src/zendesk_ai_app.py --mode sentiment --days 7 --format enhanced
-```
-
-For multi-view enhanced reports:
-
-```bash
-python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172823 --format enhanced
-```
-
-See [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) for more information on the enhanced reporting feature.
-
-This will generate a comprehensive report of all tickets in the specified view, including status distribution, hardware component analysis, and detailed ticket information.
-
-If you want to limit the number of tickets in the report:
-
-```bash
-python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support" --limit 10
-```
-
 ### List Available Views
 
 To see all available Zendesk views:
@@ -219,93 +264,45 @@ To see all available Zendesk views:
 python src/zendesk_ai_app.py --mode list-views
 ```
 
-### Hardware Component Reports
+For more usage examples, see:
+- [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting feature
+- [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
 
-Generate a hardware-focused report for a specific view:
+## Version History
 
-```bash
-python src/zendesk_ai_app.py --mode run --view [VIEW_ID] --component-report
-```
+### v1.5.0 (Current - March 30, 2025)
+- Added support for OpenAI's GPT-4o model
+- Updated to Claude 3 models (Haiku, Sonnet)
+- Added cross-platform installation scripts
+- Enhanced error handling and resilience
+- Updated dependencies to latest versions
 
-### Multi-View Analysis
+### v1.4.0 (September 2024)
+- Added multi-view analysis support
+- Enhanced reporting with descriptive labels
+- Improved hardware component detection
+- Added parallel batch processing
 
-Analyze tickets from multiple views at once:
+### v1.3.0 (May 2024)
+- Added Claude integration for sentiment analysis
+- Enhanced sentiment analysis with business impact detection
+- Implemented caching system for Zendesk data
 
-```bash
-python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172823 --output multi_view_report.txt
-```
-
-Or use view names instead of IDs:
-
-```bash
-python src/zendesk_ai_app.py --mode sentiment --view-names "Support :: Pending Customer,Support :: Pending RMA" --output multi_view_report.txt
-```
-
-See [MULTI_VIEW.md](MULTI_VIEW.md) for detailed documentation on multi-view analysis.
-
-### Cache Reliability
-
-The application includes intelligent cache validation to prevent issues with stale data:
-
-```bash
-# Force refresh views cache if you suspect outdated cache data
-python src/zendesk_ai_app.py --mode list-views
-python src/zendesk_ai_app.py --mode multi-view --views VIEW_IDS
-```
-
-The multi-view mode automatically refreshes the views cache before processing, ensuring fresh data is used. If you encounter any cache-related issues, running the `list-views` command first can help refresh the cache.
-
-## Development
-
-### Testing
-
-The project includes comprehensive test coverage. To run tests:
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage report
-pytest --cov=src --cov-report=html
-
-# Run specific test categories
-pytest tests/unit
-pytest tests/integration
-pytest tests/functional
-pytest tests/performance
-```
-
-See [TESTING.md](TESTING.md) for detailed testing information.
-
-### Pre-commit Hooks
-
-We use pre-commit hooks to ensure code quality. To set up:
-
-```bash
-pre-commit install
-```
-
-See [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) for more details.
-
-### Continuous Integration
-
-This project uses GitHub Actions for continuous integration:
-- Automated tests run on every push to main and pull requests
-- Test coverage reports are uploaded to Codecov
-- Multiple Python versions are tested in parallel
+For complete version history, see [VERSION.md](VERSION.md).
 
 ## Documentation
 
 - [README.md](README.md) - Main documentation
+- [INSTALLATION.md](INSTALLATION.md) - Detailed installation instructions for all platforms
 - [WEBHOOK_SETUP.md](WEBHOOK_SETUP.md) - Webhook configuration instructions
 - [REPORTING.md](REPORTING.md) - Detailed reporting documentation
-- [JSON_PARSING.md](JSON_PARSING.md) - JSON parsing enhancements
-- [SENTIMENT_ANALYSIS.md](SENTIMENT_ANALYSIS.md) - Sentiment analysis methodology
-- [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
 - [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting documentation
+- [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
+- [SENTIMENT_ANALYSIS.md](SENTIMENT_ANALYSIS.md) - Sentiment analysis methodology
 - [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md) - Performance optimization features
 - [TESTING.md](TESTING.md) - Testing strategy and instructions
 - [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) - Pre-commit hooks setup guide
+- [VERSION.md](VERSION.md) - Version history and release notes
 
 ## Architecture and Project Structure
 
@@ -323,11 +320,8 @@ The application follows the Single Responsibility Principle, with each module ha
   - `cli.py` - Command-line interface and argument parsing
 
 ### Reporters Package
-- `src/modules/reporters/` - Contains report generators:
-  - `hardware_report.py` - Generates hardware component reports
-  - `pending_report.py` - Generates pending support reports
-  - `sentiment_report.py` - Generates sentiment analysis reports
-
+- `src/modules/reporters/` - Contains report generators
+  
 ### AI Services
 - `src/ai_service.py` - OpenAI integration with error handling
 - `src/enhanced_sentiment.py` - Enhanced OpenAI sentiment analysis implementation
@@ -335,20 +329,10 @@ The application follows the Single Responsibility Principle, with each module ha
 - `src/claude_enhanced_sentiment.py` - Enhanced Claude sentiment analysis implementation
 - `src/security.py` - Security-related functions and decorators
 
-## LLM Version Support
-
-### OpenAI Models
-- Primary: GPT-4o (latest)
-- Fallback: GPT-3.5 Turbo
-
-### Anthropic Claude Models
-- Primary: Claude-3-Haiku-20240307
-- Fallbacks:
-  - Claude-3-Haiku
-  - Claude-3-Sonnet-20240229
-  - Claude-3-Sonnet
-  - Claude-2.1
-  - Claude-Instant-1.2
+### Installation Components
+- `install.py` - Universal installer script for all platforms
+- `check_prerequisites.py` - System requirements checker
+- `setup.py` - Guided installation and configuration script
 
 ## Dependencies
 
@@ -361,6 +345,16 @@ This project requires Python 3.9+ and the following key dependencies:
 - requests>=2.32.0
 
 See [requirements.txt](requirements.txt) for the complete list of dependencies.
+
+## Troubleshooting
+
+If you encounter any issues:
+
+1. Run the prerequisites checker: `python check_prerequisites.py`
+2. Check the error logs (usually in the console output)
+3. Verify your MongoDB connection and API keys
+4. See [INSTALLATION.md](INSTALLATION.md) for common issues and solutions
+5. Open an issue on the GitHub repository with detailed information
 
 ## Design Philosophy
 
