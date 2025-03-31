@@ -567,4 +567,12 @@ class DBRepository:
         if self.client:
             self.client.close()
             self.client = None
-            logger.info("Closed MongoDB connection")
+            # During pytest teardown, many logging handlers may already be closed
+            # Check if logger is still operational before logging
+            if logger.handlers and all(hasattr(h, 'stream') and h.stream and not h.stream.closed 
+                                      for h in logger.handlers if hasattr(h, 'stream')):
+                try:
+                    logger.info("Closed MongoDB connection")
+                except Exception:
+                    # Silently ignore any logging errors during teardown
+                    pass
