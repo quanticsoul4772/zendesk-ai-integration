@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/exxactcorp/zendesk-ai-integration/branch/main/graph/badge.svg)](https://codecov.io/gh/exxactcorp/zendesk-ai-integration)
 [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black)](https://github.com/pycqa/flake8)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-[![Version: 1.1.0](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/exxactcorp/zendesk-ai-integration/blob/main/VERSION.md)
+[![Version: 1.2.0](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/exxactcorp/zendesk-ai-integration/blob/main/VERSION.md)
 
 This application integrates Zendesk support tickets with AI services (OpenAI and Anthropic Claude) to provide automated sentiment analysis, categorization, and reporting while maintaining a read-only approach to customer tickets.
 
@@ -70,13 +70,20 @@ ZENDESK_AI_ORG=your-username SKIP_CHECKSUM_VERIFY=true python install.py
 ## Features
 
 ### AI Integration
-- **Multi-LLM Support**:
-  - **OpenAI**: Advanced GPT-4o model with GPT-3.5 Turbo fallback
-  - **Anthropic Claude**: Claude 3 models (Haiku, Sonnet) with multiple fallbacks
+- **Unified AI Architecture**:
+  - **NEW: Consolidated AI Service** - Common interface for all AI providers
+  - **Multi-LLM Support**:
+    - **OpenAI**: Advanced GPT-4o model with GPT-3.5 Turbo fallback
+    - **Anthropic Claude**: Claude 3 models (Haiku, Sonnet) with multiple fallbacks
   - Seamless switching between AI providers
-  - Automatic error handling and retry logic
+  - Automatic error handling, retry logic, and rate limit handling
+  - Robust backoff strategy with jitter
 
 ### Enhanced Sentiment Analysis
+- **Unified Sentiment Analysis**:
+  - **NEW: Provider-agnostic sentiment analysis** - Same interface for all AI models
+  - **Consistent response format** regardless of provider
+  - **Automatic priority scoring** based on weighted sentiment metrics
 - **Nuanced Analysis**:
   - Contextual examples for better sentiment classification
   - Temperature-controlled variance for nuanced analysis
@@ -347,8 +354,12 @@ The interactive menu provides:
 For more usage examples, see:
 - [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting feature
 - [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
+- [UNIFIED_AI_IMPLEMENTATION.md](docs/UNIFIED_AI_IMPLEMENTATION.md) - Unified AI architecture documentation
 
 ## Development Timeline
+
+### April 2025
+- **Apr 11:** Implemented unified AI architecture for consolidated provider interface
 
 ### March 2025
 - **Mar 12:** Initial project creation
@@ -375,6 +386,7 @@ For full commit history, see [VERSION.md](VERSION.md).
 - [INTERACTIVE_MENU.md](INTERACTIVE_MENU.md) - Interactive menu usage and features
 - [VIEW_STATUS_CHECKING.md](docs/VIEW_STATUS_CHECKING.md) - View status checking feature
 - [MULTI_VIEW_REPORTING.md](docs/MULTI_VIEW_REPORTING.md) - Improved multi-view reporting
+- [UNIFIED_AI_IMPLEMENTATION.md](docs/UNIFIED_AI_IMPLEMENTATION.md) - **NEW: Unified AI architecture documentation**
 - [TESTING.md](TESTING.md) - Testing strategy and instructions
 - [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) - Pre-commit hooks setup guide
 - [VERSION.md](VERSION.md) - Version history and release notes
@@ -398,6 +410,8 @@ The application follows the Single Responsibility Principle, with each module ha
 - `src/modules/reporters/` - Contains report generators
   
 ### AI Services
+- `src/unified_ai_service.py` - **NEW: Unified AI service with common interface**
+- `src/unified_sentiment.py` - **NEW: Consolidated sentiment analysis for all providers**
 - `src/ai_service.py` - OpenAI integration with error handling
 - `src/enhanced_sentiment.py` - Enhanced OpenAI sentiment analysis implementation
 - `src/claude_service.py` - Anthropic Claude integration with error handling
@@ -463,4 +477,4 @@ MIT
 
 ## Last Updated
 
-March 31, 2025
+April 11, 2025
