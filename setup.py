@@ -27,6 +27,12 @@ import string
 import time
 import json
 
+# Import MongoDB setup module
+try:
+    from install_mongodb import setup_mongodb_configuration
+except ImportError:
+    print("MongoDB setup module not found. Make sure install_mongodb.py is in the same directory.")
+
 # Terminal colors for better readability
 class Colors:
     GREEN = '\033[92m'
@@ -208,18 +214,10 @@ def setup_configuration():
     if ai_choice in ["2", "3"]:
         anthropic_key = getpass.getpass("Anthropic API Key: ")
     
-    # MongoDB configuration
-    print(f"\n{Colors.BOLD}MongoDB Configuration:{Colors.END}")
-    print("1. Local MongoDB (mongodb://localhost:27017)")
-    print("2. MongoDB Atlas (Cloud)")
-    mongo_choice = input("Which MongoDB setup do you want to use? (1/2): ")
-    
-    if mongo_choice == "2":
-        mongodb_uri = getpass.getpass("MongoDB Atlas URI (mongodb+srv://...): ")
-    else:
-        mongodb_uri = "mongodb://localhost:27017"
-    
-    mongodb_db_name = input("MongoDB Database Name [zendesk_analytics]: ") or "zendesk_analytics"
+    # MongoDB configuration is now handled by the specialized module
+    # We'll set default values that will be updated by the MongoDB setup function
+    mongodb_uri = "mongodb://localhost:27017"
+    mongodb_db_name = "zendesk_analytics"
     
     # Generate a secure webhook key
     webhook_key = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
@@ -244,6 +242,39 @@ def setup_configuration():
         f.write(env_content)
     
     print_status("Configuration file created successfully", "SUCCESS")
+    
+    # Handle MongoDB setup using the specialized module
+    try:
+        # Call the MongoDB setup function
+        print(f"\n{Colors.BOLD}Setting up MongoDB{Colors.END}")
+        mongodb_config = setup_mongodb_configuration()
+        
+        if mongodb_config:
+            # Update the MongoDB settings in the .env file
+            with open(env_file, "r", encoding="utf-8") as f:
+                env_content = f.read()
+            
+            # Update MongoDB URI
+            env_content = re.sub(r'MONGODB_URI=.*', f'MONGODB_URI={mongodb_config["uri"]}', env_content)
+            
+            # Update MongoDB DB name
+            env_content = re.sub(r'MONGODB_DB_NAME=.*', f'MONGODB_DB_NAME={mongodb_config["database_name"]}', env_content)
+            
+            # Write updated .env file
+            with open(env_file, "w", encoding="utf-8") as f:
+                f.write(env_content)
+                
+            print_status("MongoDB configuration updated in .env file", "SUCCESS")
+        else:
+            print_status("MongoDB setup failed or was skipped", "WARNING")
+            print("You will need to set up MongoDB manually before using the application.")
+    except ImportError:
+        print_status("MongoDB setup module not found", "WARNING")
+        print("Using basic MongoDB configuration. You may need to set up MongoDB manually.")
+    except Exception as e:
+        print_status(f"Error during MongoDB setup: {str(e)}", "WARNING")
+        print("Using basic MongoDB configuration. You may need to set up MongoDB manually.")
+    
     return True
 
 def create_run_scripts():
@@ -423,6 +454,14 @@ def main():
         print(f"  {Path('run_zendesk_ai.bat')} --mode list-views")
     else:
         print(f"  ./{Path('run_zendesk_ai.sh')} --mode list-views")
+    
+    # Add MongoDB management information if Docker was used
+    if Path("mongodb").exists():
+        print("\nTo manage your MongoDB container, use:")
+        if platform.system() == "Windows":
+            print("  mongodb.bat [start|stop|restart|status]")
+        else:
+            print("  ./mongodb.sh [start|stop|restart|status]")
     
     print("\nFor more options, refer to the README.md file.")
 

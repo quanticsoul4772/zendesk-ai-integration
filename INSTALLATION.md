@@ -11,7 +11,15 @@ Before installing the application, ensure you have the following prerequisites:
 - Python 3.9 or higher
 - pip (Python package installer)
 - Git (optional, for cloning the repository)
-- MongoDB (local or remote instance)
+
+For MongoDB, you have multiple options:
+
+1. **Docker** (recommended): The easiest way to set up MongoDB
+2. **Local MongoDB installation**: A native installation on your machine
+3. **MongoDB Atlas**: A cloud-hosted MongoDB service (no local installation needed)
+4. **Existing MongoDB installation**: Use your existing MongoDB instance
+
+The installation process will guide you through the MongoDB setup options.
 
 ## Quick Installation (Automated Setup)
 
@@ -161,9 +169,24 @@ This script will prompt you for updated values and modify your `.env` file accor
 
 #### Installing MongoDB on Windows
 
+**Option 1: Using Docker (Recommended)**
+
+1. Install Docker Desktop for Windows from [docker.com](https://www.docker.com/products/docker-desktop/)
+2. Start Docker Desktop
+3. The installation script will handle the rest
+
+**Option 2: Native Installation**
+
 1. Download MongoDB Community Server from [mongodb.com](https://www.mongodb.com/try/download/community)
 2. Run the installer with default settings
 3. MongoDB will be installed as a Windows service
+
+**Option 3: MongoDB Atlas (Cloud)**
+
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register)
+2. Follow the steps to create a free tier cluster
+3. Set up network access and database user
+4. Get your connection string for the installation process
 
 #### Setting Environment Variables on Windows
 
@@ -186,6 +209,14 @@ This script will prompt you for updated values and modify your `.env` file accor
 
 #### Installing MongoDB on macOS
 
+**Option 1: Using Docker (Recommended)**
+
+1. Install Docker Desktop for Mac from [docker.com](https://www.docker.com/products/docker-desktop/)
+2. Start Docker Desktop
+3. The installation script will handle the rest
+
+**Option 2: Native Installation with Homebrew**
+
 1. Install MongoDB with Homebrew:
    ```bash
    brew tap mongodb/brew
@@ -196,6 +227,13 @@ This script will prompt you for updated values and modify your `.env` file accor
    ```bash
    brew services start mongodb-community
    ```
+
+**Option 3: MongoDB Atlas (Cloud)**
+
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register)
+2. Follow the steps to create a free tier cluster
+3. Set up network access and database user
+4. Get your connection string for the installation process
 
 #### Setting Environment Variables on macOS
 
@@ -216,6 +254,24 @@ sudo apt install python3 python3-pip python3-venv
 
 #### Installing MongoDB on Ubuntu/Debian
 
+**Option 1: Using Docker (Recommended)**
+
+1. Install Docker using the official instructions:
+   ```bash
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sudo sh get-docker.sh
+   sudo usermod -aG docker $USER
+   ```
+
+2. Install Docker Compose:
+   ```bash
+   sudo apt-get install docker-compose-plugin
+   ```
+
+3. The installation script will handle the rest
+
+**Option 2: Native Installation**
+
 ```bash
 # Import MongoDB public GPG key
 wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
@@ -233,6 +289,13 @@ sudo apt install -y mongodb-org
 sudo systemctl start mongod
 sudo systemctl enable mongod
 ```
+
+**Option 3: MongoDB Atlas (Cloud)**
+
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register)
+2. Follow the steps to create a free tier cluster
+3. Set up network access and database user
+4. Get your connection string for the installation process
 
 #### Setting Environment Variables on Linux
 
@@ -294,7 +357,33 @@ ZENDESK_AI_ORG=your-org-name ZENDESK_AI_BRANCH=dev python install.py
 
 ## Common Issues and Solutions
 
-### MongoDB Connection Issues
+### MongoDB Setup and Connection Issues
+
+**MongoDB Docker Setup**
+
+If you chose the Docker option for MongoDB:
+- Make sure Docker is installed and running on your machine
+- You can manage your MongoDB container with the provided scripts:
+  - On Windows: `mongodb.bat [start|stop|restart|status]`
+  - On macOS/Linux: `./mongodb.sh [start|stop|restart|status]`
+- The container is configured to persist data even after restarts
+
+**Native MongoDB Installation**
+
+If you chose the native MongoDB installation:
+- Verify that MongoDB service is running
+  - Windows: Check Services application for MongoDB service
+  - macOS: Run `brew services list` to check status
+  - Linux: Run `sudo systemctl status mongod`
+
+**MongoDB Atlas Setup**
+
+If you chose MongoDB Atlas:
+- Ensure your IP is allowed in the Network Access settings
+- Verify your database user credentials
+- Test the connection string directly
+
+**General MongoDB Connection Issues**
 
 **Symptoms**: Error messages about failing to connect to MongoDB
 
@@ -303,6 +392,7 @@ ZENDESK_AI_ORG=your-org-name ZENDESK_AI_BRANCH=dev python install.py
 - Check your connection string in the `.env` file
 - For MongoDB Atlas, ensure your IP is allowed in the network access settings
 - Check that your username and password are correct
+- Run `python install_mongodb.py` to reconfigure MongoDB
 
 ### Download and Checksum Issues
 

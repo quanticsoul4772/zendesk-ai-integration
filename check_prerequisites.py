@@ -289,6 +289,33 @@ def check_dependencies():
     
     return all_ok
 
+def check_docker():
+    """Check if Docker is installed (optional)"""
+    if shutil.which("docker"):
+        try:
+            result = subprocess.run(["docker", "--version"], capture_output=True, text=True)
+            if result.returncode == 0:
+                # Check if Docker daemon is running
+                daemon_check = subprocess.run(["docker", "info"], capture_output=True, text=True)
+                if daemon_check.returncode == 0:
+                    print_status(f"Docker is installed and running: {result.stdout.strip()}", "PASS")
+                else:
+                    print_status(f"Docker is installed but not running: {result.stdout.strip()}", "WARN",
+                              "You'll need to start Docker to use the Docker-based MongoDB option.")
+                return True
+        except Exception:
+            pass
+    
+    print_status("Docker is not installed or not in PATH", "WARN",
+               "Docker is optional, but recommended for easier MongoDB setup.")
+    if platform.system() == "Windows":
+        print("  Download from: https://docs.docker.com/desktop/windows/install/")
+    elif platform.system() == "Darwin":  # macOS
+        print("  Download from: https://docs.docker.com/desktop/mac/install/")
+    elif platform.system() == "Linux":
+        print("  See: https://docs.docker.com/engine/install/")
+    return False
+
 def main():
     """Main function to run all checks"""
     print(f"\n{Colors.BOLD}Zendesk AI Integration - Prerequisites Check{Colors.END}\n")
@@ -300,6 +327,7 @@ def main():
     results["pip"] = check_pip()
     results["venv"] = check_venv()
     results["git"] = check_git()  # Optional
+    results["docker"] = check_docker()  # Optional, but helpful for MongoDB setup
     print()
     
     print(f"{Colors.BOLD}Database:{Colors.END}")

@@ -79,6 +79,17 @@ ZENDESK_AI_ORG=your-username SKIP_CHECKSUM_VERIFY=true python install.py
   - Automatic error handling, retry logic, and rate limit handling
   - Robust backoff strategy with jitter
 
+### Enhanced MongoDB Setup
+- **Multiple Setup Options**:
+  - **NEW: Docker-based MongoDB** - One-click setup with Docker and persistence
+  - **Native Installation** - Platform-specific automated installation
+  - **MongoDB Atlas** - Cloud-hosted database with guided setup
+  - **Custom Connection** - Support for existing MongoDB instances
+- **Management Tools**:
+  - MongoDB management scripts for starting/stopping/monitoring
+  - Connection verification and testing
+  - Easy reconfiguration with `configure_mongodb.py`
+
 ### Enhanced Sentiment Analysis
 - **Unified Sentiment Analysis**:
   - **NEW: Provider-agnostic sentiment analysis** - Same interface for all AI models
@@ -154,7 +165,12 @@ The project includes several automated installation options:
 
 3. **Configuration Helper**:
    ```bash
-   python configure_zendesk_ai.py  # Update configuration
+   python configure_zendesk_ai.py  # Update general configuration
+   ```
+
+4. **MongoDB Configuration Helper**:
+   ```bash
+   python configure_mongodb.py  # Set up or reconfigure MongoDB
    ```
 
 ### Manual Installation
@@ -165,11 +181,56 @@ For manual installation:
 2. Create a virtual environment: `python -m venv venv`
 3. Activate it: `.\venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Unix)
 4. Install dependencies: `pip install -r requirements.txt`
-5. Set up MongoDB database
+5. Set up MongoDB database (see [MONGODB_SETUP.md](MONGODB_SETUP.md) for options)
 6. Configure environment variables in `.env` file
 7. Set up pre-commit hooks: `pre-commit install` (see [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) for details)
 
 See [INSTALLATION.md](INSTALLATION.md) for detailed OS-specific instructions for Windows, macOS, and Linux.
+
+## MongoDB Setup
+
+The application now supports multiple MongoDB setup options:
+
+### Docker-based MongoDB (Recommended)
+```bash
+python configure_mongodb.py
+# Choose option 1: Use Docker
+```
+- One-click setup with Docker Compose
+- Data persistence with volumes
+- Automatic authentication setup
+- Management scripts provided (mongodb.bat/mongodb.sh)
+
+### Native Installation
+```bash
+python configure_mongodb.py
+# Choose option 2: Install MongoDB locally
+```
+- Automates platform-specific installation
+- Windows: MSI installation with service setup
+- macOS: Homebrew installation
+- Linux: Repository setup and package installation
+
+### MongoDB Atlas (Cloud)
+```bash
+python configure_mongodb.py
+# Choose option 3: Use MongoDB Atlas
+```
+- No local installation required
+- Free tier available for development
+- Guided setup process
+- Connection testing and validation
+
+### Custom Connection
+```bash
+python configure_mongodb.py
+# Choose option 4: Use existing MongoDB installation
+```
+- Connect to an existing MongoDB instance
+- Support for authentication
+- Connection verification
+
+For detailed information, see [MONGODB_SETUP.md](MONGODB_SETUP.md).
 
 ## Configuration
 
@@ -213,6 +274,26 @@ python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 ## Usage
+
+### MongoDB Management (Docker Setup)
+
+If you've set up MongoDB using Docker, you can manage it with the provided scripts:
+
+**Windows**:
+```
+mongodb.bat start    # Start the MongoDB container
+mongodb.bat stop     # Stop the MongoDB container
+mongodb.bat restart  # Restart the MongoDB container
+mongodb.bat status   # Check the MongoDB container status
+```
+
+**macOS/Linux**:
+```
+./mongodb.sh start    # Start the MongoDB container
+./mongodb.sh stop     # Stop the MongoDB container
+./mongodb.sh restart  # Restart the MongoDB container
+./mongodb.sh status   # Check the MongoDB container status
+```
 
 ### Sentiment Analysis with Claude or OpenAI
 
@@ -355,11 +436,13 @@ For more usage examples, see:
 - [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting feature
 - [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
 - [UNIFIED_AI_IMPLEMENTATION.md](docs/UNIFIED_AI_IMPLEMENTATION.md) - Unified AI architecture documentation
+- [MONGODB_SETUP.md](MONGODB_SETUP.md) - **NEW: MongoDB setup options and management**
 
 ## Development Timeline
 
 ### April 2025
 - **Apr 11:** Implemented unified AI architecture for consolidated provider interface
+- **Apr 11:** Added enhanced MongoDB setup with Docker, native installation, and MongoDB Atlas options
 
 ### March 2025
 - **Mar 12:** Initial project creation
@@ -377,6 +460,7 @@ For full commit history, see [VERSION.md](VERSION.md).
 
 - [README.md](README.md) - Main documentation
 - [INSTALLATION.md](INSTALLATION.md) - Detailed installation instructions for all platforms
+- [MONGODB_SETUP.md](MONGODB_SETUP.md) - **NEW: MongoDB setup options and management**
 - [WEBHOOK_SETUP.md](WEBHOOK_SETUP.md) - Webhook configuration instructions
 - [REPORTING.md](REPORTING.md) - Detailed reporting documentation
 - [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting documentation
@@ -386,7 +470,7 @@ For full commit history, see [VERSION.md](VERSION.md).
 - [INTERACTIVE_MENU.md](INTERACTIVE_MENU.md) - Interactive menu usage and features
 - [VIEW_STATUS_CHECKING.md](docs/VIEW_STATUS_CHECKING.md) - View status checking feature
 - [MULTI_VIEW_REPORTING.md](docs/MULTI_VIEW_REPORTING.md) - Improved multi-view reporting
-- [UNIFIED_AI_IMPLEMENTATION.md](docs/UNIFIED_AI_IMPLEMENTATION.md) - **NEW: Unified AI architecture documentation**
+- [UNIFIED_AI_IMPLEMENTATION.md](docs/UNIFIED_AI_IMPLEMENTATION.md) - Unified AI architecture documentation
 - [TESTING.md](TESTING.md) - Testing strategy and instructions
 - [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) - Pre-commit hooks setup guide
 - [VERSION.md](VERSION.md) - Version history and release notes
@@ -422,6 +506,8 @@ The application follows the Single Responsibility Principle, with each module ha
 - `install.py` - Universal installer script with checksum verification and retry capabilities
 - `check_prerequisites.py` - System requirements checker
 - `setup.py` - Guided installation and configuration script
+- `install_mongodb.py` - **NEW: MongoDB installation and setup module**
+- `configure_mongodb.py` - **NEW: Standalone MongoDB configuration tool**
 - `test_download_logic.py` - Test script for verifying download functionality
 - `update_checksums.py` - Utility for updating file checksums when repository files change
 
@@ -435,6 +521,10 @@ This project requires Python 3.9+ and the following key dependencies:
 - flask>=3.0.0
 - requests>=2.32.0
 
+For the Docker-based MongoDB setup, you'll need:
+- Docker
+- Docker Compose (included with Docker Desktop on Windows and macOS)
+
 See [requirements.txt](requirements.txt) for the complete list of dependencies.
 
 ## Troubleshooting
@@ -445,7 +535,27 @@ If you encounter any issues:
 2. Check the error logs (usually in the console output)
 3. Verify your MongoDB connection and API keys
 4. See [INSTALLATION.md](INSTALLATION.md) for common issues and solutions
-5. Open an issue on the GitHub repository with detailed information
+5. See [MONGODB_SETUP.md](MONGODB_SETUP.md) for MongoDB-specific issues
+6. Open an issue on the GitHub repository with detailed information
+
+### MongoDB Connection Issues
+
+If you encounter MongoDB connection issues:
+
+1. **Docker Setup**: 
+   - Check if the container is running: `mongodb.bat status` or `./mongodb.sh status`
+   - View container logs: `docker logs zendesk_ai_mongodb`
+   - Restart the container: `mongodb.bat restart` or `./mongodb.sh restart`
+
+2. **Native Installation**:
+   - Verify the service is running
+   - Check MongoDB logs for errors
+   - Reconfigure with `python configure_mongodb.py`
+
+3. **MongoDB Atlas**:
+   - Verify your IP is allowed in Network Access settings
+   - Check database user credentials
+   - Test connection string directly
 
 ### Download and Checksum Issues
 
