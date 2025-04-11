@@ -19,27 +19,24 @@ logger = logging.getLogger(__name__)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def fix_multi_view_mode_reporter_init(args, format_arg, db_repository):
+def get_sentiment_reporter(format_arg="enhanced", db_repository=None):
     """
-    Fixed function to initialize the appropriate reporter based on format
-    without causing TypeError when using SentimentReporter
+    Get a unified sentiment reporter instance with the appropriate format setting.
     
     Args:
-        args: Command line arguments
         format_arg: Format to use ("enhanced" or "standard")
         db_repository: Database repository instance
         
     Returns:
         Initialized reporter instance
     """
-    if format_arg == "enhanced":
-        from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
-        # EnhancedSentimentReporter accepts db_repository parameter
-        return EnhancedSentimentReporter(db_repository)
-    else:
-        from modules.reporters.sentiment_report import SentimentReporter
-        # SentimentReporter does not accept parameters
-        return SentimentReporter()
+    from modules.reporters import SentimentReporter
+    
+    # Determine the mode based on format_arg
+    enhanced_mode = format_arg == "enhanced"
+    
+    # Create the reporter with the appropriate settings
+    return SentimentReporter(db_repository=db_repository, enhanced_mode=enhanced_mode)
 class CommandLineInterface:
     """
     Handles parsing command-line arguments and executing the appropriate actions.
@@ -321,10 +318,10 @@ class CommandLineInterface:
                 logger.warning("PendingReporter module not available")
             
             try:
-                from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
-                report_modules["sentiment_enhanced"] = EnhancedSentimentReporter()
+                from modules.reporters import SentimentReporter
+                report_modules["sentiment"] = SentimentReporter(db_repository=db_repository, enhanced_mode=True)
             except ImportError:
-                logger.warning("EnhancedSentimentReporter module not available")
+                logger.warning("SentimentReporter module not available")
             
             # Initialize the menu system with all available components
             menu = ZendeskMenuActions(
@@ -352,8 +349,8 @@ class CommandLineInterface:
         # Save args for access in _generate_multi_view_report
         self.args = args
         
-        # Determine which reporter to use based on format
-        reporter = fix_multi_view_mode_reporter_init(args, args.format, db_repository)
+        # Get a sentiment reporter instance with the appropriate format
+        reporter = get_sentiment_reporter(format_arg=args.format, db_repository=db_repository)
         """Handle multi-view mode: analyze tickets from multiple views."""
         # Reporter already initialized
         
@@ -458,11 +455,11 @@ class CommandLineInterface:
     def _handle_multi_view_names_mode(self, args, zendesk_client, ai_analyzer, db_repository, 
                                     report_modules, use_enhanced, use_claude):
         """Handle multi-view mode with view names instead of IDs."""
-        # Import the sentiment reporter for multi-view reporting
-        from modules.reporters.sentiment_report import SentimentReporter
+        # Import the unified sentiment reporter for multi-view reporting
+        from modules.reporters import SentimentReporter
         
-        # Initialize the reporter without parameters
-        sentiment_reporter = SentimentReporter()
+        # Initialize the reporter with appropriate settings
+        sentiment_reporter = SentimentReporter(db_repository=db_repository, enhanced_mode=(args.format == "enhanced"))
         
         # Get view names from the view-names argument
         if args.view_names:
@@ -536,13 +533,11 @@ class CommandLineInterface:
     
     def _generate_multi_view_report(self, analyses, view_map, title, reporter=None, zendesk_client=None, ai_analyzer=None, db_repository=None):
         """Generate a report for tickets from multiple views."""
-        # Determine which reporter to use based on format
-        if hasattr(self, 'args') and getattr(self.args, 'format', 'standard') == 'enhanced':
-            from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
-            reporter = EnhancedSentimentReporter()
-        else:
-            from modules.reporters.sentiment_report import SentimentReporter
-            reporter = SentimentReporter()
+        # If no reporter is provided, initialize a new one based on format
+        if reporter is None:
+            from modules.reporters import SentimentReporter
+            enhanced_mode = hasattr(self, 'args') and getattr(self.args, 'format', 'standard') == 'enhanced'
+            reporter = SentimentReporter(db_repository=db_repository, enhanced_mode=enhanced_mode)
         """
         Generate a report for tickets from multiple views.
         
@@ -554,12 +549,8 @@ class CommandLineInterface:
         Returns:
             Formatted report text
         """
-        from modules.reporters.sentiment_report import SentimentReporter
-        
         if not analyses:
             return "No analyses found for reporting."
-        
-        # Reporter already initialized
         
         # Group analyses by view
         view_analyses = {}
@@ -906,13 +897,9 @@ class CommandLineInterface:
     
     def _handle_sentiment_mode(self, args, zendesk_client, ai_analyzer, db_repository, report_modules, use_enhanced=True, use_claude=True):
         """Handle 'sentiment' mode: generate sentiment analysis reports."""
-        # Import appropriate reporter based on format
-        if args.format == "enhanced":
-            from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
-            reporter = report_modules.get('sentiment_enhanced') or EnhancedSentimentReporter()
-        else:
-            from modules.reporters.sentiment_report import SentimentReporter
-            reporter = report_modules.get('sentiment') or SentimentReporter()
+        # Initialize the unified sentiment reporter with appropriate format
+        from modules.reporters import SentimentReporter
+        reporter = SentimentReporter(db_repository=db_repository, enhanced_mode=(args.format == "enhanced"))
         """Handle 'sentiment' mode: generate sentiment analysis reports."""
         # Check if multi-view support is requested
         if args.views or args.view_names:
