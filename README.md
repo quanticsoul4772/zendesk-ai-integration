@@ -1,10 +1,10 @@
 # Zendesk AI Integration
 
-[![Python Tests](https://github.com/exxactcorp/zendesk-ai-integration/actions/workflows/python-tests.yml/badge.svg)](https://github.com/exxactcorp/zendesk-ai-integration/actions/workflows/python-tests.yml)
-[![codecov](https://codecov.io/gh/exxactcorp/zendesk-ai-integration/branch/main/graph/badge.svg)](https://codecov.io/gh/exxactcorp/zendesk-ai-integration)
+[![Python Tests](https://github.com/quanticsoul4772/zendesk-ai-integration/actions/workflows/python-tests.yml/badge.svg)](https://github.com/quanticsoul4772/zendesk-ai-integration/actions/workflows/python-tests.yml)
+[![codecov](https://codecov.io/gh/quanticsoul4772/zendesk-ai-integration/branch/main/graph/badge.svg)](https://codecov.io/gh/quanticsoul4772/zendesk-ai-integration)
 [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black)](https://github.com/pycqa/flake8)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-[![Version: 1.2.0](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/exxactcorp/zendesk-ai-integration/blob/main/VERSION.md)
+[![Version: 1.2.0](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/quanticsoul4772/zendesk-ai-integration/blob/main/VERSION.md)
 
 This application integrates Zendesk support tickets with AI services (OpenAI and Anthropic Claude) to provide automated sentiment analysis, categorization, and reporting while maintaining a read-only approach to customer tickets.
 
@@ -16,7 +16,7 @@ Run the universal installer script which works on Windows, macOS, and Linux:
 
 ```bash
 # Download the installer
-curl -o install.py https://raw.githubusercontent.com/exxactcorp/zendesk-ai-integration/main/install.py
+curl -o install.py https://raw.githubusercontent.com/quanticsoul4772/zendesk-ai-integration/main/install.py
 
 # Run the installer
 python install.py
@@ -52,7 +52,7 @@ The installer supports several environment variables for customization:
 
 | Variable | Description | Default |
 |----------|-------------|--------|
-| `ZENDESK_AI_ORG` | GitHub organization name | `exxactcorp` |
+| `ZENDESK_AI_ORG` | GitHub organization name | `quanticsoul4772` |
 | `ZENDESK_AI_REPO` | GitHub repository name | `zendesk-ai-integration` |
 | `ZENDESK_AI_BRANCH` | GitHub branch name | `main` |
 | `SKIP_CHECKSUM_VERIFY` | Skip checksum verification | `false` |
