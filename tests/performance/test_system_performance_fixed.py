@@ -1,8 +1,7 @@
 """
-System Performance Tests
+System Performance Tests (Fixed)
 
-End-to-end performance tests that measure the performance of the entire system
-under realistic workloads. These tests combine components to measure real-world performance.
+End-to-end performance tests that correctly detect psutil and run with proper imports.
 """
 
 import pytest
@@ -16,12 +15,10 @@ from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
 import uuid
 
-# Try to import psutil, but don't fail if it's not available
+# Skip the entire module if psutil is not available
 try:
     import psutil
-    HAS_PSUTIL = True
 except ImportError:
-    HAS_PSUTIL = False
     pytest.skip("psutil not available, skipping performance tests", allow_module_level=True)
 
 # Add the project root to the path
@@ -31,15 +28,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from src.modules.batch_processor import BatchProcessor
 from src.modules.cache_manager import ZendeskCache
 from src.modules.db_repository import DBRepository
-# Import the correct class name
 from src.modules.ai_analyzer import AIAnalyzer
 
-# Mark tests that require psutil
-pytestmark = pytest.mark.skipif(not HAS_PSUTIL, reason="psutil not installed")
-
-
 @pytest.mark.integration
-class TestSystemPerformance:
+class TestSystemPerformanceFixed:
     """End-to-end performance tests for the system."""
     
     @pytest.fixture
@@ -128,83 +120,130 @@ class TestSystemPerformance:
     
     def test_end_to_end_processing(self, mock_tickets, analyzer_system):
         """Test end-to-end performance of the ticket analysis pipeline."""
-        # Skip if psutil is not available
-        if not HAS_PSUTIL:
-            pytest.skip("psutil not installed")
-            
         cache = analyzer_system["cache"]
         db_repo = analyzer_system["db_repo"]
         analyzer = analyzer_system["analyzer"]
         batch_processor = analyzer_system["batch_processor"]
         
-        # Only run a minimal configuration for faster tests
-        configuration = {"workers": 2, "batch_size": 5}
+        # Measure performance for different batch configurations
+        configurations = [
+            {"workers": 1, "batch_size": 10},
+            {"workers": 4, "batch_size": 10}
+        ]
         
-        # Configure the batch processor
-        batch_processor.max_workers = configuration["workers"]
-        batch_processor.batch_size = configuration["batch_size"]
+        results = {}
         
-        # Clear the cache before each run
-        cache.clear_all()
+        for config in configurations:
+            # Configure the batch processor
+            batch_processor.max_workers = config["workers"]
+            batch_processor.batch_size = config["batch_size"]
+            
+            # Clear the cache before each run
+            cache.clear_all()
+            
+            # Reset mock counters
+            analyzer.analyze_ticket.reset_mock()
+            db_repo.save_analysis.reset_mock()
+            
+            # Define the processing function
+            def process_ticket(ticket):
+                # First check cache
+                cache_key = f"ticket_analysis_{ticket.id}"
+                cached_result = cache.get_tickets(cache_key)
+                
+                if cached_result:
+                    return cached_result
+                
+                # If not in cache, analyze and store
+                result = analyzer.analyze_ticket(ticket)
+                
+                # Save to database
+                db_repo.save_analysis(result)
+                
+                # Update cache
+                cache.set_tickets(cache_key, result)
+                
+                return result
+            
+            # Run the batch process with a small number of tickets for testing
+            test_tickets = mock_tickets[:10]
+            
+            # Run the batch process
+            start_time = time.time()
+            processed_results = batch_processor.process_batch(test_tickets, process_ticket)
+            end_time = time.time()
+            
+            # Calculate performance metrics
+            total_time = end_time - start_time
+            tickets_per_second = len(processed_results) / total_time
+            
+            # Track API calls and DB writes
+            api_calls = analyzer.analyze_ticket.call_count
+            db_writes = db_repo.save_analysis.call_count
+            
+            # Store results
+            config_key = f"Workers: {config['workers']}, Batch: {config['batch_size']}"
+            results[config_key] = {
+                "total_time": total_time,
+                "tickets_per_second": tickets_per_second,
+                "api_calls": api_calls,
+                "db_writes": db_writes
+            }
+            
+            # Print current configuration results
+            print(f"\nConfiguration: {config_key}")
+            print(f"  Total processing time: {total_time:.2f} seconds")
+            print(f"  Tickets processed per second: {tickets_per_second:.2f}")
+            print(f"  API calls made: {api_calls}")
+            print(f"  Database writes: {db_writes}")
+        
+        # Run a second pass with cache populated
+        # Pick the best configuration from the first run
+        best_config = max(results.items(), key=lambda x: x[1]["tickets_per_second"])
+        best_config_key = best_config[0]
+        
+        config = {
+            "workers": int(best_config_key.split(",")[0].split(":")[1].strip()),
+            "batch_size": int(best_config_key.split(",")[1].split(":")[1].strip())
+        }
+        
+        # Configure the batch processor with the best config
+        batch_processor.max_workers = config["workers"]
+        batch_processor.batch_size = config["batch_size"]
         
         # Reset mock counters
         analyzer.analyze_ticket.reset_mock()
         db_repo.save_analysis.reset_mock()
         
-        # Use only a small subset of tickets for faster testing
-        test_tickets = mock_tickets[:10]
-        
-        # Define the processing function
-        def process_ticket(ticket):
-            # First check cache
-            cache_key = f"ticket_analysis_{ticket.id}"
-            cached_result = cache.get_tickets(cache_key)
-            
-            if cached_result:
-                return cached_result
-            
-            # If not in cache, analyze and store
-            result = analyzer.analyze_ticket(ticket)
-            
-            # Save to database
-            db_repo.save_analysis(result)
-            
-            # Update cache
-            cache.set_tickets(cache_key, result)
-            
-            return result
-        
-        # Run the batch process
+        # Run the batch process again (now with cache hits)
         start_time = time.time()
         processed_results = batch_processor.process_batch(test_tickets, process_ticket)
         end_time = time.time()
         
-        # Calculate performance metrics
-        total_time = end_time - start_time
-        tickets_per_second = len(processed_results) / total_time
-        
-        # Verify results are returned
-        assert len(processed_results) > 0, "Batch processing should return results"
-        
-        # Track API calls and DB writes
-        api_calls = analyzer.analyze_ticket.call_count
-        db_writes = db_repo.save_analysis.call_count
-        
-        # Run the process again - should use cache
-        analyzer.analyze_ticket.reset_mock()
-        db_repo.save_analysis.reset_mock()
-        
-        start_time_cached = time.time()
-        processed_results_cached = batch_processor.process_batch(test_tickets, process_ticket)
-        end_time_cached = time.time()
-        
-        # Calculate cache metrics
-        total_time_cached = end_time_cached - start_time_cached
+        # Calculate cache performance metrics
+        total_time_cached = end_time - start_time
+        tickets_per_second_cached = len(processed_results) / total_time_cached
         api_calls_second_run = analyzer.analyze_ticket.call_count
+        db_writes_second_run = db_repo.save_analysis.call_count
         
-        # Calculate cache hit ratio
+        # Calculate cache effectiveness
         cache_hit_ratio = 1.0 - (api_calls_second_run / len(test_tickets))
         
-        # Compare first and second runs
+        # Compare speeds
+        if total_time_cached > 0:
+            speed_improvement = best_config[1]["total_time"] / total_time_cached
+        else:
+            speed_improvement = float('inf')
+        
+        # Print results of cached run
+        print(f"\nRunning second pass with populated cache using best configuration: {best_config_key}")
+        print(f"  Total processing time with cache: {total_time_cached:.2f} seconds")
+        print(f"  Tickets processed per second with cache: {tickets_per_second_cached:.2f}")
+        print(f"  API calls made: {api_calls_second_run}")
+        print(f"  Database writes: {db_writes_second_run}")
+        print(f"  Cache hit ratio: {cache_hit_ratio:.2%}")
+        print(f"  Speed improvement with cache: {speed_improvement:.2f}x")
+        
+        # Assert that caching provides benefits
         assert cache_hit_ratio > 0.9, "Cache hit ratio should be at least 90%"
-        assert total_time_cached < total_time, "Cached run should be faster"
+        assert speed_improvement > 1.5, "Caching should provide at least 50% speed improvement"

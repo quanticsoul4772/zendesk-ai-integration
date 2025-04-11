@@ -562,6 +562,168 @@ class DBRepository:
         logger.error(f"Failed to update document after {max_retries} attempts")
         return None
         
+    def find_analyses_for_view(self, view_id: int, start_date: datetime, end_date: datetime, max_retries: int = 3) -> List[Dict[str, Any]]:
+        """
+        Find ticket analyses for a specific view between two dates.
+        
+        Args:
+            view_id: The Zendesk view ID
+            start_date: The start date for the query
+            end_date: The end date for the query
+            max_retries: Maximum number of retry attempts
+            
+        Returns:
+            List of analysis documents for the specified view
+        """
+        # Check if collection is available
+        if self.collection is None:
+            logger.error("MongoDB collection is not available")
+            return []
+            
+        # Implement retry pattern for cloud database resilience
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # Query for analyses that match the view_id and are within the date range
+                cursor = self.collection.find({
+                    "timestamp": {
+                        "$gte": start_date,
+                        "$lte": end_date
+                    },
+                    "source_view_id": view_id
+                })
+                # Immediately convert to list to ensure we've retrieved all data before returning
+                return list(cursor)
+            except Exception as e:
+                retry_count += 1
+                
+                # Check for specific Atlas errors
+                error_str = str(e).lower()
+                if "timeout" in error_str or "connection" in error_str:
+                    logger.warning(f"MongoDB query error (attempt {retry_count}/{max_retries}): {e}")
+                    
+                    # Wait before retrying (with exponential backoff)
+                    time.sleep(2 ** retry_count)  # 2, 4, 8 seconds between retries
+                else:
+                    # Don't retry on non-connection errors
+                    logger.error(f"Error querying analyses for view: {e}")
+                    return []
+        
+        # If we've exhausted all retries
+        logger.error(f"Failed to query documents for view {view_id} after {max_retries} attempts")
+        return []
+        
+    def get_user_preferences(self, user_id: str = "default", max_retries: int = 3) -> Dict[str, Any]:
+        """
+        Get user preferences from the database.
+        
+        Args:
+            user_id: The user ID (default: "default")
+            max_retries: Maximum number of retry attempts
+            
+        Returns:
+            Dictionary with user preferences
+        """
+        # Check if database is available
+        if self.db is None:
+            logger.error("MongoDB database is not available")
+            return {}
+            
+        # Get or create preferences collection
+        preferences_collection = self.db.get_collection("user_preferences")
+        
+        # Implement retry pattern for cloud database resilience
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # Find the user preferences document
+                preferences = preferences_collection.find_one({"user_id": user_id})
+                
+                # If no preferences exist, return empty dict
+                if preferences is None:
+                    return {}
+                    
+                # Remove _id field before returning
+                if "_id" in preferences:
+                    preferences.pop("_id")
+                    
+                return preferences
+            except Exception as e:
+                retry_count += 1
+                
+                # Check for specific Atlas errors
+                error_str = str(e).lower()
+                if "timeout" in error_str or "connection" in error_str:
+                    logger.warning(f"MongoDB query error (attempt {retry_count}/{max_retries}): {e}")
+                    
+                    # Wait before retrying (with exponential backoff)
+                    time.sleep(2 ** retry_count)  # 2, 4, 8 seconds between retries
+                else:
+                    # Don't retry on non-connection errors
+                    logger.error(f"Error getting user preferences: {e}")
+                    return {}
+        
+        # If we've exhausted all retries
+        logger.error(f"Failed to get user preferences after {max_retries} attempts")
+        return {}
+        
+    def update_user_preferences(self, preferences: Dict[str, Any], user_id: str = "default", max_retries: int = 3) -> bool:
+        """
+        Update user preferences in the database.
+        
+        Args:
+            preferences: Dictionary with user preferences
+            user_id: The user ID (default: "default")
+            max_retries: Maximum number of retry attempts
+            
+        Returns:
+            Boolean indicating success
+        """
+        # Check if database is available
+        if self.db is None:
+            logger.error("MongoDB database is not available")
+            return False
+            
+        # Get or create preferences collection
+        preferences_collection = self.db.get_collection("user_preferences")
+        
+        # Add user_id to preferences
+        preferences["user_id"] = user_id
+        
+        # Implement retry pattern for cloud database resilience
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # Update the user preferences document (upsert creates if not exists)
+                result = preferences_collection.update_one(
+                    {"user_id": user_id},
+                    {"$set": preferences},
+                    upsert=True
+                )
+                
+                return True
+            except Exception as e:
+                retry_count += 1
+                
+                # Check for specific Atlas errors
+                error_str = str(e).lower()
+                if "timeout" in error_str or "connection" in error_str:
+                    logger.warning(f"MongoDB update error (attempt {retry_count}/{max_retries}): {e}")
+                    
+                    # Wait before retrying (with exponential backoff)
+                    time.sleep(2 ** retry_count)  # 2, 4, 8 seconds between retries
+                else:
+                    # Don't retry on non-connection errors
+                    logger.error(f"Error updating user preferences: {e}")
+                    return False
+        
+        # If we've exhausted all retries
+        logger.error(f"Failed to update user preferences after {max_retries} attempts")
+        return False
+                
     def close(self):
         """Close the database connection."""
         if self.client:

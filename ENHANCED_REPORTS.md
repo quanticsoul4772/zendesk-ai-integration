@@ -118,6 +118,8 @@ motherboard: 8 tickets (11.9%)
 network: 5 tickets (7.5%)
 ```
 
+This section provides a quick overview of which hardware components are causing the most support issues, helping teams identify patterns and potential systematic problems.
+
 ### 6. Business Impact Tickets
 
 The enhanced report now clearly identifies business impact tickets with explanations:
@@ -132,6 +134,37 @@ These tickets have critical business impact that may affect production systems, 
 #26860 - RMA33756-C | RMA Request for ZD26455 - 4622117819
   Impact: System crashes and GPU failure are impacting productivity and could lead to potential revenue loss if not resolved quickly
 ```
+
+### 7. Enhanced High Priority Tickets Display
+
+The latest version shows up to 10 high-priority tickets (increased from 5) with detailed information:
+
+```
+HIGH PRIORITY TICKETS
+--------------------
+Found 62 high priority tickets (priority 7-10)
+
+#26572 - Server Hardware Issues.
+  Priority: 9/10 - Critical Priority (Urgent action needed, significant business impact)
+  Sentiment: Negative
+  Urgency: 5/5 - Critical emergency with major business impact
+  Frustration: 4/5 - Highly frustrated
+  Business Impact: Production system completely down, losing critical Splunk indexers for a classified network
+  Emotions: anger, frustration, worry
+  Component: motherboard
+  Category: hardware_issue
+
+#27993 - Re: [Exxact Corporation] Ticket #26415 - Re: Consistent Machine Freezing Issue
+  Priority: 9/10 - Critical Priority (Urgent action needed, significant business impact)
+  Sentiment: Negative
+  Urgency: 4/5 - Serious issues requiring prompt resolution
+  Frustration: 5/5 - Extremely frustrated
+  Business Impact: Production system down, significant productivity loss, risk of missing deadlines and contract obligations
+  Emotions: anger, frustration, urgency
+  Category: hardware_issue
+```
+
+This expanded section gives support teams more visibility into critical issues that require immediate attention.
 
 ## Usage
 
@@ -162,9 +195,16 @@ The enhanced reporting provides several benefits:
 2. **Better Prioritization**: The executive summary and reorganized data help focus on the most critical issues
 3. **Actionable Insights**: Percentage values and contextual information help identify trends
 4. **Improved Communication**: Descriptive labels make it easier to discuss findings with non-technical stakeholders
+5. **Hardware Trend Analysis**: The component breakdown helps identify recurring hardware issues
+6. **Comprehensive High Priority View**: With up to 10 high-priority tickets displayed, nothing critical is missed
 
 ## Implementation Details
 
 The enhanced reporting is implemented in the `EnhancedSentimentReporter` class, which extends the functionality of the regular `SentimentReporter` class.
 
 The enhanced reporter shares the same methods and functionality but adds descriptive labels, contextual information, and reorganizes data for better clarity.
+
+The latest improvements include:
+- Component analysis with the `_extract_components` method
+- Extended high-priority ticket display (10 tickets instead of 5)
+- Better formatting of percentage values and metrics

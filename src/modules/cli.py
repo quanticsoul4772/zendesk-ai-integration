@@ -18,6 +18,28 @@ logger = logging.getLogger(__name__)
 # Add the parent directory to the Python path for module imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
+def fix_multi_view_mode_reporter_init(args, format_arg, db_repository):
+    """
+    Fixed function to initialize the appropriate reporter based on format
+    without causing TypeError when using SentimentReporter
+    
+    Args:
+        args: Command line arguments
+        format_arg: Format to use ("enhanced" or "standard")
+        db_repository: Database repository instance
+        
+    Returns:
+        Initialized reporter instance
+    """
+    if format_arg == "enhanced":
+        from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
+        # EnhancedSentimentReporter accepts db_repository parameter
+        return EnhancedSentimentReporter(db_repository)
+    else:
+        from modules.reporters.sentiment_report import SentimentReporter
+        # SentimentReporter does not accept parameters
+        return SentimentReporter()
 class CommandLineInterface:
     """
     Handles parsing command-line arguments and executing the appropriate actions.
@@ -32,7 +54,7 @@ class CommandLineInterface:
         """Set up command-line arguments."""
         self.parser.add_argument(
             "--mode", 
-            choices=["run", "webhook", "schedule", "summary", "report", "pending", "list-views", "sentiment", "multi-view"], 
+            choices=["run", "webhook", "schedule", "summary", "report", "pending", "list-views", "sentiment", "multi-view", "interactive"], 
             default="run",
             help="Operation mode"
         )
@@ -185,7 +207,7 @@ class CommandLineInterface:
                 return self._handle_report_mode(args, zendesk_client, report_modules)
                 
             elif args.mode == "pending":
-                return self._handle_pending_mode(args, zendesk_client, report_modules)
+                return self._handle_pending_mode(args, zendesk_client, report_modules, db_repository)
                 
             elif args.mode == "list-views":
                 return self._handle_list_views_mode(args, zendesk_client)
@@ -195,6 +217,9 @@ class CommandLineInterface:
                 
             elif args.mode == "multi-view":
                 return self._handle_multi_view_mode(args, zendesk_client, ai_analyzer, db_repository, report_modules, use_enhanced, use_claude)
+                
+            elif args.mode == "interactive":
+                return self._handle_interactive_mode(args, zendesk_client, db_repository)
                 
             else:
                 logger.error(f"Unknown mode: {args.mode}")
@@ -273,6 +298,53 @@ class CommandLineInterface:
             logger.info(f"Processed {len(analyses)} tickets using batch processing. Done.")
         
         return True
+        
+    def _handle_interactive_mode(self, args, zendesk_client, db_repository):
+        """Handle 'interactive' mode: show interactive menu for view navigation."""
+        # Import the menu system
+        try:
+            from modules.menu.menu_actions import ZendeskMenuActions
+            logger.info("Starting interactive menu mode...")
+            
+            # Check if required components are available for full functionality
+            from modules import ai_analyzer as ai_module
+            ai_analyzer = None
+            if hasattr(ai_module, 'AIAnalyzer'):
+                ai_analyzer = ai_module.AIAnalyzer()
+            
+            # Get report modules
+            report_modules = {}
+            try:
+                from modules.reporters.pending_report import PendingReporter
+                report_modules["pending"] = PendingReporter()
+            except ImportError:
+                logger.warning("PendingReporter module not available")
+            
+            try:
+                from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
+                report_modules["sentiment_enhanced"] = EnhancedSentimentReporter()
+            except ImportError:
+                logger.warning("EnhancedSentimentReporter module not available")
+            
+            # Initialize the menu system with all available components
+            menu = ZendeskMenuActions(
+                zendesk_client=zendesk_client,
+                ai_analyzer=ai_analyzer,
+                db_repository=db_repository,
+                report_modules=report_modules
+            )
+            
+            # Start the menu
+            menu.start()
+            return True
+        except ImportError as e:
+            logger.error(f"Error importing menu module: {e}")
+            print("\nThe interactive menu requires additional dependencies.")
+            print("Please install the required package with: pip install simple-term-menu\n")
+            return False
+        except Exception as e:
+            logger.exception(f"Error in interactive menu: {e}")
+            return False
     
     def _handle_multi_view_mode(self, args, zendesk_client, ai_analyzer, db_repository, 
                                report_modules, use_enhanced, use_claude):
@@ -281,24 +353,23 @@ class CommandLineInterface:
         self.args = args
         
         # Determine which reporter to use based on format
-        if args.format == "enhanced":
-            from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
-            reporter = EnhancedSentimentReporter(db_repository)
-        else:
-            from modules.reporters.sentiment_report import SentimentReporter
-            reporter = SentimentReporter(db_repository)
+        reporter = fix_multi_view_mode_reporter_init(args, args.format, db_repository)
         """Handle multi-view mode: analyze tickets from multiple views."""
         # Reporter already initialized
         
         # Get view IDs from the views argument
         if args.views:
             view_ids = [int(view_id.strip()) for view_id in args.views.split(",") if view_id.strip()]
+        elif args.view_names:
+            # If view names are provided, use the multi-view-names handler instead
+            return self._handle_multi_view_names_mode(args, zendesk_client, ai_analyzer, db_repository, 
+                                                  report_modules, use_enhanced, use_claude)
         elif args.mode == "multi-view":
-            logger.error("No views specified. Use --views parameter with comma-separated view IDs")
+            logger.error("No views specified. Use --views parameter with comma-separated view IDs or --view-names with comma-separated view names")
             return False
         else:
             # Called from run mode without views parameter
-            logger.error("No views specified. Use --views parameter with comma-separated view IDs")
+            logger.error("No views specified. Use --views parameter with comma-separated view IDs or --view-names with comma-separated view names")
             return False
             
         logger.info(f"Analyzing tickets from {len(view_ids)} views: {view_ids}")
@@ -364,7 +435,7 @@ class CommandLineInterface:
         
         # Generate a multi-view report
         title = f"Multi-View Sentiment Analysis Report"
-        report = self._generate_multi_view_report(analyses, view_map, title)
+        report = self._generate_multi_view_report(analyses, view_map, title, reporter, zendesk_client, ai_analyzer, db_repository)
         
         # Output the report
         print(report)
@@ -390,8 +461,8 @@ class CommandLineInterface:
         # Import the sentiment reporter for multi-view reporting
         from modules.reporters.sentiment_report import SentimentReporter
         
-        # Initialize the reporter
-        sentiment_reporter = SentimentReporter(db_repository)
+        # Initialize the reporter without parameters
+        sentiment_reporter = SentimentReporter()
         
         # Get view names from the view-names argument
         if args.view_names:
@@ -443,7 +514,7 @@ class CommandLineInterface:
             if 'source_view_id' in analysis and 'source_view_name' in analysis:
                 view_map[analysis['source_view_id']] = analysis['source_view_name']
         
-        report = self._generate_multi_view_report(analyses, view_map, title)
+        report = self._generate_multi_view_report(analyses, view_map, title, reporter, zendesk_client, ai_analyzer, db_repository)
         
         # Output the report
         print(report)
@@ -463,7 +534,7 @@ class CommandLineInterface:
         
         return True
     
-    def _generate_multi_view_report(self, analyses, view_map, title):
+    def _generate_multi_view_report(self, analyses, view_map, title, reporter=None, zendesk_client=None, ai_analyzer=None, db_repository=None):
         """Generate a report for tickets from multiple views."""
         # Determine which reporter to use based on format
         if hasattr(self, 'args') and getattr(self.args, 'format', 'standard') == 'enhanced':
@@ -520,7 +591,7 @@ class CommandLineInterface:
         
         # Combined sentiment analysis
         report += "COMBINED SENTIMENT ANALYSIS\n-------------------------\n"
-        report += reporter.generate_report(analyses)[61:]
+        report += reporter.generate_report(analyses, zendesk_client, ai_analyzer, db_repository)[61:]
         
         # Per-view sentiment analysis
         report += "\nPER-VIEW SENTIMENT ANALYSIS\n--------------------------\n"
@@ -674,7 +745,7 @@ class CommandLineInterface:
         
         return True
     
-    def _handle_pending_mode(self, args, zendesk_client, report_modules):
+    def _handle_pending_mode(self, args, zendesk_client, report_modules, db_repository):
         """Handle 'pending' mode: generate pending support reports."""
         # Check if multi-view support is requested
         if args.view_names:
@@ -699,7 +770,7 @@ class CommandLineInterface:
             # Generate a combined report
             pending_reporter = report_modules.get("pending")
             if pending_reporter:
-                report = pending_reporter.generate_multi_view_report(tickets_by_view)
+                report = pending_reporter.generate_multi_view_report(tickets_by_view, db_repository=db_repository)
                 print(report)
                 
                 # Optionally save to file
@@ -729,7 +800,7 @@ class CommandLineInterface:
         if tickets:
             pending_reporter = report_modules.get("pending")
             if pending_reporter:
-                report = pending_reporter.generate_report(tickets, view_name=view_name)
+                report = pending_reporter.generate_report(zendesk_client, db_repository, pending_view=view_name)
                 print(report)
                 
                 # Optionally save to file

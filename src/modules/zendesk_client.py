@@ -79,20 +79,21 @@ class ZendeskClient:
             logger.exception(f"Error fetching ticket {ticket_id}: {e}")
             return None
 
-    def fetch_tickets(self, status="open", limit=None, filter_by=None):
+    def fetch_tickets(self, status="open", limit=None, filter_by=None, days=None):
         """
-        Fetch tickets from Zendesk with the specified status.
+        Fetch tickets from Zendesk with the specified status and optional time range.
         
         Args:
             status: Ticket status (open, new, pending, solved, closed, all)
             limit: Maximum number of tickets to fetch (None for all)
             filter_by: Dictionary of additional filters
+            days: Number of days to look back for tickets (None for all time)
             
         Returns:
             List of Zendesk tickets.
         """
         # Create a cache key based on the function parameters
-        cache_key = f"tickets_{status}_{limit}_{str(filter_by)}"
+        cache_key = f"tickets_{status}_{limit}_{str(filter_by)}_{days}"
         
         # Try to get from cache first
         cached_result = self.cache.get_tickets(cache_key)
@@ -108,13 +109,34 @@ class ZendeskClient:
                 return [ticket] if ticket else []
             elif status.lower() == "all":
                 # Fetch all tickets regardless of status
-                try:
-                    tickets = list(self.client.tickets())
-                except Exception as e:
-                    logger.warning(f"Error using tickets() method, falling back to search: {e}")
-                    tickets = list(self.client.search("type:ticket"))
+                if days is not None:
+                    # Apply date filter for search query
+                    from datetime import datetime, timedelta
+                    past_date = datetime.utcnow() - timedelta(days=days)
+                    date_str = past_date.strftime("%Y-%m-%d")
+                    search_query = f"type:ticket created>{date_str}"
+                    logger.info(f"Filtering tickets created after {date_str}")
+                    tickets = list(self.client.search(search_query))
+                else:
+                    try:
+                        tickets = list(self.client.tickets())
+                    except Exception as e:
+                        logger.warning(f"Error using tickets() method, falling back to search: {e}")
+                        tickets = list(self.client.search("type:ticket"))
                 logger.info(f"Fetched {len(tickets)} tickets with any status")
+            elif days is not None:
+                # Apply date filter with status filter
+                from datetime import datetime, timedelta
+                past_date = datetime.utcnow() - timedelta(days=days)
+                date_str = past_date.strftime("%Y-%m-%d")
+                search_query = f"type:ticket status:{status} created>{date_str}"
+                logger.info(f"Filtering tickets with status {status} created after {date_str}")
+                if limit:
+                    tickets = list(self.client.search(search_query))[:limit]
+                else:
+                    tickets = list(self.client.search(search_query))
             elif limit:
+                # No date filter, just status filter with limit
                 try:
                     tickets = list(self.client.tickets(status=status))[:limit]
                 except Exception as e:
@@ -122,6 +144,7 @@ class ZendeskClient:
                     search_query = f"type:ticket status:{status}"
                     tickets = list(self.client.search(search_query))[:limit]
             else:
+                # No date filter, just status filter
                 try:
                     tickets = list(self.client.tickets(status=status))
                 except Exception as e:

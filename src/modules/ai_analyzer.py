@@ -12,10 +12,15 @@ from datetime import datetime
 # Import batch processor
 from modules.batch_processor import BatchProcessor
 
-# Import AI services with absolute imports
+# Import AI services
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Get the src directory
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Add the src directory to Python path if not already there
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
 # Import both OpenAI and Claude services
 from ai_service import analyze_ticket_content as openai_analyze_ticket_content

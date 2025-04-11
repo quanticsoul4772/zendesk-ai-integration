@@ -14,24 +14,21 @@ import os
 import threading
 import statistics
 from unittest.mock import MagicMock, patch
-# Attempt to import psutil, but gracefully handle if it's not available
+import cachetools
+
+# Try to import psutil, but don't fail if it's not available
 try:
     import psutil
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
-    print("Warning: psutil not installed. Memory usage tests will be skipped.")
-
-import cachetools
+    pytest.skip("psutil not available, skipping performance tests", allow_module_level=True)
 
 # Add the project root to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import module to test
 from src.modules.cache_manager import ZendeskCache
-
-# Mark the entire test class to be skipped if psutil is not available
-pytestmark = pytest.mark.skipif(not HAS_PSUTIL, reason="psutil not installed")
 
 
 class TestCachePerformance:
@@ -42,6 +39,7 @@ class TestCachePerformance:
         """Fixture to provide a ZendeskCache instance."""
         return ZendeskCache()
     
+    @staticmethod
     def get_memory_usage():
         """Helper function to get current memory usage in MB."""
         if HAS_PSUTIL:
@@ -166,11 +164,8 @@ class TestCachePerformance:
                 assert invalidation_time < estimated_full_eviction_time, \
                     "Explicit invalidation should be faster than waiting for TTL expiration"
     
+    @pytest.mark.skipif(not HAS_PSUTIL, reason="psutil not installed")
     def test_cache_memory_usage(self, cache_instance):
-        """Test memory usage of the cache under different loads."""
-        # Skip if psutil is not available
-        if not HAS_PSUTIL:
-            pytest.skip("psutil not installed, skipping memory usage test")
             
         # Get baseline memory usage
         gc.collect()  # Force garbage collection

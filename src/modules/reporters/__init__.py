@@ -1,7 +1,9 @@
 """
 Reporters Package
 
-This package contains modules for generating different types of reports:
-- hardware_report.py: For hardware component analysis reports
-- pending_report.py: For pending support ticket reports
+This package contains reporter modules for generating various reports.
 """
+
+from .sentiment_report import SentimentReporter
+
+__all__ = ['SentimentReporter']

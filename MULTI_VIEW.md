@@ -9,6 +9,7 @@ The Multi-View Analysis feature allows you to process tickets from multiple Zend
 - **Status Overview**: Get a snapshot of all support queues at once
 - **Workload Distribution**: Identify which views have the most high-priority tickets
 - **Business Impact Assessment**: Find critical issues across multiple views
+- **Hardware Trend Analysis**: Identify which components are causing issues across different queues
 
 ## Using Multi-View Analysis
 
@@ -17,7 +18,7 @@ The Multi-View Analysis feature allows you to process tickets from multiple Zend
 To analyze tickets from multiple views using their IDs:
 
 ```bash
-python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172823,25764222686871 --output multi_view_report.txt
+python src/zendesk_ai_app.py --mode multi-view --views 18002932412055,25973272172823,25764222686871 --output multi_view_report.txt
 ```
 
 ### Specifying Multiple Views by Name
@@ -25,8 +26,10 @@ python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172
 To analyze tickets from multiple views using their names:
 
 ```bash
-python src/zendesk_ai_app.py --mode sentiment --view-names "Support :: Escalated Tickets,Support :: Pending Customer" --output multi_view_report.txt
+python src/zendesk_ai_app.py --mode multi-view --view-names "Support :: Escalated Tickets,Support :: Pending Customer" --output multi_view_report.txt
 ```
+
+This feature is now fully functional in all modes. The system will match view names exactly when possible, and fall back to partial matching if needed.
 
 ### Additional Options
 
@@ -34,7 +37,7 @@ You can customize the multi-view analysis with additional parameters:
 
 - `--status all`: Include tickets of all statuses (default is "open")
 - `--limit 100`: Limit the number of tickets per view
-- `--basic-sentiment`: Use basic sentiment analysis instead of enhanced
+- `--format enhanced`: Use enhanced reporting with component analysis and more detailed information
 - `--use-openai`: Use OpenAI instead of Claude for analysis
 
 ## Report Structure
@@ -49,6 +52,7 @@ The multi-view report includes:
 ### Combined Analysis
 - Overall sentiment distribution
 - Priority score distribution
+- Top affected components analysis (new feature)
 - Average urgency, frustration, and priority scores
 - Business impact assessment
 
@@ -62,33 +66,77 @@ For each view, the report includes:
 
 ## Example Commands
 
-### Sentiment Analysis Across Multiple Views
+### Enhanced Sentiment Analysis Across Multiple Views
 
 ```bash
-python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172823,25764222686871 --output sentiment_report.txt
+python src/zendesk_ai_app.py --mode multi-view --views 18002932412055,25973272172823,25764222686871 --format enhanced --output enhanced_multi_view_report.txt
 ```
 
-### Hardware Component Analysis Across Multiple Views
+### Hardware Component Analysis Using View Names
 
 ```bash
-python src/zendesk_ai_app.py --mode report --views 18002932412055,25973272172823,25764222686871 --output hardware_report.txt
+python src/zendesk_ai_app.py --mode multi-view --view-names "Support :: Pending Customer,Support :: Pending RMA" --format enhanced --output component_analysis_report.txt
 ```
 
-### Pending Support Analysis Across Multiple Views
+### Full Status Analysis (All Ticket Statuses)
 
 ```bash
-python src/zendesk_ai_app.py --mode pending --view-names "Support :: Pending Customer,Support :: Pending RMA" --output pending_report.txt
+python src/zendesk_ai_app.py --mode multi-view --views 18002932412055,25973272172823,25764222686871 --status all --format enhanced --output full_status_report.txt
 ```
 
-## Direct Multi-View Mode
+## Top Components Analysis
 
-You can also use the dedicated multi-view mode:
+The multi-view report now includes a TOP AFFECTED COMPONENTS section that provides insight into which hardware components are causing the most issues across all views:
 
-```bash
-python src/zendesk_ai_app.py --mode multi-view --views 18002932412055,25973272172823,25764222686871 --output multi_view_report.txt
+```
+TOP AFFECTED COMPONENTS
+---------------------
+gpu: 22 (36.7%)
+drive: 7 (11.7%)
+boot: 5 (8.3%)
+ipmi: 4 (6.7%)
+display: 4 (6.7%)
+network: 4 (6.7%)
+bios: 3 (5.0%)
+power_supply: 3 (5.0%)
+memory: 3 (5.0%)
+motherboard: 3 (5.0%)
+cooling: 1 (1.7%)
+software: 1 (1.7%)
 ```
 
-This mode is optimized for multi-view analysis and provides the most comprehensive cross-view reporting.
+This section helps identify patterns in hardware issues that may require systematic attention or proactive maintenance across different support queues.
+
+## High Priority Tickets Display
+
+The enhanced multi-view report now displays up to 10 high-priority tickets (increased from 5) with detailed information:
+
+```
+HIGH PRIORITY TICKETS
+--------------------
+Found 62 high priority tickets (priority 7-10)
+
+#26572 - Server Hardware Issues.
+  Priority: 9/10 - Critical Priority (Urgent action needed, significant business impact)
+  Sentiment: Negative
+  Urgency: 5/5 - Critical emergency with major business impact
+  Frustration: 4/5 - Highly frustrated
+  Business Impact: Production system completely down, losing critical Splunk indexers for a classified network
+  Emotions: anger, frustration, worry
+  Component: motherboard
+  Category: hardware_issue
+
+#27993 - Re: [Exxact Corporation] Ticket #26415 - Re: Consistent Machine Freezing Issue
+  Priority: 9/10 - Critical Priority (Urgent action needed, significant business impact)
+  Sentiment: Negative
+  Urgency: 4/5 - Serious issues requiring prompt resolution
+  Frustration: 5/5 - Extremely frustrated
+  Business Impact: Production system down, significant productivity loss, risk of missing deadlines and contract obligations
+  Emotions: anger, frustration, urgency
+  Category: hardware_issue
+```
+
+This expanded view ensures that the most important tickets across multiple queues are visible to support management.
 
 ## Performance Considerations
 

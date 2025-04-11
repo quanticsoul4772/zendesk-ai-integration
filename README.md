@@ -114,12 +114,19 @@ ZENDESK_AI_ORG=your-username SKIP_CHECKSUM_VERIFY=true python install.py
   - HMAC signature verification
   - Robust error handling and input validation
 
+### Workflow Improvements
+- **View Status Checking**:
+  - Visual indicators showing which views have tickets
+  - Empty view detection prevents wasted operations
+  - Dedicated utility for checking view status
+  - See [VIEW_STATUS_CHECKING.md](docs/VIEW_STATUS_CHECKING.md) for details
+
 ### Multiple Operation Modes
 - One-time batch analysis
 - Real-time webhook analysis
 - Scheduled daily/weekly analysis
 - View-based reporting and analytics
-- Multi-view aggregated analysis
+- **NEW: Improved multi-view reporting with intuitive selection interface**
 
 ## Installation
 
@@ -205,13 +212,13 @@ python -c "import secrets; print(secrets.token_hex(32))"
 Analyze tickets with Claude (default):
 
 ```bash
-python src/zendesk_ai_app.py --mode run --status open
+python -m src.zendesk_ai_app --mode run --status open
 ```
 
 Specify OpenAI instead of Claude:
 
 ```bash
-python src/zendesk_ai_app.py --mode run --status open --use-openai
+python -m src.zendesk_ai_app --mode run --status open --use-openai
 ```
 
 Enhanced sentiment analysis is now the standard for all operations.
@@ -219,7 +226,7 @@ Enhanced sentiment analysis is now the standard for all operations.
 To reanalyze existing tickets with the improved sentiment model:
 
 ```bash
-python src/zendesk_ai_app.py --mode run --reanalyze --days 7
+python -m src.zendesk_ai_app --mode run --reanalyze --days 7
 ```
 
 ### Sentiment Analysis Reporting
@@ -227,7 +234,7 @@ python src/zendesk_ai_app.py --mode run --reanalyze --days 7
 Generate detailed sentiment analysis reports:
 
 ```bash
-python src/zendesk_ai_app.py --mode sentiment --days 7
+python -m src.zendesk_ai_app --mode sentiment --days 7
 ```
 
 This generates a comprehensive report including:
@@ -240,27 +247,47 @@ This generates a comprehensive report including:
 You can specify a specific view:
 
 ```bash
-python src/zendesk_ai_app.py --mode sentiment --view "Support Queue"
+python -m src.zendesk_ai_app --mode sentiment --view "Support Queue"
 ```
 
 Or output to a file:
 
 ```bash
-python src/zendesk_ai_app.py --mode sentiment --days 30 --output sentiment_report.txt
+python -m src.zendesk_ai_app --mode sentiment --days 30 --output sentiment_report.txt
 ```
+
+### Multi-View Reporting
+
+Use the dedicated multi-view reporting tool for an improved interface:
+
+```bash
+# Windows
+multi_view_reports.bat
+
+# macOS/Linux
+./multi_view_reports.sh
+```
+
+This tool provides:
+- Detailed view status information (ticket counts, pending tickets)
+- Multiple view selection with an intuitive interface
+- Categorized view display for easier navigation
+- Comprehensive cross-view reports
+
+See [MULTI_VIEW_REPORTING.md](docs/MULTI_VIEW_REPORTING.md) for detailed usage instructions.
 
 ### View-Based Reporting
 
 Generate a report for a specific Zendesk view:
 
 ```bash
-python src/zendesk_ai_app.py --mode pending --pending-view "Support :: Pending Support"
+python -m src.zendesk_ai_app --mode pending --pending-view "Support :: Pending Support"
 ```
 
 For multi-view enhanced reports:
 
 ```bash
-python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172823 --format enhanced
+python -m src.zendesk_ai_app --mode sentiment --views 18002932412055,25973272172823 --format enhanced
 ```
 
 ### Webhook Server
@@ -268,7 +295,7 @@ python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172
 Start a webhook server for real-time analysis:
 
 ```bash
-python src/zendesk_ai_app.py --mode webhook
+python -m src.zendesk_ai_app --mode webhook
 ```
 
 ### Scheduled Analysis
@@ -276,7 +303,7 @@ python src/zendesk_ai_app.py --mode webhook
 Run daily and weekly summaries automatically:
 
 ```bash
-python src/zendesk_ai_app.py --mode schedule
+python -m src.zendesk_ai_app --mode schedule
 ```
 
 ### List Available Views
@@ -284,8 +311,38 @@ python src/zendesk_ai_app.py --mode schedule
 To see all available Zendesk views:
 
 ```bash
-python src/zendesk_ai_app.py --mode list-views
+python -m src.zendesk_ai_app --mode list-views
 ```
+
+### Interactive Menu
+
+Use the interactive menu for easier navigation of Zendesk views and actions:
+
+```bash
+python -m src.zendesk_ai_app --mode interactive
+```
+
+Or use the convenience launcher scripts:
+
+**Windows**:
+```bash
+zendesk_menu.bat
+```
+
+**macOS/Linux**:
+```bash
+./zendesk_menu.sh
+```
+
+The interactive menu provides:
+- Hierarchical navigation of Zendesk views (structured by their :: delimiters)
+- Quick access to recently used views
+- Easy execution of actions on selected views:
+  - Run sentiment analysis
+  - Generate pending or enhanced reports
+  - View tickets in browser
+- Search functionality (type / to search)
+- Keyboard shortcuts for efficient navigation
 
 For more usage examples, see:
 - [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting feature
@@ -315,6 +372,9 @@ For full commit history, see [VERSION.md](VERSION.md).
 - [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
 - [SENTIMENT_ANALYSIS.md](SENTIMENT_ANALYSIS.md) - Sentiment analysis methodology
 - [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md) - Performance optimization features
+- [INTERACTIVE_MENU.md](INTERACTIVE_MENU.md) - Interactive menu usage and features
+- [VIEW_STATUS_CHECKING.md](docs/VIEW_STATUS_CHECKING.md) - View status checking feature
+- [MULTI_VIEW_REPORTING.md](docs/MULTI_VIEW_REPORTING.md) - Improved multi-view reporting
 - [TESTING.md](TESTING.md) - Testing strategy and instructions
 - [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) - Pre-commit hooks setup guide
 - [VERSION.md](VERSION.md) - Version history and release notes

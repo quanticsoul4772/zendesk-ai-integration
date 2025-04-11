@@ -187,6 +187,17 @@ class EnhancedSentimentReporter(ReporterBase):
             report += f"{category} ({min_val}-{max_val}): {count} tickets ({percentage:.1f}%)\n"
         report += "\n"
         
+        # Add component analysis section
+        components = self._extract_components(analyses)
+        if components:
+            report += "TOP AFFECTED COMPONENTS\n---------------------\n"
+            total = sum(components.values())
+            for component, count in sorted(components.items(), key=lambda x: x[1], reverse=True)[:12]:
+                if component != "none":
+                    percentage = (count / total) * 100 if total > 0 else 0
+                    report += f"{component}: {count} ({percentage:.1f}%)\n"
+            report += "\n"
+        
         # Business impact section
         business_impact_tickets = self._filter_business_impact_tickets(analyses)
         if business_impact_tickets:
@@ -209,8 +220,8 @@ class EnhancedSentimentReporter(ReporterBase):
             report += "HIGH PRIORITY TICKETS\n--------------------\n"
             report += f"Found {len(high_priority_tickets)} high priority tickets (priority 7-10)\n\n"
             
-            # Add details for up to 5 highest priority tickets
-            for i, analysis in enumerate(sorted(high_priority_tickets, key=lambda x: x.get('priority_score', 0), reverse=True)[:5]):
+            # Add details for up to 10 highest priority tickets (increased from 5)
+            for i, analysis in enumerate(sorted(high_priority_tickets, key=lambda x: x.get('priority_score', 0), reverse=True)[:10]):
                 report += self._format_ticket_details(analysis) + "\n"
             report += "\n"
         
@@ -225,6 +236,17 @@ class EnhancedSentimentReporter(ReporterBase):
         report += f"Priority: {avg_priority:.2f}/10\n\n"
         
         return report
+    
+    def _extract_components(self, analyses):
+        """Extract and count component types from analyses."""
+        components = {}
+        
+        for analysis in analyses:
+            component = analysis.get('component', 'none')
+            if component and component != "none":
+                components[component] = components.get(component, 0) + 1
+        
+        return components
     
     def _generate_executive_summary(self, stats, analyses=None):
         """Generate an executive summary of the sentiment analysis."""

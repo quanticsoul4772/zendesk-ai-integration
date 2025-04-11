@@ -6,7 +6,7 @@ Generates reports about pending tickets requiring attention.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional, Tuple, Union
 from collections import Counter, defaultdict
 from .reporter_base import ReporterBase
 
@@ -84,13 +84,154 @@ class PendingReporter(ReporterBase):
         analyses = {}
         
         if not tickets:
-            report = f"No pending tickets found for {time_period}."
+            report = f"No pending tickets found for the last 7 days for view '{view}'."
         else:
             # Generate the actual report
             report = self._generate_report_content(tickets, analyses, f"Pending Tickets Report - {time_period}")
         
         # Output the report
         self.output(report, output_file)
+        
+        return report
+    
+    def generate_multi_view_report(
+        self, tickets_by_view: Dict[str, List], 
+        db_repository=None, 
+        days=7, 
+        status="pending", 
+        output_file=None, 
+        format="standard"
+    ):
+        """
+        Generate a combined report for multiple views.
+        
+        Args:
+            tickets_by_view: Dictionary mapping view names to lists of tickets
+            db_repository: Optional database repository for analysis data
+            days: Number of days to look back (default: 7)
+            status: Ticket status to filter by (default: "pending")
+            output_file: File to write the report to (optional)
+            format: Report format (standard or enhanced) (default: "standard")
+            
+        Returns:
+            The generated report as a string
+        """
+        # Set up output file
+        self.output_file = output_file
+        
+        # Check if we have any tickets
+        total_tickets = sum(len(tickets) for tickets in tickets_by_view.values())
+        
+        if total_tickets == 0:
+            # No tickets found in any view
+            views_str = ", ".join(tickets_by_view.keys())
+            return f"No pending tickets found for the last {days} days in the selected views: {views_str}"
+        
+        # Get analyses from database if available
+        analyses = {}
+        if db_repository:
+            # Get ticket IDs from all views
+            all_ticket_ids = []
+            for tickets in tickets_by_view.values():
+                for ticket in tickets:
+                    if hasattr(ticket, 'id'):
+                        all_ticket_ids.append(str(ticket.id))
+            
+            # Get analyses from database
+            if all_ticket_ids:
+                analyses = db_repository.find_analyses_by_ticket_ids(all_ticket_ids)
+        
+        # Generate the report
+        return self._generate_multi_view_report_content(tickets_by_view, analyses, days)
+    
+    def _generate_multi_view_report_content(self, tickets_by_view, analyses, days=7):
+        """
+        Generate the content for a multi-view pending tickets report.
+        
+        Args:
+            tickets_by_view: Dictionary mapping view names to lists of tickets
+            analyses: Dictionary mapping ticket IDs to analysis results
+            days: Number of days to look back
+            
+        Returns:
+            The generated report as a string
+        """
+        now = datetime.now()
+        report = f"\n{'='*60}\n"
+        report += f"MULTI-VIEW PENDING TICKETS REPORT ({now.strftime('%Y-%m-%d %H:%M')})\n"
+        report += f"{'='*60}\n\n"
+        
+        title = f"Pending Tickets - Last {days} Days"
+        report += f"{title}\n{'-' * len(title)}\n\n"
+        
+        # Calculate total tickets
+        total_tickets = sum(len(tickets) for tickets in tickets_by_view.values())
+        
+        # Overview section
+        report += "OVERVIEW\n--------\n"
+        report += f"Total views: {len(tickets_by_view)}\n"
+        report += f"Total pending tickets: {total_tickets}\n\n"
+        
+        # Views summary section
+        report += "TICKETS BY VIEW\n--------------\n"
+        for view_name, tickets in tickets_by_view.items():
+            report += f"{view_name}: {len(tickets)} pending tickets\n"
+        report += "\n"
+        
+        # Status breakdown for all tickets
+        all_tickets = []
+        for tickets in tickets_by_view.values():
+            all_tickets.extend(tickets)
+            
+        status_counts = Counter()
+        for ticket in all_tickets:
+            status = getattr(ticket, 'status', 'unknown')
+            status_counts[status] += 1
+        
+        if status_counts:
+            report += "STATUS BREAKDOWN\n---------------\n"
+            for status, count in sorted(status_counts.items(), key=lambda x: x[1], reverse=True):
+                percentage = (count / total_tickets) * 100
+                status_label = self.status_groups.get(status, status.capitalize())
+                report += f"{status_label}: {count} tickets ({percentage:.1f}%)\n"
+            report += "\n"
+        
+        # Per-view details
+        report += "PER-VIEW DETAILS\n----------------\n"
+        
+        for view_name, tickets in tickets_by_view.items():
+            report += f"\n{view_name}\n{'-' * len(view_name)}\n"
+            
+            if not tickets:
+                report += "No pending tickets found in this view.\n"
+                continue
+                
+            # Get status distribution for this view
+            view_status_counts = Counter()
+            for ticket in tickets:
+                status = getattr(ticket, 'status', 'unknown')
+                view_status_counts[status] += 1
+            
+            # Status distribution
+            for status, count in sorted(view_status_counts.items(), key=lambda x: x[1], reverse=True):
+                percentage = (count / len(tickets)) * 100
+                status_label = self.status_groups.get(status, status.capitalize())
+                report += f"{status_label}: {count} tickets ({percentage:.1f}%)\n"
+            
+            # Add ticket details (limit to 5 per view to avoid overwhelming reports)
+            if tickets:
+                report += "\nRecent tickets:\n"
+                # Sort tickets by updated_at if available
+                sorted_tickets = sorted(
+                    tickets, 
+                    key=lambda t: getattr(t, 'updated_at', datetime.min), 
+                    reverse=True
+                )
+                
+                for ticket in sorted_tickets[:5]:
+                    ticket_id = getattr(ticket, 'id', 'Unknown')
+                    analysis = analyses.get(str(ticket_id))
+                    report += self._format_ticket_details(ticket, analysis) + "\n"
         
         return report
     
