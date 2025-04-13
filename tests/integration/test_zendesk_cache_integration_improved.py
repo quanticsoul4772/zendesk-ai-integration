@@ -15,8 +15,9 @@ from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import the components to test
-from src.modules.zendesk_client import ZendeskClient
+# from src.infrastructure.compatibility import ZendeskClient
 from src.modules.cache_manager import ZendeskCache
+from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
 
 # Mark all tests in this module as serial to prevent parallel execution issues
 pytestmark = pytest.mark.serial
@@ -202,7 +203,7 @@ class TestImprovedZendeskCacheIntegration:
     def test_fetch_tickets_cache_integration(self, zendesk_client, mock_zendesk_api):
         """Test fetch_tickets with caching integration."""
         # First call should go to the API
-        tickets_first_call = zendesk_client.fetch_tickets(status="open")
+        tickets_first_call = zendesk_client.get_tickets(status="open")
         
         # Verify API was called
         assert mock_zendesk_api.search_tickets.call_count == 1
@@ -211,7 +212,7 @@ class TestImprovedZendeskCacheIntegration:
         mock_zendesk_api.search_tickets.reset_mock()
         
         # Second call should use the cache
-        tickets_second_call = zendesk_client.fetch_tickets(status="open")
+        tickets_second_call = zendesk_client.get_tickets(status="open")
         
         # Verify API was NOT called again
         assert mock_zendesk_api.search_tickets.call_count == 0
@@ -225,7 +226,7 @@ class TestImprovedZendeskCacheIntegration:
         mock_zendesk_api.search_tickets.reset_mock()
         
         # First call with open status
-        zendesk_client.fetch_tickets(status="open")
+        zendesk_client.get_tickets(status="open")
         
         # Verify API was called
         assert mock_zendesk_api.search_tickets.call_count == 1
@@ -234,7 +235,7 @@ class TestImprovedZendeskCacheIntegration:
         mock_zendesk_api.search_tickets.reset_mock()
         
         # Second call with pending status (different parameter)
-        zendesk_client.fetch_tickets(status="pending")
+        zendesk_client.get_tickets(status="pending")
         
         # Verify API was called again (different parameter means cache miss)
         assert mock_zendesk_api.search_tickets.call_count == 1
@@ -243,8 +244,8 @@ class TestImprovedZendeskCacheIntegration:
         mock_zendesk_api.search_tickets.reset_mock()
         
         # Call each status again - should use cache for both
-        zendesk_client.fetch_tickets(status="open")
-        zendesk_client.fetch_tickets(status="pending")
+        zendesk_client.get_tickets(status="open")
+        zendesk_client.get_tickets(status="pending")
         
         # Verify API was NOT called again
         assert mock_zendesk_api.search_tickets.call_count == 0
@@ -252,13 +253,13 @@ class TestImprovedZendeskCacheIntegration:
     def test_cache_invalidation(self, zendesk_client, mock_zendesk_api):
         """Test cache invalidation forces fresh API calls."""
         # First call
-        zendesk_client.fetch_tickets(status="all")
+        zendesk_client.get_tickets(status="all")
         
         # Reset the API call counter
         mock_zendesk_api.search_tickets.reset_mock()
         
         # Second call should use cache
-        zendesk_client.fetch_tickets(status="all")
+        zendesk_client.get_tickets(status="all")
         
         # Verify API was NOT called again
         assert mock_zendesk_api.search_tickets.call_count == 0
@@ -267,7 +268,7 @@ class TestImprovedZendeskCacheIntegration:
         zendesk_client.invalidate_tickets()
         
         # Third call should hit API again
-        zendesk_client.fetch_tickets(status="all")
+        zendesk_client.get_tickets(status="all")
         
         # Verify API was called after invalidation
         assert mock_zendesk_api.search_tickets.call_count == 1
@@ -332,20 +333,20 @@ class TestImprovedZendeskCacheIntegration:
     def test_cache_ttl_expiration(self, zendesk_client, mock_zendesk_api):
         """Test cache TTL expiration (simulate time passing)."""
         # First call should go to the API
-        zendesk_client.fetch_tickets(status="all")
+        zendesk_client.get_tickets(status="all")
         
         # Reset the API call counter
         mock_zendesk_api.search_tickets.reset_mock()
         
         # Second call should use cache
-        zendesk_client.fetch_tickets(status="all")
+        zendesk_client.get_tickets(status="all")
         assert mock_zendesk_api.search_tickets.call_count == 0
         
         # Wait for TTL to expire (cache TTL is 5 seconds)
         time.sleep(6)
         
         # Call again - should go to API because cache TTL expired
-        zendesk_client.fetch_tickets(status="all")
+        zendesk_client.get_tickets(status="all")
         assert mock_zendesk_api.search_tickets.call_count == 1
     
     def test_view_name_lookup_caching(self, zendesk_client, mock_zendesk_api):

@@ -3,6 +3,7 @@
 ## Project Timeline
 
 ### April 2025
+- **Apr 12:** Removed legacy mode support in favor of command-based interface
 - **Apr 11:** Implemented unified AI architecture for consolidated provider interface
 
 ### March 2025
@@ -15,7 +16,16 @@
 - **Mar 30:** Added cross-platform installation scripts and documentation
 - **Mar 31:** Enhanced installer with file integrity verification and retry capabilities
 
-## v1.2.0 (Current)
+## v1.2.1 (Current)
+
+### Features
+- **Command-line Interface Improvements**:
+  - Removed legacy `--mode` parameter support
+  - Standardized on command-based interface
+  - Simplified code by removing compatibility layer
+  - Improved error messages for invalid commands
+
+### v1.2.0
 
 ### Features
 - **NEW: Unified AI architecture**:

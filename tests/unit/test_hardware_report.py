@@ -10,9 +10,10 @@ import os
 import sys
 from datetime import datetime, timedelta
 import io
+from src.application.services.report_service import HardwareReportService
 
 # Import module to test
-from src.modules.reporters.hardware_report import HardwareReporter
+# from src.infrastructure.compatibility import HardwareReporter
 
 
 class TestHardwareReporter:
@@ -128,7 +129,7 @@ class TestHardwareReporter:
         
         try:
             # Get tickets for the report
-            tickets = mock_dependencies["zendesk_client"].fetch_tickets(view_id="12345")
+            tickets = mock_dependencies["zendesk_client"].get_tickets(view_id="12345")
             
             # Generate report
             report = reporter.generate_report(tickets)
@@ -165,7 +166,7 @@ class TestHardwareReporter:
         
         try:
             # Get tickets for the report
-            tickets = mock_dependencies["zendesk_client"].fetch_tickets(status="open")
+            tickets = mock_dependencies["zendesk_client"].get_tickets(status="open")
             
             # Generate report
             report = reporter.generate_report(tickets)
@@ -198,7 +199,7 @@ class TestHardwareReporter:
         mock_dependencies["db_repository"].get_analysis_by_ticket_id.side_effect = get_analysis_side_effect
         
         # Get tickets for the report
-        tickets = mock_dependencies["zendesk_client"].fetch_tickets(status="open")
+        tickets = mock_dependencies["zendesk_client"].get_tickets(status="open")
         
         # Generate report
         report = reporter.generate_report(tickets)

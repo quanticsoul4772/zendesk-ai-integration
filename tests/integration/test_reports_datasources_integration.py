@@ -15,10 +15,13 @@ from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import the components to test
-from src.modules.reporters.sentiment_report import SentimentReporter
-from src.modules.reporters.hardware_report import HardwareReporter
-from src.modules.reporters.pending_report import PendingReporter
+# from src.infrastructure.compatibility import SentimentReporter
+# from src.infrastructure.compatibility import HardwareReporter
+# from src.infrastructure.compatibility import PendingReporter
 from src.modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
+from src.application.services.report_service import HardwareReportService
+from src.application.services.report_service import PendingReportService
+from src.application.services.report_service import SentimentReportService
 
 
 class TestReportDataSourcesIntegration:

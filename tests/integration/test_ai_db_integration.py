@@ -9,13 +9,15 @@ from unittest.mock import patch, MagicMock, call
 import os
 import sys
 from datetime import datetime, timedelta
+from src.application.services.ticket_analysis_service import TicketAnalysisService
+from src.infrastructure.repositories.mongodb_repository import MongoDBRepository
 
 # Add the src directory to the Python path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import the components to test
-from src.modules.ai_analyzer import AIAnalyzer
-from src.modules.db_repository import DBRepository
+# from src.infrastructure.compatibility import AIAnalyzer
+# from src.infrastructure.compatibility import DBRepository
 
 
 class TestAIDBIntegration:

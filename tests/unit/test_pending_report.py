@@ -10,9 +10,10 @@ import os
 import sys
 from datetime import datetime, timedelta
 import io
+from src.application.services.report_service import PendingReportService
 
 # Import module to test
-from src.modules.reporters.pending_report import PendingReporter
+# from src.infrastructure.compatibility import PendingReporter
 
 
 class TestPendingReporter:

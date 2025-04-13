@@ -6,6 +6,8 @@ import pytest
 from unittest.mock import MagicMock, patch
 import sys
 import os
+from src.application.services.ticket_analysis_service import TicketAnalysisService
+from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
 
 # Ensure the project root is in the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
@@ -16,7 +18,7 @@ def zendesk_client():
     Fixture that provides a ZendeskClient instance for performance testing.
     Uses the actual implementation rather than a mock for performance tests.
     """
-    from src.modules.zendesk_client import ZendeskClient
+#     from src.infrastructure.compatibility import ZendeskClient
     
     # Create the client
     with patch("modules.zendesk_client.ZendeskClient._validate_view_ids", return_value=set([123, 456])):
@@ -40,7 +42,7 @@ def ai_analyzer():
     Fixture that provides an AIAnalyzer instance for performance testing.
     Uses a mock for AI services to avoid actual API calls while maintaining real processing logic.
     """
-    from src.modules.ai_analyzer import AIAnalyzer
+#     from src.infrastructure.compatibility import AIAnalyzer
     from src.modules.batch_processor import BatchProcessor
     
     # Create the analyzer

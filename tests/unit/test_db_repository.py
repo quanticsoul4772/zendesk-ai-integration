@@ -9,9 +9,10 @@ from unittest.mock import patch, MagicMock, call
 import os
 import sys
 from datetime import datetime, timedelta
+from src.infrastructure.repositories.mongodb_repository import MongoDBRepository
 
 # Import module to test
-from src.modules.db_repository import DBRepository
+# from src.infrastructure.compatibility import DBRepository
 
 
 class TestDBRepository:

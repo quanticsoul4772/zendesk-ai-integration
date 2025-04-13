@@ -10,9 +10,10 @@ import os
 import sys
 from datetime import datetime, timedelta
 import io
+from src.application.services.report_service import SentimentReportService
 
 # Import sample reporter for testing
-from src.modules.reporters.sentiment_report import SentimentReporter
+# from src.infrastructure.compatibility import SentimentReporter
 
 
 class TestReporterCommon:

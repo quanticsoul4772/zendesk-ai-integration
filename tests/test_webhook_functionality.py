@@ -15,15 +15,19 @@ import requests
 from unittest.mock import patch, MagicMock
 from datetime import datetime
 from flask import Flask, request, jsonify
+from src.application.services.ticket_analysis_service import TicketAnalysisService
+from src.infrastructure.repositories.mongodb_repository import MongoDBRepository
+from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
+from src.presentation.webhook.webhook_handler import WebhookHandler
 
 # Add the src directory to Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 # Import the webhook server
-from modules.webhook_server import WebhookServer
-from modules.zendesk_client import ZendeskClient
-from modules.ai_analyzer import AIAnalyzer
-from modules.db_repository import DBRepository
+# from src.infrastructure.compatibility import WebhookServer
+# from src.infrastructure.compatibility import ZendeskClient
+# from src.infrastructure.compatibility import AIAnalyzer
+# from src.infrastructure.compatibility import DBRepository
 
 # Mark all tests in this module as serial
 pytestmark = pytest.mark.serial

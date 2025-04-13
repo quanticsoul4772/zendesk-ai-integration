@@ -7,6 +7,7 @@ import pytest
 import logging
 import os
 from datetime import datetime
+from src.application.use_cases.generate_report_use_case import GenerateReportUseCase
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +15,13 @@ def test_full_ticket_analysis_workflow(zendesk_client, ai_analyzer):
     """Test the complete workflow from fetching tickets to generating analysis."""
     # We've already mocked the necessary components, so we don't need to skip
     # Fetch a small number of tickets for testing
-    tickets = zendesk_client.fetch_tickets(status="open", limit=2)
+    tickets = zendesk_client.get_tickets(status="open", limit=2)
     
     if not tickets or len(tickets) == 0:
-        tickets = zendesk_client.fetch_tickets(status="pending", limit=2)
+        tickets = zendesk_client.get_tickets(status="pending", limit=2)
     
     if not tickets or len(tickets) == 0:
-        tickets = zendesk_client.fetch_tickets(status="all", limit=2)
+        tickets = zendesk_client.get_tickets(status="all", limit=2)
     
     if not tickets or len(tickets) == 0:
         pytest.skip("No tickets found for integration test")
@@ -58,7 +59,7 @@ def test_report_generation(zendesk_client, ai_analyzer):
     
     # Import the report generator (assuming it exists)
     try:
-        from src.modules.report_generator import generate_summary_report
+#         from src.infrastructure.compatibility import generate_summary_report
     except ImportError:
         pytest.skip("Report generator module not available")
     
@@ -73,7 +74,7 @@ def test_report_generation(zendesk_client, ai_analyzer):
             pytest.skip("No views available for testing report generation")
     
     # Generate a report
-    report_data = generate_summary_report(
+    report_data = generate_report_use_case.execute(
         zendesk_client=zendesk_client,
         ai_analyzer=ai_analyzer,
         view_id=view_id,

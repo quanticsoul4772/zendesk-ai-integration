@@ -20,7 +20,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # Import the main application entry point and webhook components
 from src.zendesk_ai_app import main
-from src.modules.webhook_server import WebhookServer
+from src.presentation.webhook.webhook_handler import WebhookHandler
+# from src.infrastructure.compatibility import WebhookServer
 
 
 @pytest.mark.serial

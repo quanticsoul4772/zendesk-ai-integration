@@ -18,9 +18,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # Import the main application entry point and key components
 from src.zendesk_ai_app import main
-from src.modules.zendesk_client import ZendeskClient
-from src.modules.ai_analyzer import AIAnalyzer
-from src.modules.db_repository import DBRepository
+from src.application.services.ticket_analysis_service import TicketAnalysisService
+from src.infrastructure.repositories.mongodb_repository import MongoDBRepository
+from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
+# from src.infrastructure.compatibility import ZendeskClient
+# from src.infrastructure.compatibility import AIAnalyzer
+# from src.infrastructure.compatibility import DBRepository
 
 
 class TestEndToEndFlows:

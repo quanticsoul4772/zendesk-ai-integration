@@ -15,8 +15,9 @@ import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import the components to test
-from src.modules.zendesk_client import ZendeskClient
+# from src.infrastructure.compatibility import ZendeskClient
 from src.modules.cache_manager import ZendeskCache
+from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
 
 # Mark all tests in this module as serial to prevent parallel execution issues
 pytestmark = pytest.mark.serial
@@ -98,10 +99,10 @@ class TestZendeskCacheIntegration:
     def test_fetch_tickets_cache_integration(self, zendesk_client, mock_zenpy):
         """Test fetch_tickets with caching integration."""
         # First call should go to the API
-        tickets_first_call = zendesk_client.fetch_tickets(status="open")
+        tickets_first_call = zendesk_client.get_tickets(status="open")
         
         # Second call should use the cache
-        tickets_second_call = zendesk_client.fetch_tickets(status="open")
+        tickets_second_call = zendesk_client.get_tickets(status="open")
         
         # Get cache stats
         cache_stats = zendesk_client.cache.get_stats()
@@ -121,17 +122,17 @@ class TestZendeskCacheIntegration:
         mock_zenpy.search.reset_mock()
         
         # First call with open status
-        tickets_open = zendesk_client.fetch_tickets(status="open")
+        tickets_open = zendesk_client.get_tickets(status="open")
         
         # Second call with pending status
-        tickets_pending = zendesk_client.fetch_tickets(status="pending")
+        tickets_pending = zendesk_client.get_tickets(status="pending")
         
         # Both should hit the API since they have different parameters
         assert mock_zenpy.search.call_count == 2
         
         # Call each again - should use cache
-        tickets_open_again = zendesk_client.fetch_tickets(status="open")
-        tickets_pending_again = zendesk_client.fetch_tickets(status="pending")
+        tickets_open_again = zendesk_client.get_tickets(status="open")
+        tickets_pending_again = zendesk_client.get_tickets(status="pending")
         
         # API call count should remain at 2
         assert mock_zenpy.search.call_count == 2
@@ -146,20 +147,20 @@ class TestZendeskCacheIntegration:
         mock_zenpy.search.reset_mock()
         
         # First call
-        tickets_first = zendesk_client.fetch_tickets(status="all")
+        tickets_first = zendesk_client.get_tickets(status="all")
         
         # Should call API
         assert mock_zenpy.search.call_count == 1
         
         # Second call should use cache
-        tickets_second = zendesk_client.fetch_tickets(status="all")
+        tickets_second = zendesk_client.get_tickets(status="all")
         assert mock_zenpy.search.call_count == 1
         
         # Invalidate cache
         zendesk_client.cache.invalidate_tickets()
         
         # Third call should hit API again
-        tickets_third = zendesk_client.fetch_tickets(status="all")
+        tickets_third = zendesk_client.get_tickets(status="all")
         assert mock_zenpy.search.call_count == 2
     
     def test_fetch_views_cache_integration(self, zendesk_client, mock_zenpy):

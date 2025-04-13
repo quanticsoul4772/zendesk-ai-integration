@@ -9,9 +9,10 @@ from unittest.mock import patch, MagicMock, call
 import os
 import sys
 from datetime import datetime, timedelta
+from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
 
 # Import module to test
-from src.modules.zendesk_client import ZendeskClient
+# from src.infrastructure.compatibility import ZendeskClient
 
 
 class TestZendeskClient:
@@ -51,7 +52,7 @@ class TestZendeskClient:
             client.client = mock_zendesk_client
             
             # Call the function being tested
-            results = client.fetch_tickets(status=status)
+            results = client.get_tickets(status=status)
             
             # Assertions
             assert results == mock_tickets
@@ -89,7 +90,7 @@ class TestZendeskClient:
             # Mock fetch_views to return our test views
             with patch.object(client, 'fetch_views', return_value=test_views):
                 # Call the correct function being tested
-                results = client.fetch_tickets_from_view(view_id)
+                results = client.get_tickets_from_view(view_id)
                 
                 # Assertions
                 assert results == mock_tickets
@@ -119,7 +120,7 @@ class TestZendeskClient:
             client.client = mock_zendesk_client
             
             # Call the function being tested with days parameter
-            results = client.fetch_tickets(status=status, days=days)
+            results = client.get_tickets(status=status, days=days)
             
             # Assertions
             assert results == mock_tickets
@@ -156,7 +157,7 @@ class TestZendeskClient:
             client.client = mock_zendesk_client
             
             # Call the function being tested
-            results = client.fetch_tickets(status=status, limit=limit)
+            results = client.get_tickets(status=status, limit=limit)
             
             # Assertions
             assert len(results) == limit
@@ -174,7 +175,7 @@ class TestZendeskClient:
         # Configure cache to return a hit
         with patch.object(client.cache, 'get_tickets', return_value=mock_tickets):
             # Call the function being tested
-            results = client.fetch_tickets(status=status)
+            results = client.get_tickets(status=status)
             
             # Assertions
             assert results == mock_tickets
@@ -206,7 +207,7 @@ class TestZendeskClient:
             with patch.object(client.cache, 'get_tickets', return_value=None) as mock_get:
                 with patch.object(client.cache, 'set_tickets') as mock_set:
                     # Call the function being tested
-                    results = client.fetch_tickets(status=status)
+                    results = client.get_tickets(status=status)
                     
                     # Assertions
                     assert results == mock_tickets
@@ -392,7 +393,7 @@ class TestZendeskClient:
             # Mock the logger to verify that the error is logged
             with patch('logging.Logger.exception') as mock_logger:
                 # Call the function being tested
-                results = client.fetch_tickets(status="open")
+                results = client.get_tickets(status="open")
                 
                 # Assertions
                 # Verify that an empty list is returned

@@ -80,6 +80,10 @@ pending_support_report_*.txt
 sentiment_analysis_report_*.txt
 hardware_report_*.txt
 multi_view_report_*.txt
+hardware_report.html
+hardware_report_*.html
+support_views_*.html
+*_comparison.html
 
 # Jupyter Notebook
 .ipynb_checkpoints/
@@ -115,3 +119,18 @@ web_modules/
 .parcel-cache/
 .npm/
 .yarn/
+
+# Cleanup and transition files
+cleanup_*.log
+cleanup_execution.log
+*cleanup.log
+zendesk_ai.log
+
+# Test results
+test_results/*.md
+test_results/*.txt
+test_results/*.html
+
+# Keep the cleanup script for future use
+# but ignore its output logs
+# cleanup_project.py

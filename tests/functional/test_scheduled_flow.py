@@ -18,7 +18,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # Import the main application entry point and scheduler component
 from src.zendesk_ai_app import main
-from src.modules.scheduler import Scheduler
+from src.infrastructure.external_services.scheduler_service import SchedulerService
+# from src.infrastructure.compatibility import Scheduler
 
 
 @pytest.mark.serial

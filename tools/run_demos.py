@@ -209,7 +209,7 @@ def demo_sentiment_analysis():
 def demo_cache_invalidation():
     """Run a demonstration of cache invalidation functionality."""
     try:
-        from src.modules.zendesk_client import ZendeskClient
+        from src.infrastructure.compatibility import ZendeskClient
         from dotenv import load_dotenv
         
         # Load environment variables
@@ -289,8 +289,8 @@ def demo_cache_invalidation():
 def demo_performance():
     """Run a demonstration of the performance optimizations."""
     try:
-        from src.modules.zendesk_client import ZendeskClient
-        from src.modules.ai_analyzer import AIAnalyzer
+        from src.infrastructure.compatibility import ZendeskClient
+        from src.infrastructure.compatibility import AIAnalyzer
         from src.modules.batch_processor import BatchProcessor
         from dotenv import load_dotenv
         
@@ -364,8 +364,8 @@ def demo_performance():
 def demo_workflow():
     """Run a demonstration of the complete workflow with caching."""
     try:
-        from src.modules.zendesk_client import ZendeskClient
-        from src.modules.ai_analyzer import AIAnalyzer
+        from src.infrastructure.compatibility import ZendeskClient
+        from src.infrastructure.compatibility import AIAnalyzer
         from src.modules.batch_processor import BatchProcessor
         from dotenv import load_dotenv
         

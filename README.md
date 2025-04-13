@@ -1,590 +1,265 @@
 # Zendesk AI Integration
 
-[![Python Tests](https://github.com/quanticsoul4772/zendesk-ai-integration/actions/workflows/python-tests.yml/badge.svg)](https://github.com/quanticsoul4772/zendesk-ai-integration/actions/workflows/python-tests.yml)
-[![codecov](https://codecov.io/gh/quanticsoul4772/zendesk-ai-integration/branch/main/graph/badge.svg)](https://codecov.io/gh/quanticsoul4772/zendesk-ai-integration)
-[![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black)](https://github.com/pycqa/flake8)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-[![Version: 1.2.0](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/quanticsoul4772/zendesk-ai-integration/blob/main/VERSION.md)
+An intelligent support system that enhances Zendesk support using AI analysis to improve ticket categorization, prioritization, and reporting.
 
-This application integrates Zendesk support tickets with AI services (OpenAI and Anthropic Claude) to provide automated sentiment analysis, categorization, and reporting while maintaining a read-only approach to customer tickets.
+## Overview
 
-## Quick Start
+The Zendesk AI Integration tool uses artificial intelligence to analyze support tickets in Zendesk, providing:
 
-### One-Step Installation
-
-Run the universal installer script which works on Windows, macOS, and Linux:
-
-```bash
-# Download the installer
-curl -o install.py https://raw.githubusercontent.com/quanticsoul4772/zendesk-ai-integration/main/install.py
-
-# Run the installer
-python install.py
-```
-
-The installer will:
-1. Check if your system meets all requirements
-2. Download necessary files with integrity verification (SHA-256 checksums)
-3. Set up a Python virtual environment
-4. Install all dependencies
-5. Guide you through configuration
-6. Create OS-specific convenience scripts
-
-The installer features robust error handling with automatic retries, progress visualization for larger downloads, and customization options through environment variables.
-
-After installation, you can run the application using:
-
-**Windows**:
-```
-run_zendesk_ai.bat --mode list-views
-```
-
-**macOS/Linux**:
-```
-./run_zendesk_ai.sh --mode list-views
-```
-
-For detailed installation instructions, see [INSTALLATION.md](INSTALLATION.md).
-
-### Installation Customization
-
-The installer supports several environment variables for customization:
-
-| Variable | Description | Default |
-|----------|-------------|--------|
-| `ZENDESK_AI_ORG` | GitHub organization name | `quanticsoul4772` |
-| `ZENDESK_AI_REPO` | GitHub repository name | `zendesk-ai-integration` |
-| `ZENDESK_AI_BRANCH` | GitHub branch name | `main` |
-| `SKIP_CHECKSUM_VERIFY` | Skip checksum verification | `false` |
-
-**Examples:**
-
-```bash
-# Using a development branch
-ZENDESK_AI_BRANCH=dev python install.py
-
-# Using a fork with checksum verification disabled
-ZENDESK_AI_ORG=your-username SKIP_CHECKSUM_VERIFY=true python install.py
-```
+- **Sentiment Analysis**: Detect customer sentiment (positive, neutral, negative)
+- **Ticket Categorization**: Automatically categorize tickets by issue type
+- **Priority Scoring**: Generate priority scores based on sentiment, urgency, and business impact
+- **Hardware Component Detection**: Identify hardware components mentioned in tickets
+- **Advanced Reporting**: Generate comprehensive reports with actionable insights
+- **Real-time Processing**: Process tickets as they arrive using webhooks
+- **Scheduled Analysis**: Run batch analyses on a regular schedule
 
 ## Features
 
-### AI Integration
-- **Unified AI Architecture**:
-  - **NEW: Consolidated AI Service** - Common interface for all AI providers
-  - **Multi-LLM Support**:
-    - **OpenAI**: Advanced GPT-4o model with GPT-3.5 Turbo fallback
-    - **Anthropic Claude**: Claude 3 models (Haiku, Sonnet) with multiple fallbacks
-  - Seamless switching between AI providers
-  - Automatic error handling, retry logic, and rate limit handling
-  - Robust backoff strategy with jitter
+### AI-Powered Analysis
 
-### Enhanced MongoDB Setup
-- **Multiple Setup Options**:
-  - **NEW: Docker-based MongoDB** - One-click setup with Docker and persistence
-  - **Native Installation** - Platform-specific automated installation
-  - **MongoDB Atlas** - Cloud-hosted database with guided setup
-  - **Custom Connection** - Support for existing MongoDB instances
-- **Management Tools**:
-  - MongoDB management scripts for starting/stopping/monitoring
-  - Connection verification and testing
-  - Easy reconfiguration with `configure_mongodb.py`
+- Uses Claude and OpenAI models for accurate analysis
+- Detects customer sentiment with nuanced categorization
+- Identifies priority based on several factors
+- Recognizes hardware components mentioned in tickets
+- Detects business impact indicators
 
-### Enhanced Sentiment Analysis
-- **Unified Sentiment Analysis**:
-  - **NEW: Provider-agnostic sentiment analysis** - Same interface for all AI models
-  - **Consistent response format** regardless of provider
-  - **Automatic priority scoring** based on weighted sentiment metrics
-- **Nuanced Analysis**:
-  - Contextual examples for better sentiment classification
-  - Temperature-controlled variance for nuanced analysis
-  - Sentiment polarity detection (positive, negative, neutral)
-- **Support Metrics**:
-  - Urgency level detection (1-5 scale)
-  - Frustration level detection (1-5 scale)
-  - Technical expertise estimation
-  - Priority score calculation (1-10 scale)
-- **Business Intelligence**:
-  - Business impact assessment
-  - Key phrase extraction
-  - Emotion detection
+### Comprehensive Reporting
 
-### Reporting Capabilities
-- **Intuitive Reporting** with descriptive labels and contextual information
-  - Executive summary highlighting critical issues
-  - Descriptive labels for numerical scales
-  - Percentage values for all metrics
-  - Summaries and alerts for significant findings
-- **Specialized Reports**:
-  - Hardware component detection and analysis
-  - Multi-view aggregated analytics
-  - Sentiment distribution analysis
-  - High-priority ticket identification
+- Standard and enhanced sentiment reports
+- Hardware component reports
+- Pending ticket reports
+- Multi-view comparative reports
+- Time-based trend analysis
+- Executive summaries with actionable insights
 
-### Performance & Security
-- **Read-only Design** - analyzes tickets without modifying them
-- **Performance Optimizations**:
-  - Caching system with TTL and intelligent cache validation
-  - Parallel batch processing for ticket analysis
-  - Self-healing cache with automatic refresh mechanism
-- **Enhanced Security**:
-  - IP whitelisting for webhook endpoints
-  - HMAC signature verification
-  - Robust error handling and input validation
+### Integration Capabilities
 
-### Workflow Improvements
-- **View Status Checking**:
-  - Visual indicators showing which views have tickets
-  - Empty view detection prevents wasted operations
-  - Dedicated utility for checking view status
-  - See [VIEW_STATUS_CHECKING.md](docs/VIEW_STATUS_CHECKING.md) for details
+- Webhook server for real-time ticket processing
+- Scheduled tasks for regular reporting
+- Comments and tags to enhance Zendesk workflow
+- Multi-view support for organizational needs
 
-### Multiple Operation Modes
-- One-time batch analysis
-- Real-time webhook analysis
-- Scheduled daily/weekly analysis
-- View-based reporting and analytics
-- **NEW: Improved multi-view reporting with intuitive selection interface**
+### User-Friendly Interfaces
+
+- Command-line interface for all operations
+- Interactive menu system for easy navigation
+- Hierarchical view organization
+- Text, JSON, HTML, CSV export options
+
+## Clean Architecture
+
+The application is built using Clean Architecture principles, organized into the following layers:
+
+### Domain Layer (`src/domain`)
+
+- **Entities**: Core business objects (`Ticket`, `TicketAnalysis`)
+- **Value Objects**: Immutable objects (`SentimentPolarity`, `TicketCategory`, `HardwareComponent`)
+- **Interfaces**: Abstract definitions for services and repositories
+- **Exceptions**: Domain-specific exceptions
+
+### Application Layer (`src/application`)
+
+- **Use Cases**: Orchestration of business operations
+- **Services**: Implementation of complex business logic
+- **DTOs**: Data transfer objects for communication between layers
+
+### Infrastructure Layer (`src/infrastructure`)
+
+- **Repositories**: Data access implementations for MongoDB and Zendesk
+- **External Services**: Integrations with Claude and OpenAI
+- **Utils**: Technical utilities like configuration and dependency injection
+
+### Presentation Layer (`src/presentation`)
+
+- **CLI**: Command-line interface and commands
+- **Webhook**: Webhook handling for real-time events
+- **Reporters**: Formatting and presentation of reports
+
+### Benefits of Clean Architecture
+
+- **Separation of Concerns**: Domain logic is isolated from infrastructure
+- **Testability**: Components can be tested independently
+- **Flexibility**: Easy to change infrastructure without affecting business logic
+- **Maintainability**: Well-organized code with clear responsibilities
 
 ## Installation
 
-### Automated Installation (Recommended)
+### Prerequisites
 
-The project includes several automated installation options:
+- Python 3.8 or higher
+- MongoDB 4.4 or higher
+- Zendesk account with API access
 
-1. **Universal Installer (Easiest)**:
+### Installation Steps
+
+1. Clone the repository:
    ```bash
-   python install.py
+   git clone https://github.com/your-organization/zendesk-ai-integration.git
+   cd zendesk-ai-integration
    ```
 
-2. **Step-by-Step Setup**:
+2. Create and activate a virtual environment:
    ```bash
-   python check_prerequisites.py  # Check system requirements
-   python setup.py                # Run guided setup
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. **Configuration Helper**:
+3. Install dependencies:
    ```bash
-   python configure_zendesk_ai.py  # Update general configuration
+   pip install -r requirements.txt
    ```
 
-4. **MongoDB Configuration Helper**:
+4. Configure your environment:
    ```bash
-   python configure_mongodb.py  # Set up or reconfigure MongoDB
+   cp .env.example .env
+   # Edit .env with your Zendesk API credentials and other settings
    ```
 
-### Manual Installation
-
-For manual installation:
-
-1. Clone this repository
-2. Create a virtual environment: `python -m venv venv`
-3. Activate it: `.\venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Unix)
-4. Install dependencies: `pip install -r requirements.txt`
-5. Set up MongoDB database (see [MONGODB_SETUP.md](MONGODB_SETUP.md) for options)
-6. Configure environment variables in `.env` file
-7. Set up pre-commit hooks: `pre-commit install` (see [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) for details)
-
-See [INSTALLATION.md](INSTALLATION.md) for detailed OS-specific instructions for Windows, macOS, and Linux.
-
-## MongoDB Setup
-
-The application now supports multiple MongoDB setup options:
-
-### Docker-based MongoDB (Recommended)
-```bash
-python configure_mongodb.py
-# Choose option 1: Use Docker
-```
-- One-click setup with Docker Compose
-- Data persistence with volumes
-- Automatic authentication setup
-- Management scripts provided (mongodb.bat/mongodb.sh)
-
-### Native Installation
-```bash
-python configure_mongodb.py
-# Choose option 2: Install MongoDB locally
-```
-- Automates platform-specific installation
-- Windows: MSI installation with service setup
-- macOS: Homebrew installation
-- Linux: Repository setup and package installation
-
-### MongoDB Atlas (Cloud)
-```bash
-python configure_mongodb.py
-# Choose option 3: Use MongoDB Atlas
-```
-- No local installation required
-- Free tier available for development
-- Guided setup process
-- Connection testing and validation
-
-### Custom Connection
-```bash
-python configure_mongodb.py
-# Choose option 4: Use existing MongoDB installation
-```
-- Connect to an existing MongoDB instance
-- Support for authentication
-- Connection verification
-
-For detailed information, see [MONGODB_SETUP.md](MONGODB_SETUP.md).
-
-## Configuration
-
-Create a `.env` file with your configuration (or copy and modify `.env.example`):
-
-```
-# Zendesk API credentials
-ZENDESK_EMAIL=your_email@company.com
-ZENDESK_API_TOKEN=your_zendesk_api_token
-ZENDESK_SUBDOMAIN=your_zendesk_subdomain
-
-# AI API keys
-OPENAI_API_KEY=your_openai_api_key
-ANTHROPIC_API_KEY=your_anthropic_api_key
-
-# MongoDB configuration
-MONGODB_URI=mongodb://localhost:27017
-MONGODB_DB_NAME=zendesk_analytics
-MONGODB_COLLECTION_NAME=ticket_analysis
-
-# Slack integration (optional)
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
-
-# Security settings
-WEBHOOK_SECRET_KEY=your_secure_random_key_here
-ALLOWED_IPS=127.0.0.1,10.0.0.0/24
-
-# Feature flags
-DISABLE_TAG_UPDATES=true
-```
-
-The `.env.example` file includes additional configuration options for:
-- Caching settings
-- Performance tuning parameters
-- Logging configuration
-- Report settings
-
-Generate a secure webhook key with:
-```bash
-python -c "import secrets; print(secrets.token_hex(32))"
-```
+5. Set up MongoDB:
+   ```bash
+   python install_mongodb.py
+   ```
 
 ## Usage
 
-### MongoDB Management (Docker Setup)
+### Command-Line Interface
 
-If you've set up MongoDB using Docker, you can manage it with the provided scripts:
-
-**Windows**:
-```
-mongodb.bat start    # Start the MongoDB container
-mongodb.bat stop     # Stop the MongoDB container
-mongodb.bat restart  # Restart the MongoDB container
-mongodb.bat status   # Check the MongoDB container status
-```
-
-**macOS/Linux**:
-```
-./mongodb.sh start    # Start the MongoDB container
-./mongodb.sh stop     # Stop the MongoDB container
-./mongodb.sh restart  # Restart the MongoDB container
-./mongodb.sh status   # Check the MongoDB container status
-```
-
-### Sentiment Analysis with Claude or OpenAI
-
-Analyze tickets with Claude (default):
+The command-line interface provides access to all features:
 
 ```bash
-python -m src.zendesk_ai_app --mode run --status open
+python -m src.main [COMMAND] [OPTIONS]
 ```
 
-Specify OpenAI instead of Claude:
+See [Command Reference](COMMAND_REFERENCE.md) for detailed usage information.
+
+### Basic Operations
+
+#### Analyzing Tickets
 
 ```bash
-python -m src.zendesk_ai_app --mode run --status open --use-openai
+# Analyze a specific ticket
+python -m src.main analyze --ticket-id 12345
+
+# Analyze all tickets in a view
+python -m src.main analyze --view-id 67890
 ```
 
-Enhanced sentiment analysis is now the standard for all operations.
-
-To reanalyze existing tickets with the improved sentiment model:
+#### Generating Reports
 
 ```bash
-python -m src.zendesk_ai_app --mode run --reanalyze --days 7
+# Generate a standard sentiment report
+python -m src.main report --type sentiment --days 7
+
+# Generate an enhanced sentiment report
+python -m src.main report --type enhanced-sentiment --days 7
+
+# Generate a hardware component report
+python -m src.main report --type hardware --view-id 12345
+
+# Generate a multi-view comparative report
+python -m src.main report --type multi-view --view-ids 12345,67890
 ```
 
-### Sentiment Analysis Reporting
-
-Generate detailed sentiment analysis reports:
+#### Using the Interactive Menu
 
 ```bash
-python -m src.zendesk_ai_app --mode sentiment --days 7
+python -m src.main interactive
 ```
 
-This generates a comprehensive report including:
-- Sentiment distribution
-- Urgency and frustration levels
-- Business impact assessment
-- High-priority tickets
-- Average sentiment metrics
-
-You can specify a specific view:
+#### Running the Webhook Server
 
 ```bash
-python -m src.zendesk_ai_app --mode sentiment --view "Support Queue"
+python -m src.main webhook --start --host 0.0.0.0 --port 8000
 ```
 
-Or output to a file:
+#### Setting Up Scheduled Tasks
 
 ```bash
-python -m src.zendesk_ai_app --mode sentiment --days 30 --output sentiment_report.txt
+python -m src.main schedule --add --type analyze --view-id 12345 --interval 60
 ```
 
-### Multi-View Reporting
+## Configuration
 
-Use the dedicated multi-view reporting tool for an improved interface:
+The application uses environment variables for configuration:
+
+- `ZENDESK_EMAIL`: Your Zendesk email address
+- `ZENDESK_API_TOKEN`: Your Zendesk API token
+- `ZENDESK_SUBDOMAIN`: Your Zendesk subdomain
+- `MONGODB_URI`: MongoDB connection string
+- `OPENAI_API_KEY`: OpenAI API key
+- `CLAUDE_API_KEY`: Anthropic Claude API key
+
+## Development
+
+### Project Structure
+
+```
+zendesk-ai-integration/
+├── docs/                 # Documentation
+├── reports/              # Generated reports
+├── src/                  # Source code
+│   ├── domain/           # Domain layer
+│   │   ├── entities/     # Domain entities
+│   │   ├── interfaces/   # Interfaces for repositories and services
+│   │   └── value_objects/# Value objects
+│   ├── application/      # Application layer
+│   │   ├── dtos/         # Data Transfer Objects
+│   │   ├── services/     # Application services
+│   │   └── use_cases/    # Use cases
+│   ├── infrastructure/   # Infrastructure layer
+│   │   ├── external_services/ # External APIs
+│   │   ├── repositories/ # Repository implementations
+│   │   └── utils/        # Utility functions
+│   └── presentation/     # Presentation layer
+│       ├── cli/          # Command-line interface
+│       │   ├── commands/ # Command implementations
+│       │   └── command_handler.py # Command handling
+│       ├── reporters/    # Report formatters
+│       └── webhook/      # Webhook server
+└── tests/                # Tests
+    ├── unit/             # Unit tests
+    ├── integration/      # Integration tests
+    └── functional/       # Functional tests
+```
+
+### Running Tests
 
 ```bash
-# Windows
-multi_view_reports.bat
+# Run all tests
+python run_tests.py
 
-# macOS/Linux
-./multi_view_reports.sh
+# Run specific tests
+python -m unittest tests/unit/test_module.py
+
+# Run tests with enhanced reports
+python run_enhanced_tests.py
 ```
 
-This tool provides:
-- Detailed view status information (ticket counts, pending tickets)
-- Multiple view selection with an intuitive interface
-- Categorized view display for easier navigation
-- Comprehensive cross-view reports
+### Contributing
 
-See [MULTI_VIEW_REPORTING.md](docs/MULTI_VIEW_REPORTING.md) for detailed usage instructions.
+1. Create a feature branch
+2. Make your changes
+3. Run tests
+4. Submit a pull request
 
-### View-Based Reporting
-
-Generate a report for a specific Zendesk view:
-
-```bash
-python -m src.zendesk_ai_app --mode pending --pending-view "Support :: Pending Support"
-```
-
-For multi-view enhanced reports:
-
-```bash
-python -m src.zendesk_ai_app --mode sentiment --views 18002932412055,25973272172823 --format enhanced
-```
-
-### Webhook Server
-
-Start a webhook server for real-time analysis:
-
-```bash
-python -m src.zendesk_ai_app --mode webhook
-```
-
-### Scheduled Analysis
-
-Run daily and weekly summaries automatically:
-
-```bash
-python -m src.zendesk_ai_app --mode schedule
-```
-
-### List Available Views
-
-To see all available Zendesk views:
-
-```bash
-python -m src.zendesk_ai_app --mode list-views
-```
-
-### Interactive Menu
-
-Use the interactive menu for easier navigation of Zendesk views and actions:
-
-```bash
-python -m src.zendesk_ai_app --mode interactive
-```
-
-Or use the convenience launcher scripts:
-
-**Windows**:
-```bash
-zendesk_menu.bat
-```
-
-**macOS/Linux**:
-```bash
-./zendesk_menu.sh
-```
-
-The interactive menu provides:
-- Hierarchical navigation of Zendesk views (structured by their :: delimiters)
-- Quick access to recently used views
-- Easy execution of actions on selected views:
-  - Run sentiment analysis
-  - Generate pending or enhanced reports
-  - View tickets in browser
-- Search functionality (type / to search)
-- Keyboard shortcuts for efficient navigation
-
-For more usage examples, see:
-- [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting feature
-- [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
-- [UNIFIED_AI_IMPLEMENTATION.md](docs/UNIFIED_AI_IMPLEMENTATION.md) - Unified AI architecture documentation
-- [MONGODB_SETUP.md](MONGODB_SETUP.md) - **NEW: MongoDB setup options and management**
-
-## Development Timeline
-
-### April 2025
-- **Apr 11:** Implemented unified AI architecture for consolidated provider interface
-- **Apr 11:** Added enhanced MongoDB setup with Docker, native installation, and MongoDB Atlas options
-
-### March 2025
-- **Mar 12:** Initial project creation
-- **Mar 18:** Added test framework and OpenAI integration
-- **Mar 22:** Added configuration samples and security enhancements
-- **Mar 25:** Implemented comprehensive Zendesk view reporting
-- **Mar 26:** Added Claude AI integration and multi-view analysis
-- **Mar 27:** Implemented performance optimizations and caching
-- **Mar 30:** Added cross-platform installation scripts and enhanced documentation
-- **Mar 31:** Enhanced installer with file integrity verification and retry capabilities
-
-For full commit history, see [VERSION.md](VERSION.md).
+See [Contributing Guide](CONTRIBUTING.md) for more details.
 
 ## Documentation
 
-- [README.md](README.md) - Main documentation
-- [INSTALLATION.md](INSTALLATION.md) - Detailed installation instructions for all platforms
-- [MONGODB_SETUP.md](MONGODB_SETUP.md) - **NEW: MongoDB setup options and management**
-- [WEBHOOK_SETUP.md](WEBHOOK_SETUP.md) - Webhook configuration instructions
-- [REPORTING.md](REPORTING.md) - Detailed reporting documentation
-- [ENHANCED_REPORTS.md](ENHANCED_REPORTS.md) - Enhanced reporting documentation
-- [MULTI_VIEW.md](MULTI_VIEW.md) - Multi-view analysis documentation
-- [SENTIMENT_ANALYSIS.md](SENTIMENT_ANALYSIS.md) - Sentiment analysis methodology
-- [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md) - Performance optimization features
-- [INTERACTIVE_MENU.md](INTERACTIVE_MENU.md) - Interactive menu usage and features
-- [VIEW_STATUS_CHECKING.md](docs/VIEW_STATUS_CHECKING.md) - View status checking feature
-- [MULTI_VIEW_REPORTING.md](docs/MULTI_VIEW_REPORTING.md) - Improved multi-view reporting
-- [UNIFIED_AI_IMPLEMENTATION.md](docs/UNIFIED_AI_IMPLEMENTATION.md) - Unified AI architecture documentation
-- [TESTING.md](TESTING.md) - Testing strategy and instructions
-- [PRE_COMMIT_SETUP.md](PRE_COMMIT_SETUP.md) - Pre-commit hooks setup guide
-- [VERSION.md](VERSION.md) - Version history and release notes
-
-## Architecture and Project Structure
-
-The application follows the Single Responsibility Principle, with each module having a clearly defined responsibility:
-
-### Main Components
-
-- `src/zendesk_ai_app.py` - Entry point that coordinates between modules
-- `src/modules/` - Directory containing modular components:
-  - `zendesk_client.py` - Handles all Zendesk API interactions (read-only)
-  - `ai_analyzer.py` - Processes ticket content using AI services
-  - `db_repository.py` - Manages database operations
-  - `webhook_server.py` - Handles webhook requests
-  - `scheduler.py` - Manages scheduled tasks
-  - `cli.py` - Command-line interface and argument parsing
-
-### Reporters Package
-- `src/modules/reporters/` - Contains report generators
-  
-### AI Services
-- `src/unified_ai_service.py` - **NEW: Unified AI service with common interface**
-- `src/unified_sentiment.py` - **NEW: Consolidated sentiment analysis for all providers**
-- `src/ai_service.py` - OpenAI integration with error handling
-- `src/enhanced_sentiment.py` - Enhanced OpenAI sentiment analysis implementation
-- `src/claude_service.py` - Anthropic Claude integration with error handling
-- `src/claude_enhanced_sentiment.py` - Enhanced Claude sentiment analysis implementation
-- `src/security.py` - Security-related functions and decorators
-
-### Installation Components
-- `install.py` - Universal installer script with checksum verification and retry capabilities
-- `check_prerequisites.py` - System requirements checker
-- `setup.py` - Guided installation and configuration script
-- `install_mongodb.py` - **NEW: MongoDB installation and setup module**
-- `configure_mongodb.py` - **NEW: Standalone MongoDB configuration tool**
-- `test_download_logic.py` - Test script for verifying download functionality
-- `update_checksums.py` - Utility for updating file checksums when repository files change
-
-## Dependencies
-
-This project requires Python 3.9+ and the following key dependencies:
-- zenpy>=2.0.56
-- openai>=1.63.0
-- anthropic>=0.49.0
-- pymongo>=4.11.3
-- flask>=3.0.0
-- requests>=2.32.0
-
-For the Docker-based MongoDB setup, you'll need:
-- Docker
-- Docker Compose (included with Docker Desktop on Windows and macOS)
-
-See [requirements.txt](requirements.txt) for the complete list of dependencies.
-
-## Troubleshooting
-
-If you encounter any issues:
-
-1. Run the prerequisites checker: `python check_prerequisites.py`
-2. Check the error logs (usually in the console output)
-3. Verify your MongoDB connection and API keys
-4. See [INSTALLATION.md](INSTALLATION.md) for common issues and solutions
-5. See [MONGODB_SETUP.md](MONGODB_SETUP.md) for MongoDB-specific issues
-6. Open an issue on the GitHub repository with detailed information
-
-### MongoDB Connection Issues
-
-If you encounter MongoDB connection issues:
-
-1. **Docker Setup**: 
-   - Check if the container is running: `mongodb.bat status` or `./mongodb.sh status`
-   - View container logs: `docker logs zendesk_ai_mongodb`
-   - Restart the container: `mongodb.bat restart` or `./mongodb.sh restart`
-
-2. **Native Installation**:
-   - Verify the service is running
-   - Check MongoDB logs for errors
-   - Reconfigure with `python configure_mongodb.py`
-
-3. **MongoDB Atlas**:
-   - Verify your IP is allowed in Network Access settings
-   - Check database user credentials
-   - Test connection string directly
-
-### Download and Checksum Issues
-
-If you encounter issues during installation due to download failures or checksum verification errors:
-
-1. **Connection Issues**: The installer automatically retries downloads up to 3 times with increasing delays. If all retries fail, check your internet connection or try again later.
-
-2. **Checksum Verification Failures**: This could indicate file corruption during download or repository updates without updated checksums. Try running with checksum verification disabled:
-   ```bash
-   SKIP_CHECKSUM_VERIFY=true python install.py
-   ```
-
-3. **Manual Downloads**: If automated downloads fail, you can manually download the required files from the GitHub repository and place them in the same directory as `install.py`. The installer will use existing files if they pass checksum verification or if verification is skipped.
-
-## Design Philosophy
-
-This application follows a read-only design philosophy where tickets are analyzed but never modified. All analysis results are stored in the database for reporting and analytics purposes. This approach provides:
-
-1. **Non-Intrusive Analysis**: Analyze tickets without modifying them
-2. **Historical Tracking**: Store analysis results for trend analysis
-3. **Comprehensive Reporting**: Generate detailed sentiment reports
-4. **Safety**: Prevent unintended modifications to production tickets
-
-By keeping the system read-only, it can safely be used in production environments without risk of interfering with support workflows.
+- [Command Reference](COMMAND_REFERENCE.md): Detailed CLI command documentation
+- [Reporting Features](REPORTING.md): Overview of all reporting capabilities
+- [Enhanced Reports](ENHANCED_REPORTS.md): Details on enhanced reporting features
+- [Multi-View Reporting](MULTI_VIEW_REPORTING.md): Information on multi-view comparative reports
+- [Architecture Documentation](src/ARCHITECTURE.md): Detailed architecture overview
+- [Testing Guide](docs/TESTING_GUIDE.md): Testing approach and examples
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Last Updated
+## Acknowledgments
 
-April 11, 2025
+- Anthropic for Claude API
+- OpenAI for GPT API
+- Zendesk for their API

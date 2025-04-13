@@ -15,12 +15,13 @@ import statistics
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
 import uuid
+from src.infrastructure.repositories.mongodb_repository import MongoDBRepository
 
 # Add the project root to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import module to test
-from src.modules.db_repository import DBRepository
+# from src.infrastructure.compatibility import DBRepository
 
 
 @pytest.mark.mongodb

@@ -6,6 +6,34 @@ This document explains the enhanced reporting feature that adds more intuitive a
 
 The enhanced reporting feature makes sentiment analysis reports more intuitive by adding descriptive labels to numerical scales and organizing information in a more actionable way. It also provides additional data points and context to help support teams better understand the state of their tickets.
 
+## Usage
+
+To generate an enhanced sentiment report, use either of these commands:
+
+```bash
+python -m src.main report --type enhanced-sentiment --days 7
+# OR
+python -m src.main report --type sentiment --enhanced --days 7
+```
+
+Additional options include:
+
+```bash
+# Generate enhanced report for a specific view
+python -m src.main report --type enhanced-sentiment --view-id 12345
+
+# Generate enhanced report for a view by name
+python -m src.main report --type enhanced-sentiment --view-name "Support :: Pending Customer"
+
+# Generate enhanced report for multiple views
+python -m src.main report --type enhanced-sentiment --view-ids 12345,67890
+# OR
+python -m src.main report --type enhanced-sentiment --view-names "Support :: Pending Customer,Support :: Pending RMA"
+
+# Generate enhanced report and save to a specific file
+python -m src.main report --type enhanced-sentiment --output enhanced_report.txt
+```
+
 ## Key Improvements
 
 ### 1. Descriptive Labels for Numerical Scales
@@ -52,26 +80,13 @@ The enhanced report reorganizes information to present the most critical data fi
 
 1. Executive Summary
 2. Business Impact Section with Clear Criteria
-   ```
-   BUSINESS IMPACT
-   --------------
-   A ticket is flagged as having business impact when it indicates:
-   - Production system downtime (non-functional systems)
-   - Revenue loss (financial impact)
-   - Missed deadlines (time-sensitive deliverables at risk)
-   - Customer-facing issues (visible to clients)
-   - Contractual obligations at risk (legal/agreement compliance)
-
-   Tickets with business impact: 61
-   Percentage of total: 91.04%
-   ```
 3. Priority Score Distribution
 4. Urgency and Frustration Levels
 5. Detailed Ticket List (organized by priority)
 
 ### 4. Intuitive Priority Scoring
 
-The enhanced report now includes a clear explanation of the priority scoring system:
+The enhanced report includes a clear explanation of the priority scoring system:
 
 ```
 PRIORITY SCORING SYSTEM
@@ -84,25 +99,6 @@ Our system scores tickets from 1-10 based on urgency, frustration, business impa
 4-5 = Medium Priority (Address within this week)
 1-3 = Low Priority (Address when resources permit)
 ```
-
-And provides a detailed breakdown with meaningful descriptions:
-
-```
-DETAILED PRIORITY BREAKDOWN
---------------------------
-Score 9 (Critical Priority (Urgent action needed, significant business impact)): 5 tickets (7.5%)
-Score 8 (High Priority (Requires attention within 24 hours, significant impact)): 46 tickets (68.7%)
-Score 7 (High Priority (Address within 48 hours, important issue)): 8 tickets (11.9%)
-Score 6 (Medium-High Priority (Address within this week)): 2 tickets (3.0%)
-```
-
-The report also explains when certain priority scores aren't present in the dataset:
-
-```
-No tickets with scores 1, 10 in current dataset
-```
-
-This additional explanation makes it much clearer to team members what the priority scores mean and how they should respond to tickets at different priority levels.
 
 ### 5. Top Components Analysis
 
@@ -122,7 +118,7 @@ This section provides a quick overview of which hardware components are causing 
 
 ### 6. Business Impact Tickets
 
-The enhanced report now clearly identifies business impact tickets with explanations:
+The enhanced report clearly identifies business impact tickets with explanations:
 
 ```
 BUSINESS IMPACT TICKETS
@@ -137,7 +133,7 @@ These tickets have critical business impact that may affect production systems, 
 
 ### 7. Enhanced High Priority Tickets Display
 
-The latest version shows up to 10 high-priority tickets (increased from 5) with detailed information:
+The latest version shows up to 10 high-priority tickets with detailed information:
 
 ```
 HIGH PRIORITY TICKETS
@@ -153,38 +149,6 @@ Found 62 high priority tickets (priority 7-10)
   Emotions: anger, frustration, worry
   Component: motherboard
   Category: hardware_issue
-
-#27993 - Re: [Exxact Corporation] Ticket #26415 - Re: Consistent Machine Freezing Issue
-  Priority: 9/10 - Critical Priority (Urgent action needed, significant business impact)
-  Sentiment: Negative
-  Urgency: 4/5 - Serious issues requiring prompt resolution
-  Frustration: 5/5 - Extremely frustrated
-  Business Impact: Production system down, significant productivity loss, risk of missing deadlines and contract obligations
-  Emotions: anger, frustration, urgency
-  Category: hardware_issue
-```
-
-This expanded section gives support teams more visibility into critical issues that require immediate attention.
-
-## Usage
-
-To generate an enhanced report, use the `--format enhanced` parameter:
-
-```bash
-python src/zendesk_ai_app.py --mode sentiment --views 18002932412055,25973272172823 --output enhanced_report.txt --format enhanced
-```
-
-Additional options include:
-
-```bash
-# Generate enhanced report for a single view
-python src/zendesk_ai_app.py --mode sentiment --view 18002932412055 --format enhanced
-
-# Generate enhanced report for the last 7 days
-python src/zendesk_ai_app.py --mode sentiment --days 7 --format enhanced
-
-# Generate enhanced report for multiple views by name
-python src/zendesk_ai_app.py --mode sentiment --view-names "Support :: Pending Customer,Support :: Pending RMA" --format enhanced
 ```
 
 ## Benefits
@@ -200,11 +164,25 @@ The enhanced reporting provides several benefits:
 
 ## Implementation Details
 
-The enhanced reporting is implemented in the `EnhancedSentimentReporter` class, which extends the functionality of the regular `SentimentReporter` class.
+The enhanced reporting feature is implemented using Clean Architecture principles. Within the `src/presentation/reporters` directory, the sentiment reporter supports enhanced formatting via the `enhanced` parameter.
 
-The enhanced reporter shares the same methods and functionality but adds descriptive labels, contextual information, and reorganizes data for better clarity.
+When generating a report, you can either:
+1. Specify `--type enhanced-sentiment` as the report type
+2. Use `--type sentiment --enhanced` to enable enhanced formatting
 
-The latest improvements include:
-- Component analysis with the `_extract_components` method
+The implementation provides:
+- Component analysis to track hardware trends
 - Extended high-priority ticket display (10 tickets instead of 5)
 - Better formatting of percentage values and metrics
+- Descriptive labels for numerical values
+- Executive summary with actionable insights
+
+## Multi-View Enhanced Reports
+
+Enhanced reporting also works with multi-view reports, allowing you to compare sentiment metrics across different support queues with the same improved formatting and clarity:
+
+```bash
+python -m src.main report --type multi-view --view-ids 12345,67890 --enhanced
+```
+
+This provides comparative insights across different support queues with the enhanced formatting.

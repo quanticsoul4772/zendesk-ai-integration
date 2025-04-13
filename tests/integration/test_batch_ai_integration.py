@@ -16,8 +16,9 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import the components to test
-from src.modules.ai_analyzer import AIAnalyzer
+# from src.infrastructure.compatibility import AIAnalyzer
 from src.modules.batch_processor import BatchProcessor
+from src.application.services.ticket_analysis_service import TicketAnalysisService
 
 
 class TestBatchAIIntegration:
