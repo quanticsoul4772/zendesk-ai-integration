@@ -21,12 +21,13 @@ python -m src.main [command] [options]
    - `--include-inactive` - Include inactive views
    - `--filter [string]` - Filter views by name (case-insensitive)
 
-2. **analyze** - Analyze tickets
+2. **analyzeticket** - Analyze tickets
    ```bash
-   python -m src.main analyze [options]
+   python -m src.main analyzeticket [options]
    ```
    Options:
-   - `--ticket-id [id]` - Analyze a specific ticket by ID
+   - `[ticket_id]` - Optional positional argument to specify ticket ID
+   - `--ticket-id [id]` - Analyze a specific ticket by ID (alternative to positional)
    - `--view-id [id]` - Analyze tickets from a specific view
    - `--view-name [name]` - Analyze tickets from a view by name
    - `--ticket-query [query]` - Zendesk search query to find tickets to analyze
@@ -38,9 +39,9 @@ python -m src.main [command] [options]
    - `--reanalyze` - Reanalyze tickets that have already been analyzed
    - `--use-openai` - Use OpenAI instead of Claude for analysis
 
-3. **report** - Generate reports
+3. **generatereport** - Generate reports
    ```bash
-   python -m src.main report [options]
+   python -m src.main generatereport [options]
    ```
    Options:
    - `--type [sentiment|enhanced-sentiment|hardware|pending|multi-view]` - Report type
@@ -50,7 +51,7 @@ python -m src.main [command] [options]
    - `--view-ids [ids]` - Comma-separated list of view IDs
    - `--view-names [names]` - Comma-separated list of view names
    - `--output [filepath]` - Output file path
-   - `--format [text|html|csv|json]` - Output format
+   - `--format [text|html|json|csv]` - Output format
    - `--enhanced` - Use enhanced format with more details (alternatively use --type enhanced-sentiment)
    - `--limit [number]` - Maximum number of tickets to include
 
@@ -118,23 +119,25 @@ python -m src.main views
 python -m src.main views --flat --include-inactive
 
 # Analyze a specific ticket
-python -m src.main analyze --ticket-id 12345
+python -m src.main analyzeticket 12345
+# OR
+python -m src.main analyzeticket --ticket-id 12345
 
 # Analyze tickets from a view
-python -m src.main analyze --view-id 67890 --limit 10
+python -m src.main analyzeticket --view-id 67890 --limit 10
 
 # Generate a sentiment report
-python -m src.main report --type sentiment --days 7
+python -m src.main generatereport --type sentiment --days 7
 
 # Generate an enhanced sentiment report
-python -m src.main report --type enhanced-sentiment --days 7
+python -m src.main generatereport --type enhanced-sentiment --days 7
 # OR
-python -m src.main report --type sentiment --enhanced --days 7
+python -m src.main generatereport --type sentiment --enhanced --days 7
 
 # Generate a multi-view report
-python -m src.main report --type multi-view --view-ids 12345,67890 --days 7
+python -m src.main generatereport --type multi-view --view-ids 12345,67890 --days 7
 # OR
-python -m src.main report --type multi-view --view-names "Support :: Pending,Support :: Open" --days 7
+python -m src.main generatereport --type multi-view --view-names "Support :: Pending,Support :: Open" --days 7
 
 # Start webhook server
 python -m src.main webhook --start --host 0.0.0.0 --port 8000

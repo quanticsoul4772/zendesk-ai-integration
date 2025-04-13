@@ -11,27 +11,27 @@ The enhanced reporting feature makes sentiment analysis reports more intuitive b
 To generate an enhanced sentiment report, use either of these commands:
 
 ```bash
-python -m src.main report --type enhanced-sentiment --days 7
+python -m src.main generatereport --type enhanced-sentiment --days 7
 # OR
-python -m src.main report --type sentiment --enhanced --days 7
+python -m src.main generatereport --type sentiment --enhanced --days 7
 ```
 
 Additional options include:
 
 ```bash
 # Generate enhanced report for a specific view
-python -m src.main report --type enhanced-sentiment --view-id 12345
+python -m src.main generatereport --type enhanced-sentiment --view-id 12345
 
 # Generate enhanced report for a view by name
-python -m src.main report --type enhanced-sentiment --view-name "Support :: Pending Customer"
+python -m src.main generatereport --type enhanced-sentiment --view-name "Support :: Pending Customer"
 
 # Generate enhanced report for multiple views
-python -m src.main report --type enhanced-sentiment --view-ids 12345,67890
+python -m src.main generatereport --type enhanced-sentiment --view-ids 12345,67890
 # OR
-python -m src.main report --type enhanced-sentiment --view-names "Support :: Pending Customer,Support :: Pending RMA"
+python -m src.main generatereport --type enhanced-sentiment --view-names "Support :: Pending Customer,Support :: Pending RMA"
 
 # Generate enhanced report and save to a specific file
-python -m src.main report --type enhanced-sentiment --output enhanced_report.txt
+python -m src.main generatereport --type enhanced-sentiment --output enhanced_report.txt
 ```
 
 ## Key Improvements
@@ -182,7 +182,7 @@ The implementation provides:
 Enhanced reporting also works with multi-view reports, allowing you to compare sentiment metrics across different support queues with the same improved formatting and clarity:
 
 ```bash
-python -m src.main report --type multi-view --view-ids 12345,67890 --enhanced
+python -m src.main generatereport --type multi-view --view-ids 12345,67890 --enhanced
 ```
 
 This provides comparative insights across different support queues with the enhanced formatting.

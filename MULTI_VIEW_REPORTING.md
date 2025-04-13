@@ -11,26 +11,26 @@ Multi-view reporting enables support teams to compare sentiment metrics, priorit
 To generate a multi-view report, use the following command:
 
 ```bash
-python -m src.main report --type multi-view --view-ids 12345,67890 --days 7
+python -m src.main generatereport --type multi-view --view-ids 12345,67890 --days 7
 ```
 
 Or by view names:
 
 ```bash
-python -m src.main report --type multi-view --view-names "Support :: Pending,Support :: Open" --days 7
+python -m src.main generatereport --type multi-view --view-names "Support :: Pending,Support :: Open" --days 7
 ```
 
 Additional options include:
 
 ```bash
 # Generate enhanced multi-view report
-python -m src.main report --type multi-view --view-ids 12345,67890 --enhanced
+python -m src.main generatereport --type multi-view --view-ids 12345,67890 --enhanced
 
 # Generate multi-view report with specific output format
-python -m src.main report --type multi-view --view-names "Support :: Pending,Support :: Open" --format html
+python -m src.main generatereport --type multi-view --view-names "Support :: Pending,Support :: Open" --format html
 
 # Generate multi-view report and save to a specific file
-python -m src.main report --type multi-view --view-ids 12345,67890 --output multi_view_report.txt
+python -m src.main generatereport --type multi-view --view-ids 12345,67890 --output multi_view_report.txt
 ```
 
 ## Report Content
@@ -139,7 +139,7 @@ The implementation follows Clean Architecture principles:
 Compare metrics across all active support queues to identify bottlenecks:
 
 ```bash
-python -m src.main report --type multi-view --view-names "Support :: New,Support :: Open,Support :: Pending,Support :: Solved" --enhanced
+python -m src.main generatereport --type multi-view --view-names "Support :: New,Support :: Open,Support :: Pending,Support :: Solved" --enhanced
 ```
 
 ### Team Performance Comparison
@@ -147,7 +147,7 @@ python -m src.main report --type multi-view --view-names "Support :: New,Support
 Compare metrics across different team views to evaluate performance:
 
 ```bash
-python -m src.main report --type multi-view --view-names "Team A :: All,Team B :: All,Team C :: All" --days 30
+python -m src.main generatereport --type multi-view --view-names "Team A :: All,Team B :: All,Team C :: All" --days 30
 ```
 
 ### Customer Segment Analysis
@@ -155,7 +155,7 @@ python -m src.main report --type multi-view --view-names "Team A :: All,Team B :
 Compare metrics across different customer segment views:
 
 ```bash
-python -m src.main report --type multi-view --view-names "Enterprise Customers,SMB Customers,Individual Customers"
+python -m src.main generatereport --type multi-view --view-names "Enterprise Customers,SMB Customers,Individual Customers"
 ```
 
 ### Hardware vs. Software Issue Comparison
@@ -163,5 +163,5 @@ python -m src.main report --type multi-view --view-names "Enterprise Customers,S
 Compare metrics between hardware and software issue queues:
 
 ```bash
-python -m src.main report --type multi-view --view-names "Hardware Issues,Software Issues"
+python -m src.main generatereport --type multi-view --view-names "Hardware Issues,Software Issues"
 ```

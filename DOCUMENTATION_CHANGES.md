@@ -16,7 +16,7 @@ The documentation has been updated to reflect the current command structure, rep
 
 ### COMMAND_REFERENCE.md
 
-- Updated command names from `analyzeticket` and `generatereport` to `analyze` and `report`
+- Updated command names to match the actual implementation (`analyzeticket` and `generatereport`)
 - Added missing command options including `--enhanced` and improved multi-view reporting options
 - Updated examples to match the current command syntax
 - Added documentation for enhanced sentiment report options
@@ -62,6 +62,12 @@ The documentation updates reflect the following architectural changes:
 4. Enhanced support for multi-view reporting
 5. New options for enhanced reporting formats
 
+## Command Naming Correction (April 13, 2025)
+
+After testing the commands, we discovered that the actual command names in the code (`analyzeticket`, `generatereport`) differ from what was previously documented (`analyze`, `report`). The COMMAND_REFERENCE.md has been updated to reflect the correct command names as implemented in the codebase.
+
+This discrepancy comes from how the command names are derived in the Command base class. The name property in the Command class removes the "Command" suffix from the class name, but does not transform `analyzeticket` to `analyze` or `generatereport` to `report`.
+
 ## Next Steps
 
 For further documentation improvements, consider:
@@ -70,6 +76,7 @@ For further documentation improvements, consider:
 2. Creating user guides with screenshots for common operations
 3. Developing API documentation for potential integrations
 4. Expanding troubleshooting documentation with common issues and solutions
+5. Consider renaming the commands in the code to match more intuitive names (`analyze` instead of `analyzeticket`, `report` instead of `generatereport`)
 
 ## Conclusion
 

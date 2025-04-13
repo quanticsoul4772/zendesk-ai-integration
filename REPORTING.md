@@ -9,7 +9,7 @@ This document describes the reporting features available in the Zendesk AI Integ
 Generate a detailed sentiment analysis report:
 
 ```bash
-python -m src.main report --type sentiment --days 7
+python -m src.main generatereport --type sentiment --days 7
 ```
 
 This report provides comprehensive sentiment analytics:
@@ -23,15 +23,15 @@ This report provides comprehensive sentiment analytics:
 
 You can generate reports for different time periods:
 ```bash
-python -m src.main report --type sentiment --days 1   # Last 24 hours
-python -m src.main report --type sentiment --days 7   # Last week
-python -m src.main report --type sentiment --days 30  # Last month
+python -m src.main generatereport --type sentiment --days 1   # Last 24 hours
+python -m src.main generatereport --type sentiment --days 7   # Last week
+python -m src.main generatereport --type sentiment --days 30  # Last month
 ```
 
 Or focus on specific views:
 ```bash
-python -m src.main report --type sentiment --view-name "Support Queue"
-python -m src.main report --type sentiment --view-id 12345
+python -m src.main generatereport --type sentiment --view-name "Support Queue"
+python -m src.main generatereport --type sentiment --view-id 12345
 ```
 
 ### Enhanced Sentiment Analysis Report
@@ -39,9 +39,9 @@ python -m src.main report --type sentiment --view-id 12345
 Generate a more detailed and intuitive sentiment report with descriptive labels:
 
 ```bash
-python -m src.main report --type enhanced-sentiment --days 7
+python -m src.main generatereport --type enhanced-sentiment --days 7
 # OR
-python -m src.main report --type sentiment --enhanced --days 7
+python -m src.main generatereport --type sentiment --enhanced --days 7
 ```
 
 The enhanced report includes:
@@ -57,7 +57,7 @@ The enhanced report includes:
 Generate a detailed report of tickets in the Pending Support view:
 
 ```bash
-python -m src.main report --type pending --view-name "Support :: Pending Support"
+python -m src.main generatereport --type pending --view-name "Support :: Pending Support"
 ```
 
 This report includes:
@@ -74,7 +74,7 @@ This report includes:
 Generate a report focused on hardware component issues:
 
 ```bash
-python -m src.main report --type hardware --view-id 12345
+python -m src.main generatereport --type hardware --view-id 12345
 ```
 
 This report analyzes tickets for hardware component mentions and provides:
@@ -88,9 +88,9 @@ This report analyzes tickets for hardware component mentions and provides:
 Generate reports that compare data across multiple views:
 
 ```bash
-python -m src.main report --type multi-view --view-ids 12345,67890
+python -m src.main generatereport --type multi-view --view-ids 12345,67890
 # OR
-python -m src.main report --type multi-view --view-names "Support :: Pending,Support :: Open"
+python -m src.main generatereport --type multi-view --view-names "Support :: Pending,Support :: Open"
 ```
 
 Multi-view reports provide:
