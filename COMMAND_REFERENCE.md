@@ -120,8 +120,6 @@ python -m src.main views --flat --include-inactive
 
 # Analyze a specific ticket
 python -m src.main analyzeticket 12345
-# OR
-python -m src.main analyzeticket --ticket-id 12345
 
 # Analyze tickets from a view
 python -m src.main analyzeticket --view-id 67890 --limit 10
