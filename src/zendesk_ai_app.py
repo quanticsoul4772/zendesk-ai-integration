@@ -1,168 +1,134 @@
 #!/usr/bin/env python3
+
 """
 Zendesk AI Integration Application
 
-This is the main entry point for the Zendesk AI Integration application.
-It coordinates between the various modules to provide the requested functionality.
+This module provides the main entry point for the Zendesk AI Integration application.
 """
 
 import os
-import logging
-import atexit
 import sys
-import time
-import random
+import logging
+import argparse
 from dotenv import load_dotenv
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("zendesk_ai")
-
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
+from typing import Dict, Any, List, Optional
 
-# Add the current directory to the Python path to enable absolute imports
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
+import sys
+import os
 
-# First ensure parent directory (project root) is in the path
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+# Add parent directory to path for proper imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Then add current directory (src)
-if current_dir not in sys.path:
-    sys.path.insert(0, current_dir)
+from src.infrastructure.utils.service_provider import ServiceProvider
+from src.presentation.cli.command_handler import CommandHandler
+from src.presentation.cli.commands import (
+    AnalyzeTicketCommand,
+    GenerateReportCommand,
+    ListViewsCommand,
+    InteractiveCommand,
+    ScheduleCommand,
+    WebhookCommand
+)
 
-# Create a function to get a Zendesk client instance
-def get_zendesk_client():
+# Command classes to register
+COMMAND_CLASSES = [
+    AnalyzeTicketCommand,
+    GenerateReportCommand,
+    ListViewsCommand,
+    InteractiveCommand,
+    ScheduleCommand,
+    WebhookCommand
+]
+
+
+def configure_logging(level_name: str = "INFO") -> None:
     """
-    Get a Zendesk client instance for use outside the main function.
-    
-    Returns:
-        A ZendeskClient instance
-    """
-    from modules.zendesk_client import ZendeskClient
-    return ZendeskClient().client
-
-# Add a utility function for exponential backoff retries
-def exponential_backoff_retry(func, *args, max_retries=5, base_delay=2.0, max_delay=30.0, **kwargs):
-    """
-    Retry a function with exponential backoff.
+    Configure logging for the application.
     
     Args:
-        func: The function to retry
-        *args: Arguments to pass to the function
-        max_retries: Maximum number of retries
-        base_delay: Base delay in seconds
-        max_delay: Maximum delay in seconds
-        **kwargs: Keyword arguments to pass to the function
+        level_name: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    """
+    level = getattr(logging, level_name.upper(), logging.INFO)
+    
+    # Configure root logger
+    logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler('zendesk_ai.log')
+        ]
+    )
+    
+    # Set lower log level for some noisy libraries
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("zenpy").setLevel(logging.WARNING)
+    logging.getLogger("openai").setLevel(logging.WARNING)
+    
+    logging.info(f"Logging configured with level: {level_name}")
+
+
+def parse_args(args: Optional[List[str]] = None) -> Dict[str, Any]:
+    """
+    Parse command-line arguments.
+    
+    Args:
+        args: Command-line arguments (defaults to sys.argv[1:])
         
     Returns:
-        The result of the function call
-    
-    Raises:
-        The last exception encountered if all retries fail
+        Dictionary of parsed arguments
     """
-    last_exception = None
+    parser = argparse.ArgumentParser(description="Zendesk AI Integration")
     
-    for retry in range(max_retries):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            last_exception = e
-            
-            # Calculate delay with jitter to avoid thundering herd
-            delay = min(max_delay, base_delay * (2 ** retry))
-            jitter = random.uniform(0, delay / 2)
-            total_delay = delay + jitter
-            
-            logger.warning(f"Retry {retry+1}/{max_retries} after {total_delay:.2f}s due to: {e}")
-            time.sleep(total_delay)
+    parser.add_argument("--config", help="Path to configuration file")
+    parser.add_argument("--log-level", default="INFO", help="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
     
-    # If we've exhausted all retries, raise the last exception
-    raise last_exception
+    # Parse known arguments to get the config file and log level
+    parsed_args, remaining = parser.parse_known_args(args)
+    
+    # Configure logging with the specified level
+    configure_logging(parsed_args.log_level)
+    
+    # Return the parsed arguments
+    return vars(parsed_args)
 
-def main():
-    """Main entry point for the application."""
+
+def main(args: Optional[List[str]] = None) -> int:
+    """
+    Main entry point for the application.
+    
+    Args:
+        args: Command-line arguments (defaults to sys.argv[1:])
+        
+    Returns:
+        Exit code (0 for success, non-zero for failure)
+    """
     try:
-        # Import modules from the modular structure using absolute imports
-        from modules.zendesk_client import ZendeskClient
-        from modules.ai_analyzer import AIAnalyzer
-        from modules.db_repository import DBRepository
-        from modules.cli import CommandLineInterface
-        from modules.reporters.hardware_report import HardwareReporter
-        from modules.reporters.pending_report import PendingReporter
+        # Parse arguments
+        parsed_args = parse_args(args)
         
-        # Initialize components
-        zendesk_client = ZendeskClient()
-        ai_analyzer = AIAnalyzer()
-        db_repository = DBRepository()
+        # Create service provider
+        config_file = parsed_args.get("config")
+        service_provider = ServiceProvider(config_file)
         
-        # Initialize report modules and import SentimentReporter
-        from modules.reporters.sentiment_report import SentimentReporter
-        from modules.reporters.enhanced_sentiment_report import EnhancedSentimentReporter
+        # Create command handler
+        command_handler = CommandHandler(service_provider)
         
-        report_modules = {
-            "hardware": HardwareReporter(),
-            "pending": PendingReporter(),
-            "sentiment": SentimentReporter(),
-            "sentiment_enhanced": EnhancedSentimentReporter()
-        }
+        # Register commands
+        command_handler.register_commands(COMMAND_CLASSES)
         
-        # Register function to close MongoDB connections on exit
-        atexit.register(db_repository.close)
+        # Run the command handler
+        result = command_handler.run(args)
         
-        # Parse command-line arguments and execute the requested mode
-        cli = CommandLineInterface()
-        args = cli.parse_args()
-        
-        logger.info(f"Starting Zendesk AI Integration in {args.mode} mode")
-        
-        # For webhook mode, we need to pass the add_comments preference
-        if args.mode == "webhook":
-            from modules.webhook_server import WebhookServer
-            webhook_server = WebhookServer(
-                zendesk_client=zendesk_client,
-                ai_analyzer=ai_analyzer,
-                db_repository=db_repository
-            )
-            # Explicitly set comment preference to False unless requested
-            webhook_server.set_comment_preference(args.add_comments)
-            webhook_server.run(host=args.host, port=args.port)
-            return 0
-        
-        # For other modes, use the CLI executor
-        success = cli.execute(args, zendesk_client, ai_analyzer, db_repository, report_modules)
-        
-        if success:
-            logger.info(f"Successfully completed {args.mode} mode")
-            return 0
-        else:
-            logger.error(f"Failed to complete {args.mode} mode")
-            return 1
-            
-    except ImportError as e:
-        logger.error(f"Import error: {e}")
-        logger.error("Make sure all required packages are installed. Run: pip install -r requirements.txt")
-        return 1
+        # Return exit code based on success
+        return 0 if result.get("success", False) else 1
     except Exception as e:
-        logger.exception(f"Unexpected error: {e}")
+        logging.exception(f"Unhandled exception: {e}")
         return 1
-    finally:
-        # Ensure any cleanup happens
-        try:
-            # Initialize db_repository to None to avoid unbound variable warning
-            db_repository = None
-            
-            # Check if db_repository was created and close it if it exists
-            if 'db_repository' in locals() and db_repository is not None:
-                db_repository.close()
-        except Exception as e:
-            logger.warning(f"Error during cleanup: {e}")
+
 
 if __name__ == "__main__":
-    exit_code = main()
-    exit(exit_code)
+    sys.exit(main())
