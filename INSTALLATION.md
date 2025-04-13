@@ -1,8 +1,16 @@
 # Zendesk AI Integration - Installation Guide
 
-**Last Updated: March 31, 2025**
+**Last Updated: April 13, 2025**
 
 This guide provides step-by-step instructions for installing and running the Zendesk AI Integration application on Windows, macOS, and Linux systems.
+
+## Quick Reference Documents
+
+Before starting the installation, check these helpful resources:
+
+- [Installation Checklist](docs/INSTALLATION_CHECKLIST.md) - Everything you need before starting
+- [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md) - Explanations of technical terms in plain language
+- [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md) - Ready-to-use commands for easy installation
 
 ## Prerequisites
 
@@ -36,13 +44,6 @@ For an automated installation experience, use the universal installer script whi
    ```bash
    python install.py
    ```
-
-3. Or for more advanced usage, you can download and run the setup components directly:
-
-```bash
-python check_prerequisites.py  # Check if your system meets requirements
-python setup.py                # Run the automated installation
-```
 
 The setup script will:
 - Check if your system meets requirements
@@ -328,34 +329,9 @@ To upgrade to a newer version of the application:
    ```
 4. Restore your custom settings from the backup `.env` if needed
 
-## Customizing Installation
-
-The installer supports several environment variables to customize the installation process:
-
-| Variable | Description | Default |
-|----------|-------------|--------|
-| `ZENDESK_AI_ORG` | GitHub organization name | `exxactcorp` |
-| `ZENDESK_AI_REPO` | GitHub repository name | `zendesk-ai-integration` |
-| `ZENDESK_AI_BRANCH` | GitHub branch name | `main` |
-| `SKIP_CHECKSUM_VERIFY` | Skip checksum verification | `false` |
-
-### Using Environment Variables
-
-#### On Windows:
-
-```cmd
-set ZENDESK_AI_ORG=your-org-name
-set ZENDESK_AI_BRANCH=dev
-python install.py
-```
-
-#### On macOS/Linux:
-
-```bash
-ZENDESK_AI_ORG=your-org-name ZENDESK_AI_BRANCH=dev python install.py
-```
-
 ## Common Issues and Solutions
+
+For detailed troubleshooting steps, refer to the [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md) which includes plain-language explanations of common error messages.
 
 ### MongoDB Setup and Connection Issues
 
@@ -363,18 +339,7 @@ ZENDESK_AI_ORG=your-org-name ZENDESK_AI_BRANCH=dev python install.py
 
 If you chose the Docker option for MongoDB:
 - Make sure Docker is installed and running on your machine
-- You can manage your MongoDB container with the provided scripts:
-  - On Windows: `mongodb.bat [start|stop|restart|status]`
-  - On macOS/Linux: `./mongodb.sh [start|stop|restart|status]`
-- The container is configured to persist data even after restarts
-
-**Native MongoDB Installation**
-
-If you chose the native MongoDB installation:
-- Verify that MongoDB service is running
-  - Windows: Check Services application for MongoDB service
-  - macOS: Run `brew services list` to check status
-  - Linux: Run `sudo systemctl status mongod`
+- Use the commands in the [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md) to manage your MongoDB container
 
 **MongoDB Atlas Setup**
 
@@ -382,27 +347,6 @@ If you chose MongoDB Atlas:
 - Ensure your IP is allowed in the Network Access settings
 - Verify your database user credentials
 - Test the connection string directly
-
-**General MongoDB Connection Issues**
-
-**Symptoms**: Error messages about failing to connect to MongoDB
-
-**Solutions**:
-- Ensure MongoDB is running on your machine
-- Check your connection string in the `.env` file
-- For MongoDB Atlas, ensure your IP is allowed in the network access settings
-- Check that your username and password are correct
-- Run `python install_mongodb.py` to reconfigure MongoDB
-
-### Download and Checksum Issues
-
-**Symptoms**: Errors during download or checksum verification failures
-
-**Solutions**:
-- Check your internet connection and try again
-- For checksum failures, try skipping verification: `SKIP_CHECKSUM_VERIFY=true python install.py`
-- Download files manually from the GitHub repository if automated downloads fail
-- If using a custom branch or fork, ensure the checksums in `install.py` match the actual files
 
 ### API Key Issues
 
@@ -412,14 +356,6 @@ If you chose MongoDB Atlas:
 - Double-check your API keys in the `.env` file
 - Ensure your Zendesk API token has the necessary permissions
 - For OpenAI or Anthropic, make sure your API key is active and has credits
-
-### Missing or Outdated Dependencies
-
-**Symptoms**: Import errors or unexpected behavior
-
-**Solutions**:
-- Run `pip install -r requirements.txt` to update all dependencies
-- Create a new virtual environment if issues persist
 
 ## Getting Help
 
