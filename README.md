@@ -2,6 +2,32 @@
 
 An intelligent support system that enhances Zendesk support using AI analysis to improve ticket categorization, prioritization, and reporting.
 
+![Zendesk AI Integration Banner](docs/images/zendesk_ai_banner.png)
+
+## Quick Start
+
+Getting started with Zendesk AI Integration is now easier than ever:
+
+1. **Check the [Installation Checklist](docs/INSTALLATION_CHECKLIST.md)** to ensure you have everything needed
+2. **Run our automated installer**:
+   ```bash
+   # Download the installer
+   curl -o install.py https://raw.githubusercontent.com/exxactcorp/zendesk-ai-integration/main/install.py
+
+   # Run the installer
+   python install.py
+   ```
+3. **Verify your installation**:
+   ```bash
+   # On Windows
+   run_zendesk_ai.bat --mode list-views
+   
+   # On macOS/Linux
+   ./run_zendesk_ai.sh --mode list-views
+   ```
+
+Need help? Check our [Installation Index](docs/INSTALLATION_INDEX.md) for all documentation resources!
+
 ## Overview
 
 The Zendesk AI Integration tool uses artificial intelligence to analyze support tickets in Zendesk, providing:
@@ -47,78 +73,38 @@ The Zendesk AI Integration tool uses artificial intelligence to analyze support 
 - Hierarchical view organization
 - Text, JSON, HTML, CSV export options
 
-## Clean Architecture
-
-The application is built using Clean Architecture principles, organized into the following layers:
-
-### Domain Layer (`src/domain`)
-
-- **Entities**: Core business objects (`Ticket`, `TicketAnalysis`)
-- **Value Objects**: Immutable objects (`SentimentPolarity`, `TicketCategory`, `HardwareComponent`)
-- **Interfaces**: Abstract definitions for services and repositories
-- **Exceptions**: Domain-specific exceptions
-
-### Application Layer (`src/application`)
-
-- **Use Cases**: Orchestration of business operations
-- **Services**: Implementation of complex business logic
-- **DTOs**: Data transfer objects for communication between layers
-
-### Infrastructure Layer (`src/infrastructure`)
-
-- **Repositories**: Data access implementations for MongoDB and Zendesk
-- **External Services**: Integrations with Claude and OpenAI
-- **Utils**: Technical utilities like configuration and dependency injection
-
-### Presentation Layer (`src/presentation`)
-
-- **CLI**: Command-line interface and commands
-- **Webhook**: Webhook handling for real-time events
-- **Reporters**: Formatting and presentation of reports
-
-### Benefits of Clean Architecture
-
-- **Separation of Concerns**: Domain logic is isolated from infrastructure
-- **Testability**: Components can be tested independently
-- **Flexibility**: Easy to change infrastructure without affecting business logic
-- **Maintainability**: Well-organized code with clear responsibilities
-
 ## Installation
+
+### Simplified Installation
+
+We've made installation easier with:
+
+- [Installation Checklist](docs/INSTALLATION_CHECKLIST.md): Everything you need before starting
+- [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md): Technical terms explained simply
+- [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md): Ready-to-use commands
+
+For complete installation instructions, see the [Installation Guide](INSTALLATION.md).
 
 ### Prerequisites
 
-- Python 3.8 or higher
-- MongoDB 4.4 or higher
+- Python 3.9 or higher
+- MongoDB 4.4 or higher (or use our Docker-based setup option)
 - Zendesk account with API access
 
-### Installation Steps
+### Quick Installation Steps
 
-1. Clone the repository:
+1. Download and run the installer:
    ```bash
-   git clone https://github.com/your-organization/zendesk-ai-integration.git
-   cd zendesk-ai-integration
+   curl -o install.py https://raw.githubusercontent.com/exxactcorp/zendesk-ai-integration/main/install.py
+   python install.py
    ```
 
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+2. Follow the on-screen prompts to configure your installation
 
-3. Install dependencies:
+3. After installation, verify with:
    ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Configure your environment:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your Zendesk API credentials and other settings
-   ```
-
-5. Set up MongoDB:
-   ```bash
-   python install_mongodb.py
+   run_zendesk_ai.bat --mode list-views  # Windows
+   ./run_zendesk_ai.sh --mode list-views  # macOS/Linux
    ```
 
 ## Usage
@@ -139,26 +125,26 @@ See [Command Reference](COMMAND_REFERENCE.md) for detailed usage information.
 
 ```bash
 # Analyze a specific ticket
-python -m src.main analyze --ticket-id 12345
+python -m src.main analyzeticket 12345
 
 # Analyze all tickets in a view
-python -m src.main analyze --view-id 67890
+python -m src.main analyzeticket --view-id 67890 --limit 10
 ```
 
 #### Generating Reports
 
 ```bash
 # Generate a standard sentiment report
-python -m src.main report --type sentiment --days 7
+python -m src.main generatereport --type sentiment --days 7
 
 # Generate an enhanced sentiment report
-python -m src.main report --type enhanced-sentiment --days 7
+python -m src.main generatereport --type enhanced-sentiment --days 7
 
 # Generate a hardware component report
-python -m src.main report --type hardware --view-id 12345
+python -m src.main generatereport --type hardware --view-id 12345
 
 # Generate a multi-view comparative report
-python -m src.main report --type multi-view --view-ids 12345,67890
+python -m src.main generatereport --type multi-view --view-ids 12345,67890
 ```
 
 #### Using the Interactive Menu
@@ -190,6 +176,35 @@ The application uses environment variables for configuration:
 - `OPENAI_API_KEY`: OpenAI API key
 - `CLAUDE_API_KEY`: Anthropic Claude API key
 
+## Clean Architecture
+
+The application is built using Clean Architecture principles, organized into the following layers:
+
+### Domain Layer (`src/domain`)
+
+- **Entities**: Core business objects (`Ticket`, `TicketAnalysis`)
+- **Value Objects**: Immutable objects (`SentimentPolarity`, `TicketCategory`, `HardwareComponent`)
+- **Interfaces**: Abstract definitions for services and repositories
+- **Exceptions**: Domain-specific exceptions
+
+### Application Layer (`src/application`)
+
+- **Use Cases**: Orchestration of business operations
+- **Services**: Implementation of complex business logic
+- **DTOs**: Data transfer objects for communication between layers
+
+### Infrastructure Layer (`src/infrastructure`)
+
+- **Repositories**: Data access implementations for MongoDB and Zendesk
+- **External Services**: Integrations with Claude and OpenAI
+- **Utils**: Technical utilities like configuration and dependency injection
+
+### Presentation Layer (`src/presentation`)
+
+- **CLI**: Command-line interface and commands
+- **Webhook**: Webhook handling for real-time events
+- **Reporters**: Formatting and presentation of reports
+
 ## Development
 
 ### Project Structure
@@ -200,27 +215,10 @@ zendesk-ai-integration/
 ├── reports/              # Generated reports
 ├── src/                  # Source code
 │   ├── domain/           # Domain layer
-│   │   ├── entities/     # Domain entities
-│   │   ├── interfaces/   # Interfaces for repositories and services
-│   │   └── value_objects/# Value objects
 │   ├── application/      # Application layer
-│   │   ├── dtos/         # Data Transfer Objects
-│   │   ├── services/     # Application services
-│   │   └── use_cases/    # Use cases
 │   ├── infrastructure/   # Infrastructure layer
-│   │   ├── external_services/ # External APIs
-│   │   ├── repositories/ # Repository implementations
-│   │   └── utils/        # Utility functions
 │   └── presentation/     # Presentation layer
-│       ├── cli/          # Command-line interface
-│       │   ├── commands/ # Command implementations
-│       │   └── command_handler.py # Command handling
-│       ├── reporters/    # Report formatters
-│       └── webhook/      # Webhook server
 └── tests/                # Tests
-    ├── unit/             # Unit tests
-    ├── integration/      # Integration tests
-    └── functional/       # Functional tests
 ```
 
 ### Running Tests
@@ -247,12 +245,20 @@ See [Contributing Guide](CONTRIBUTING.md) for more details.
 
 ## Documentation
 
+### User Guides
+- [Installation Guide](INSTALLATION.md): Complete installation instructions
 - [Command Reference](COMMAND_REFERENCE.md): Detailed CLI command documentation
+- [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md): Ready-to-use commands
+
+### Feature Documentation
 - [Reporting Features](REPORTING.md): Overview of all reporting capabilities
 - [Enhanced Reports](ENHANCED_REPORTS.md): Details on enhanced reporting features
-- [Multi-View Reporting](MULTI_VIEW_REPORTING.md): Information on multi-view comparative reports
+- [Multi-View Reporting](MULTI_VIEW_REPORTING.md): Information on multi-view reports
+
+### Technical Documentation
 - [Architecture Documentation](src/ARCHITECTURE.md): Detailed architecture overview
 - [Testing Guide](docs/TESTING_GUIDE.md): Testing approach and examples
+- [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md): Technical terms explained simply
 
 ## License
 
