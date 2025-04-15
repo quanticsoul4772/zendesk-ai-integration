@@ -315,13 +315,15 @@ def create_run_scripts():
     # Create a config script
     config_script = Path("configure_zendesk_ai.py")
     with open(config_script, "w", encoding="utf-8") as f:
-        f.write("""#!/usr/bin/env python3
-"""
+        # Fix: Properly format the multi-line string with shebang
+        f.write("#!/usr/bin/env python3\n")
+        f.write("""
 Configuration Tool for Zendesk AI Integration
 
 This script helps you update the configuration of the Zendesk AI Integration.
-"""
-
+""")
+        
+        f.write("""
 import os
 import sys
 import getpass
