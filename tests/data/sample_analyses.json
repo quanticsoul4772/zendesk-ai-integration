@@ -1,0 +1,107 @@
+[
+  {
+    "ticket_id": "12345",
+    "subject": "GPU crashes during rendering",
+    "timestamp": "2023-03-15T16:00:00Z",
+    "sentiment": {
+      "polarity": "negative",
+      "urgency_level": 4,
+      "frustration_level": 3,
+      "technical_expertise": 3,
+      "business_impact": {
+        "detected": true,
+        "description": "Urgent client deadline approaching, system downtime"
+      },
+      "key_phrases": ["frequent crashes", "urgent client deadline", "RTX 4090"],
+      "emotions": ["frustrated", "worried"]
+    },
+    "category": "hardware_issue",
+    "component": "gpu",
+    "priority_score": 8,
+    "confidence": 0.92
+  },
+  {
+    "ticket_id": "12346",
+    "subject": "Memory upgrade inquiry",
+    "timestamp": "2023-03-16T09:30:00Z",
+    "sentiment": {
+      "polarity": "neutral",
+      "urgency_level": 1,
+      "frustration_level": 1,
+      "technical_expertise": 2,
+      "business_impact": {
+        "detected": false,
+        "description": ""
+      },
+      "key_phrases": ["memory upgrade", "compatibility", "pricing"],
+      "emotions": ["curious"]
+    },
+    "category": "general_inquiry",
+    "component": "memory",
+    "priority_score": 2,
+    "confidence": 0.89
+  },
+  {
+    "ticket_id": "12347",
+    "subject": "System won't boot after power outage",
+    "timestamp": "2023-03-16T12:45:00Z",
+    "sentiment": {
+      "polarity": "negative",
+      "urgency_level": 5,
+      "frustration_level": 4,
+      "technical_expertise": 3,
+      "business_impact": {
+        "detected": true,
+        "description": "Main production server down, critical business impact"
+      },
+      "key_phrases": ["won't boot", "power outage", "main production server", "ASAP"],
+      "emotions": ["urgent", "stressed", "concerned"]
+    },
+    "category": "hardware_issue",
+    "component": "power_supply",
+    "priority_score": 9,
+    "confidence": 0.87
+  },
+  {
+    "ticket_id": "12348",
+    "subject": "RMA request for faulty motherboard",
+    "timestamp": "2023-03-17T10:30:00Z",
+    "sentiment": {
+      "polarity": "negative",
+      "urgency_level": 3,
+      "frustration_level": 2,
+      "technical_expertise": 4,
+      "business_impact": {
+        "detected": false,
+        "description": ""
+      },
+      "key_phrases": ["intermittent issues", "freezes", "memory errors", "RMA"],
+      "emotions": ["annoyed"]
+    },
+    "category": "rma",
+    "component": "motherboard",
+    "priority_score": 5,
+    "confidence": 0.95
+  },
+  {
+    "ticket_id": "12349",
+    "subject": "Software recommendation for ML workload",
+    "timestamp": "2023-03-18T16:35:00Z",
+    "sentiment": {
+      "polarity": "positive",
+      "urgency_level": 2,
+      "frustration_level": 1,
+      "technical_expertise": 5,
+      "business_impact": {
+        "detected": false,
+        "description": ""
+      },
+      "key_phrases": ["deep learning workstation", "A100 GPUs", "natural language processing", "PyTorch"],
+      "emotions": ["interested", "optimistic"]
+    },
+    "category": "technical_support",
+    "component": "gpu",
+    "priority_score": 3,
+    "confidence": 0.91
+  }
+]

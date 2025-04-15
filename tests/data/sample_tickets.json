@@ -1,0 +1,42 @@
+[
+  {
+    "id": "12345",
+    "subject": "GPU crashes during rendering",
+    "description": "I'm experiencing frequent crashes during rendering jobs with our RTX 4090. The system was working fine last week but now crashes after about 10 minutes of rendering. We have an urgent client deadline approaching.",
+    "status": "open",
+    "created_at": "2023-03-15T14:30:00Z",
+    "updated_at": "2023-03-15T15:45:00Z"
+  },
+  {
+    "id": "12346",
+    "subject": "Memory upgrade inquiry",
+    "description": "We're looking to upgrade the memory in our Exxact workstation from 128GB to 256GB. Can you please advise on compatible memory modules and pricing?",
+    "status": "open",
+    "created_at": "2023-03-16T09:20:00Z",
+    "updated_at": "2023-03-16T09:20:00Z"
+  },
+  {
+    "id": "12347",
+    "subject": "System won't boot after power outage",
+    "description": "Our Exxact server won't boot after a power outage yesterday. The power LED comes on but there's no display and no POST beep. This is our main production server and we need it back up ASAP.",
+    "status": "open",
+    "created_at": "2023-03-16T11:15:00Z",
+    "updated_at": "2023-03-16T12:30:00Z"
+  },
+  {
+    "id": "12348",
+    "subject": "RMA request for faulty motherboard",
+    "description": "We need to RMA a motherboard that's showing intermittent issues. The system occasionally freezes and the BIOS reports memory errors on different DIMMs, suggesting it's a motherboard issue rather than memory.",
+    "status": "open",
+    "created_at": "2023-03-17T08:45:00Z",
+    "updated_at": "2023-03-17T10:15:00Z"
+  },
+  {
+    "id": "12349",
+    "subject": "Software recommendation for ML workload",
+    "description": "We just purchased a new deep learning workstation with 4x A100 GPUs. Could you recommend the optimal software stack for natural language processing workloads? We're currently using PyTorch but open to other frameworks.",
+    "status": "open",
+    "created_at": "2023-03-18T16:20:00Z",
+    "updated_at": "2023-03-18T16:20:00Z"
+  }
+]
