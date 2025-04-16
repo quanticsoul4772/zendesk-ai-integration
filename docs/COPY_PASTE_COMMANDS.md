@@ -7,10 +7,17 @@ This document provides ready-to-use commands for installing and using the Zendes
 ### Installation
 
 ```batch
-:: Download the installer
-curl -o install.py https://raw.githubusercontent.com/exxactcorp/zendesk-ai-integration/main/install.py
+:: Clone the repository
+git clone https://github.com/quanticsoul4772/zendesk-ai-integration.git
+cd zendesk-ai-integration
 
-:: Run the installer
+:: Option 1: Run the easy installer (recommended)
+easy_install.bat
+
+:: Option 2: Run the Python installer directly with correct environment variables
+set ZENDESK_AI_ORG=quanticsoul4772
+set ZENDESK_AI_REPO=zendesk-ai-integration
+set SKIP_CHECKSUM_VERIFY=true
 python install.py
 ```
 
@@ -18,7 +25,7 @@ python install.py
 
 ```batch
 :: List Zendesk views
-run_zendesk_ai.bat --mode list-views
+run_zendesk_ai.bat --mode listviews
 
 :: Analyze a specific ticket
 run_zendesk_ai.bat --mode analyzeticket --ticket-id 12345
@@ -51,10 +58,18 @@ mongodb.bat restart
 ### Installation
 
 ```bash
-# Download the installer
-curl -o install.py https://raw.githubusercontent.com/exxactcorp/zendesk-ai-integration/main/install.py
+# Clone the repository
+git clone https://github.com/quanticsoul4772/zendesk-ai-integration.git
+cd zendesk-ai-integration
 
-# Run the installer
+# Option 1: Run the easy installer (recommended)
+chmod +x easy_install.sh
+./easy_install.sh
+
+# Option 2: Run the Python installer directly with correct environment variables
+export ZENDESK_AI_ORG=quanticsoul4772
+export ZENDESK_AI_REPO=zendesk-ai-integration
+export SKIP_CHECKSUM_VERIFY=true
 python3 install.py
 ```
 
@@ -62,7 +77,7 @@ python3 install.py
 
 ```bash
 # List Zendesk views
-./run_zendesk_ai.sh --mode list-views
+./run_zendesk_ai.sh --mode listviews
 
 # Analyze a specific ticket
 ./run_zendesk_ai.sh --mode analyzeticket --ticket-id 12345
@@ -103,8 +118,8 @@ python configure_zendesk_ai.py
 
 ```bash
 # Test Zendesk connection
-run_zendesk_ai.bat --mode list-views  # Windows
-./run_zendesk_ai.sh --mode list-views  # macOS/Linux
+run_zendesk_ai.bat --mode listviews  # Windows
+./run_zendesk_ai.sh --mode listviews  # macOS/Linux
 ```
 
 ## Troubleshooting Commands
@@ -136,4 +151,21 @@ cat zendesk_ai.log      # macOS/Linux
 # View last 50 lines of log
 type zendesk_ai.log | findstr /n "." | findstr /b "[45][0-9][0-9]:"  # Windows
 tail -50 zendesk_ai.log                                             # macOS/Linux
+```
+
+### Reinstall After Download Issues
+
+```bash
+# If you encounter download issues, try:
+# Windows:
+set ZENDESK_AI_ORG=quanticsoul4772
+set ZENDESK_AI_REPO=zendesk-ai-integration
+set SKIP_CHECKSUM_VERIFY=true
+python install.py
+
+# macOS/Linux:
+export ZENDESK_AI_ORG=quanticsoul4772
+export ZENDESK_AI_REPO=zendesk-ai-integration
+export SKIP_CHECKSUM_VERIFY=true
+python3 install.py
 ```

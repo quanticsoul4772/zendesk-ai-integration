@@ -9,21 +9,27 @@ An intelligent support system that enhances Zendesk support using AI analysis to
 Getting started with Zendesk AI Integration is now easier than ever:
 
 1. **Check the [Installation Checklist](docs/INSTALLATION_CHECKLIST.md)** to ensure you have everything needed
-2. **Run our automated installer**:
+2. **Run our easy installer**:
    ```bash
-   # Download the installer
-   curl -o install.py https://raw.githubusercontent.com/exxactcorp/zendesk-ai-integration/main/install.py
-
-   # Run the installer
-   python install.py
+   # Clone the repository
+   git clone https://github.com/quanticsoul4772/zendesk-ai-integration.git
+   cd zendesk-ai-integration
+   
+   # Run the easy installer
+   # On Windows:
+   easy_install.bat
+   # On macOS/Linux:
+   ./easy_install.sh
+   # Alternative for any platform:
+   python easy_install.py
    ```
 3. **Verify your installation**:
    ```bash
    # On Windows
-   run_zendesk_ai.bat --mode list-views
+   run_zendesk_ai.bat --mode listviews
    
    # On macOS/Linux
-   ./run_zendesk_ai.sh --mode list-views
+   ./run_zendesk_ai.sh --mode listviews
    ```
 
 Need help? Check our [Installation Index](docs/INSTALLATION_INDEX.md) for all documentation resources!
@@ -93,18 +99,24 @@ For complete installation instructions, see the [Installation Guide](INSTALLATIO
 
 ### Quick Installation Steps
 
-1. Download and run the installer:
+1. Clone the repository and run the easy installer:
    ```bash
-   curl -o install.py https://raw.githubusercontent.com/exxactcorp/zendesk-ai-integration/main/install.py
-   python install.py
+   # Clone the repository
+   git clone https://github.com/quanticsoul4772/zendesk-ai-integration.git
+   cd zendesk-ai-integration
+   
+   # Run the easy installer (choose one based on your platform)
+   easy_install.bat            # Windows
+   ./easy_install.sh           # macOS/Linux
+   python easy_install.py      # Any platform
    ```
 
 2. Follow the on-screen prompts to configure your installation
 
 3. After installation, verify with:
    ```bash
-   run_zendesk_ai.bat --mode list-views  # Windows
-   ./run_zendesk_ai.sh --mode list-views  # macOS/Linux
+   run_zendesk_ai.bat --mode listviews  # Windows
+   ./run_zendesk_ai.sh --mode listviews  # macOS/Linux
    ```
 
 ## Usage
