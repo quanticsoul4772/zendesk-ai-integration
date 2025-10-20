@@ -939,8 +939,8 @@ class InteractiveMenu:
         self._display_header("Start Webhook Server")
 
         # Get webhook configuration
-        # Default to 0.0.0.0 to bind to all interfaces for webhook server (user configurable)
-        host = self._get_input("Enter host (default: 0.0.0.0): ", r"^[a-zA-Z0-9\.:]+$") or "0.0.0.0"  # nosec B104
+        # Default to localhost for security, but allow user to override for remote access.
+        host = self._get_input("Enter host (default: 127.0.0.1): ", r"^[a-zA-Z0-9\.:]+$") or "127.0.0.1"
         port_str = self._get_input("Enter port (default: 5000): ", r"^\d*$") or "5000"
         port = int(port_str)
         path = self._get_input("Enter webhook path (default: /webhook): ", r"^/.*$") or "/webhook"
