@@ -6,16 +6,14 @@ An intelligent support system that enhances Zendesk support using AI analysis to
 
 ## Quick Start
 
-Getting started with Zendesk AI Integration is now easier than ever:
-
-1. **Check the [Installation Checklist](docs/INSTALLATION_CHECKLIST.md)** to ensure you have everything needed
-2. **Run our easy installer**:
+1. Check the [Installation Checklist](docs/INSTALLATION_CHECKLIST.md) to ensure you have the required prerequisites
+2. Run the installer:
    ```bash
    # Clone the repository
    git clone https://github.com/quanticsoul4772/zendesk-ai-integration.git
    cd zendesk-ai-integration
-   
-   # Run the easy installer
+
+   # Run the installer
    # On Windows:
    easy_install.bat
    # On macOS/Linux:
@@ -23,40 +21,40 @@ Getting started with Zendesk AI Integration is now easier than ever:
    # Alternative for any platform:
    python easy_install.py
    ```
-3. **Verify your installation**:
+3. Verify your installation:
    ```bash
    # On Windows
    run_zendesk_ai.bat --mode listviews
-   
+
    # On macOS/Linux
    ./run_zendesk_ai.sh --mode listviews
    ```
 
-Need help? Check our [Installation Index](docs/INSTALLATION_INDEX.md) for all documentation resources!
+For additional help, see the [Installation Index](docs/INSTALLATION_INDEX.md) for documentation resources.
 
 ## Overview
 
 The Zendesk AI Integration tool uses artificial intelligence to analyze support tickets in Zendesk, providing:
 
-- **Sentiment Analysis**: Detect customer sentiment (positive, neutral, negative)
-- **Ticket Categorization**: Automatically categorize tickets by issue type
-- **Priority Scoring**: Generate priority scores based on sentiment, urgency, and business impact
-- **Hardware Component Detection**: Identify hardware components mentioned in tickets
-- **Advanced Reporting**: Generate comprehensive reports with actionable insights
-- **Real-time Processing**: Process tickets as they arrive using webhooks
-- **Scheduled Analysis**: Run batch analyses on a regular schedule
+- Sentiment Analysis: Detect customer sentiment (positive, neutral, negative)
+- Ticket Categorization: Automatically categorize tickets by issue type
+- Priority Scoring: Generate priority scores based on sentiment, urgency, and business impact
+- Hardware Component Detection: Identify hardware components mentioned in tickets
+- Reporting: Generate reports with actionable insights
+- Real-time Processing: Process tickets as they arrive using webhooks
+- Scheduled Analysis: Run batch analyses on a regular schedule
 
 ## Features
 
-### AI-Powered Analysis
+### Analysis
 
-- Uses Claude and OpenAI models for accurate analysis
-- Detects customer sentiment with nuanced categorization
-- Identifies priority based on several factors
+- Uses Claude and OpenAI models for ticket analysis
+- Detects customer sentiment with categorization
+- Identifies priority based on multiple factors
 - Recognizes hardware components mentioned in tickets
 - Detects business impact indicators
 
-### Comprehensive Reporting
+### Reporting
 
 - Standard and enhanced sentiment reports
 - Hardware component reports
@@ -65,55 +63,53 @@ The Zendesk AI Integration tool uses artificial intelligence to analyze support 
 - Time-based trend analysis
 - Executive summaries with actionable insights
 
-### Integration Capabilities
+### Integration
 
 - Webhook server for real-time ticket processing
 - Scheduled tasks for regular reporting
-- Comments and tags to enhance Zendesk workflow
-- Multi-view support for organizational needs
+- Comments and tags integration with Zendesk workflow
+- Multi-view support
 
-### User-Friendly Interfaces
+### Interfaces
 
-- Command-line interface for all operations
-- Interactive menu system for easy navigation
+- Command-line interface
+- Interactive menu system
 - Hierarchical view organization
 - Text, JSON, HTML, CSV export options
 
 ## Installation
 
-### Simplified Installation
+### Installation Resources
 
-We've made installation easier with:
-
-- [Installation Checklist](docs/INSTALLATION_CHECKLIST.md): Everything you need before starting
-- [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md): Technical terms explained simply
-- [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md): Ready-to-use commands
+- [Installation Checklist](docs/INSTALLATION_CHECKLIST.md): Prerequisites and requirements
+- [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md): Technical terms explained
+- [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md): Command reference
 
 For complete installation instructions, see the [Installation Guide](docs/INSTALLATION.md).
 
 ### Prerequisites
 
 - Python 3.9 or higher
-- MongoDB 4.4 or higher (or use our Docker-based setup option)
+- MongoDB 4.4 or higher (or Docker-based setup)
 - Zendesk account with API access
 
-### Quick Installation Steps
+### Installation Steps
 
-1. Clone the repository and run the easy installer:
+1. Clone the repository and run the installer:
    ```bash
    # Clone the repository
    git clone https://github.com/quanticsoul4772/zendesk-ai-integration.git
    cd zendesk-ai-integration
-   
-   # Run the easy installer (choose one based on your platform)
+
+   # Run the installer (choose one based on your platform)
    easy_install.bat            # Windows
    ./easy_install.sh           # macOS/Linux
    python easy_install.py      # Any platform
    ```
 
-2. Follow the on-screen prompts to configure your installation
+2. Follow the prompts to configure your installation
 
-3. After installation, verify with:
+3. Verify the installation:
    ```bash
    run_zendesk_ai.bat --mode listviews  # Windows
    ./run_zendesk_ai.sh --mode listviews  # macOS/Linux
@@ -123,13 +119,13 @@ For complete installation instructions, see the [Installation Guide](docs/INSTAL
 
 ### Command-Line Interface
 
-The command-line interface provides access to all features:
+Run commands using:
 
 ```bash
 python -m src.main [COMMAND] [OPTIONS]
 ```
 
-See [Command Reference](docs/COMMAND_REFERENCE.md) for detailed usage information.
+See [Command Reference](docs/COMMAND_REFERENCE.md) for usage information.
 
 ### Basic Operations
 
@@ -188,34 +184,34 @@ The application uses environment variables for configuration:
 - `OPENAI_API_KEY`: OpenAI API key
 - `CLAUDE_API_KEY`: Anthropic Claude API key
 
-## Clean Architecture
+## Architecture
 
-The application is built using Clean Architecture principles, organized into the following layers:
+The application uses a layered architecture organized as follows:
 
 ### Domain Layer (`src/domain`)
 
-- **Entities**: Core business objects (`Ticket`, `TicketAnalysis`)
-- **Value Objects**: Immutable objects (`SentimentPolarity`, `TicketCategory`, `HardwareComponent`)
-- **Interfaces**: Abstract definitions for services and repositories
-- **Exceptions**: Domain-specific exceptions
+- Entities: Core business objects (`Ticket`, `TicketAnalysis`)
+- Value Objects: Immutable objects (`SentimentPolarity`, `TicketCategory`, `HardwareComponent`)
+- Interfaces: Abstract definitions for services and repositories
+- Exceptions: Domain-specific exceptions
 
 ### Application Layer (`src/application`)
 
-- **Use Cases**: Orchestration of business operations
-- **Services**: Implementation of complex business logic
-- **DTOs**: Data transfer objects for communication between layers
+- Use Cases: Orchestration of business operations
+- Services: Implementation of business logic
+- DTOs: Data transfer objects for communication between layers
 
 ### Infrastructure Layer (`src/infrastructure`)
 
-- **Repositories**: Data access implementations for MongoDB and Zendesk
-- **External Services**: Integrations with Claude and OpenAI
-- **Utils**: Technical utilities like configuration and dependency injection
+- Repositories: Data access implementations for MongoDB and Zendesk
+- External Services: Integrations with Claude and OpenAI
+- Utils: Configuration and dependency injection utilities
 
 ### Presentation Layer (`src/presentation`)
 
-- **CLI**: Command-line interface and commands
-- **Webhook**: Webhook handling for real-time events
-- **Reporters**: Formatting and presentation of reports
+- CLI: Command-line interface and commands
+- Webhook: Webhook handling for real-time events
+- Reporters: Report formatting and presentation
 
 ## Development
 
@@ -242,7 +238,7 @@ python scripts/testing/run_tests.py
 # Run specific tests
 python -m unittest tests/unit/test_module.py
 
-# Run tests with enhanced reports
+# Run tests with reports
 python scripts/testing/run_enhanced_tests.py
 ```
 
@@ -258,19 +254,19 @@ See [Contributing Guide](docs/CONTRIBUTING.md) for more details.
 ## Documentation
 
 ### User Guides
-- [Installation Guide](docs/INSTALLATION.md): Complete installation instructions
-- [Command Reference](docs/COMMAND_REFERENCE.md): Detailed CLI command documentation
-- [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md): Ready-to-use commands
+- [Installation Guide](docs/INSTALLATION.md): Installation instructions
+- [Command Reference](docs/COMMAND_REFERENCE.md): CLI command documentation
+- [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md): Command reference
 
 ### Feature Documentation
-- [Reporting Features](docs/REPORTING.md): Overview of all reporting capabilities
-- [Enhanced Reports](docs/ENHANCED_REPORTS.md): Details on enhanced reporting features
-- [Multi-View Reporting](docs/MULTI_VIEW_REPORTING.md): Information on multi-view reports
+- [Reporting Features](docs/REPORTING.md): Reporting capabilities
+- [Enhanced Reports](docs/ENHANCED_REPORTS.md): Enhanced reporting features
+- [Multi-View Reporting](docs/MULTI_VIEW_REPORTING.md): Multi-view reports
 
 ### Technical Documentation
-- [Architecture Documentation](docs/ARCHITECTURE.md): Detailed architecture overview
+- [Architecture Documentation](docs/ARCHITECTURE.md): Architecture overview
 - [Testing Guide](docs/TESTING_GUIDE.md): Testing approach and examples
-- [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md): Technical terms explained simply
+- [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md): Technical terms explained
 
 ## License
 
