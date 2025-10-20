@@ -939,7 +939,7 @@ class InteractiveMenu:
         self._display_header("Start Webhook Server")
 
         # Get webhook configuration
-        host = self._get_input("Enter host (default: 0.0.0.0): ", r"^[a-zA-Z0-9\.:]+$") or "0.0.0.0"
+        host = self._get_input("Enter host (default: 127.0.0.1): ", r"^[a-zA-Z0-9\.:]+$") or "127.0.0.1"
         port_str = self._get_input("Enter port (default: 5000): ", r"^\d*$") or "5000"
         port = int(port_str)
         path = self._get_input("Enter webhook path (default: /webhook): ", r"^/.*$") or "/webhook"
@@ -1037,7 +1037,7 @@ class InteractiveMenu:
 
         if hasattr(self, 'webhook_status') and self.webhook_status.get("running", False):
             # Server is running
-            host = self.webhook_status.get("host", "0.0.0.0")
+            host = self.webhook_status.get("host", "127.0.0.1")
             port = self.webhook_status.get("port", 5000)
             path = self.webhook_status.get("path", "/webhook")
             add_comments = self.webhook_status.get("add_comments", False)

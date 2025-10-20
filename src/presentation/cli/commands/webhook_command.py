@@ -49,8 +49,8 @@ class WebhookCommand(Command):
         start_parser = subparsers.add_parser("start", help="Start the webhook server")
         start_parser.add_argument(
             "--host",
-            default="0.0.0.0",
-            help="Host to listen on (default: 0.0.0.0)"
+            default="127.0.0.1",
+            help="Host to listen on (default: 127.0.0.1)"
         )
 
         start_parser.add_argument(
@@ -143,7 +143,7 @@ class WebhookCommand(Command):
         Returns:
             Dictionary with execution results
         """
-        host = args.get("host", "0.0.0.0")
+        host = args.get("host", "127.0.0.1")
         port = args.get("port", 5000)
         path = args.get("path", "/webhook")
         add_comments = args.get("add_comments", False)
