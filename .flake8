@@ -1,0 +1,50 @@
+[flake8]
+max-line-length = 150
+max-complexity = 25
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    build,
+    dist,
+    *.egg-info
+
+# Focus on critical errors only
+# Ignore style and documentation issues for now
+ignore =
+    # All docstring issues
+    D,
+    # Import formatting (use isort for this)
+    E402,
+    # Whitespace issues (too strict)
+    E201,E202,E203,E221,E222,E241,E501,
+    # Line break issues
+    W503,W504,
+    # Blank line issues (too strict for our use case)
+    E302,E303,E305,E306,
+    # Continuation line indentation (style preference)
+    E128,E129,
+    # Allow some f-string formatting flexibility
+    F541,
+    # Allow unused variables in exception handlers
+    F841,
+    # Complexity warnings (set high threshold instead)
+    C901
+
+# Select critical error codes to check
+select =
+    # Critical Python syntax errors
+    E9,
+    # Fatal errors
+    F63,F7,F82,
+    # Undefined names and redefinitions
+    F821,F811,
+    # Import shadowing
+    F402
+
+# Per-file ignores for specific cases
+per-file-ignores =
+    __init__.py:F401,F403,F405
+    src/main.py:F401,E402

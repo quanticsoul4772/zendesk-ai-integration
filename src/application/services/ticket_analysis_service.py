@@ -14,7 +14,7 @@ from src.domain.entities.ticket_analysis import TicketAnalysis, SentimentAnalysi
 from src.domain.interfaces.repository_interfaces import TicketRepository, AnalysisRepository
 from src.domain.interfaces.ai_service_interfaces import AIService, AIServiceError
 from src.domain.interfaces.service_interfaces import TicketAnalysisService
-from src.domain.exceptions import EntityNotFoundError, AIServiceError
+from src.domain.exceptions import EntityNotFoundError
 
 # Set up logging
 logger = logging.getLogger(__name__)

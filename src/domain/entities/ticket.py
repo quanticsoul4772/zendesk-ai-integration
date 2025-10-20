@@ -136,10 +136,10 @@ class Ticket:
             ticket.custom_fields = {}
             try:
                 # Try handling custom fields as dictionaries with value attribute
-                for field in zendesk_ticket.custom_fields:
-                    if hasattr(field, 'id') and hasattr(field, 'value'):
-                        if field.value is not None:
-                            ticket.custom_fields[field.id] = field.value
+                for custom_field in zendesk_ticket.custom_fields:
+                    if hasattr(custom_field, 'id') and hasattr(custom_field, 'value'):
+                        if custom_field.value is not None:
+                            ticket.custom_fields[custom_field.id] = custom_field.value
             except AttributeError:
                 # Handle case where custom_fields might be a different structure
                 try:
