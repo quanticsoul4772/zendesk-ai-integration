@@ -8,14 +8,25 @@ It is responsible for generating various reports based on ticket data.
 import logging
 import os
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from src.domain.entities.ticket import Ticket
 from src.domain.entities.ticket_analysis import TicketAnalysis
-from src.domain.interfaces.repository_interfaces import TicketRepository, AnalysisRepository, ViewRepository
-from src.domain.interfaces.reporter_interfaces import SentimentReporter, HardwareReporter, PendingReporter
-from src.domain.interfaces.service_interfaces import ReportingService, TicketAnalysisService
 from src.domain.exceptions import EntityNotFoundError
+from src.domain.interfaces.reporter_interfaces import (
+    HardwareReporter,
+    PendingReporter,
+    SentimentReporter,
+)
+from src.domain.interfaces.repository_interfaces import (
+    AnalysisRepository,
+    TicketRepository,
+    ViewRepository,
+)
+from src.domain.interfaces.service_interfaces import (
+    ReportingService,
+    TicketAnalysisService,
+)
 
 # Set up logging
 logger = logging.getLogger(__name__)

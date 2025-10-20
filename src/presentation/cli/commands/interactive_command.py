@@ -4,15 +4,15 @@ Interactive Command
 This module defines the InteractiveCommand class for an interactive menu interface.
 """
 
+import json
 import logging
 import os
-import sys
-import json
-import re
 import platform
+import re
+import sys
 import time
-from typing import Dict, Any, List, Callable, Optional, Tuple
 from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from src.presentation.cli.command import Command
 

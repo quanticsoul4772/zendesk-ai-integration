@@ -5,8 +5,8 @@ This module defines the Ticket entity for representing Zendesk tickets.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 @dataclass

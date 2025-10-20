@@ -6,8 +6,8 @@ This module defines the GenerateReportCommand class for generating reports.
 
 import logging
 import os
-from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
 from src.presentation.cli.command import Command
 

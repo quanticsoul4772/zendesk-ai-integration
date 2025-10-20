@@ -4,10 +4,10 @@ List Views Command
 This module defines the ListViewsCommand class for listing Zendesk views.
 """
 
-import logging
 import json
+import logging
 import os
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from src.presentation.cli.command import Command
 

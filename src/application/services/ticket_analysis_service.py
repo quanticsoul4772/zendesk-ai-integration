@@ -7,14 +7,17 @@ It orchestrates the analysis of tickets using the repository and AI service.
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from src.domain.entities.ticket import Ticket
-from src.domain.entities.ticket_analysis import TicketAnalysis, SentimentAnalysis
-from src.domain.interfaces.repository_interfaces import TicketRepository, AnalysisRepository
-from src.domain.interfaces.ai_service_interfaces import AIService, AIServiceError
-from src.domain.interfaces.service_interfaces import TicketAnalysisService
+from src.domain.entities.ticket_analysis import SentimentAnalysis, TicketAnalysis
 from src.domain.exceptions import EntityNotFoundError
+from src.domain.interfaces.ai_service_interfaces import AIService, AIServiceError
+from src.domain.interfaces.repository_interfaces import (
+    AnalysisRepository,
+    TicketRepository,
+)
+from src.domain.interfaces.service_interfaces import TicketAnalysisService
 
 # Set up logging
 logger = logging.getLogger(__name__)

@@ -6,28 +6,37 @@ This module provides a service provider for dependency injection in the applicat
 
 import logging
 import os
-from typing import Dict, Any, Optional, Type, TypeVar, cast
+from typing import Any, Dict, Optional, Type, TypeVar, cast
 
-from src.infrastructure.utils.dependency_injection import container
-from src.infrastructure.utils.config_manager import EnvironmentConfigManager, JsonFileConfigManager
-from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
-from src.infrastructure.repositories.mongodb_repository import MongoDBRepository
-from src.infrastructure.external_services.openai_service import OpenAIService
-from src.infrastructure.external_services.claude_service import ClaudeService
-from src.infrastructure.cache.zendesk_cache_adapter import ZendeskCacheManager
-
-from src.domain.interfaces.repository_interfaces import TicketRepository, AnalysisRepository, ViewRepository
-from src.domain.interfaces.ai_service_interfaces import AIService, EnhancedAIService
-from src.domain.interfaces.service_interfaces import TicketAnalysisService, ReportingService, WebhookService, SchedulerService
-from src.domain.interfaces.cache_interfaces import CacheManager
-
-from src.application.services.ticket_analysis_service import TicketAnalysisServiceImpl
 from src.application.services.reporting_service import ReportingServiceImpl
-from src.application.services.webhook_service import WebhookServiceImpl
 from src.application.services.scheduler_service import SchedulerServiceImpl
-
+from src.application.services.ticket_analysis_service import TicketAnalysisServiceImpl
+from src.application.services.webhook_service import WebhookServiceImpl
 from src.application.use_cases.analyze_ticket_use_case import AnalyzeTicketUseCase
 from src.application.use_cases.generate_report_use_case import GenerateReportUseCase
+from src.domain.interfaces.ai_service_interfaces import AIService, EnhancedAIService
+from src.domain.interfaces.cache_interfaces import CacheManager
+from src.domain.interfaces.repository_interfaces import (
+    AnalysisRepository,
+    TicketRepository,
+    ViewRepository,
+)
+from src.domain.interfaces.service_interfaces import (
+    ReportingService,
+    SchedulerService,
+    TicketAnalysisService,
+    WebhookService,
+)
+from src.infrastructure.cache.zendesk_cache_adapter import ZendeskCacheManager
+from src.infrastructure.external_services.claude_service import ClaudeService
+from src.infrastructure.external_services.openai_service import OpenAIService
+from src.infrastructure.repositories.mongodb_repository import MongoDBRepository
+from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
+from src.infrastructure.utils.config_manager import (
+    EnvironmentConfigManager,
+    JsonFileConfigManager,
+)
+from src.infrastructure.utils.dependency_injection import container
 
 # Set up logging
 logger = logging.getLogger(__name__)

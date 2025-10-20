@@ -5,8 +5,8 @@ This module defines the AnalyzeTicketCommand class for analyzing tickets.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
 from src.presentation.cli.command import Command
 
@@ -114,7 +114,9 @@ class AnalyzeTicketCommand(Command):
 
         # Get required services and use cases
         try:
-            from src.application.use_cases.analyze_ticket_use_case import AnalyzeTicketUseCase
+            from src.application.use_cases.analyze_ticket_use_case import (
+                AnalyzeTicketUseCase,
+            )
             analyze_ticket_use_case = self.dependency_container.resolve("analyze_ticket_use_case")
         except KeyError:
             logger.error("Could not resolve analyze_ticket_use_case, trying by class name")
@@ -163,8 +165,8 @@ class AnalyzeTicketCommand(Command):
 
         try:
             # Get the required services using their interface types
-            from src.domain.interfaces.service_interfaces import TicketAnalysisService
             from src.domain.interfaces.ai_service_interfaces import AIService
+            from src.domain.interfaces.service_interfaces import TicketAnalysisService
 
             ticket_analysis_service = self.dependency_container.resolve(TicketAnalysisService)
 

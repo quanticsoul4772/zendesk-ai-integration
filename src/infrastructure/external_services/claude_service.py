@@ -4,14 +4,21 @@ Claude Service Adapter
 This module provides an implementation of the AIService interface using the Anthropic Claude API.
 """
 
-import os
-import logging
 import json
-import time
+import logging
+import os
 import random
-from typing import Dict, Any, List, Optional
+import time
+from typing import Any, Dict, List, Optional
 
-from src.domain.interfaces.ai_service_interfaces import AIService, EnhancedAIService, AIServiceError, RateLimitError, TokenLimitError, ContentFilterError
+from src.domain.interfaces.ai_service_interfaces import (
+    AIService,
+    AIServiceError,
+    ContentFilterError,
+    EnhancedAIService,
+    RateLimitError,
+    TokenLimitError,
+)
 from src.infrastructure.utils.retry import with_retry
 
 # Set up logging
@@ -589,12 +596,12 @@ class ClaudeService(EnhancedAIService):
         try:
             # Import error types from Anthropic only when needed to avoid direct dependencies
             from anthropic import (
-                APIError,
                 APIConnectionError,
+                APIError,
                 APITimeoutError,
                 BadRequestError,
-                RateLimitError as AnthropicRateLimitError
             )
+            from anthropic import RateLimitError as AnthropicRateLimitError
 
             # Call the API
             logger.debug(f"Calling Claude API with model {self.model}")

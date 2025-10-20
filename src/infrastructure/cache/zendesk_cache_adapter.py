@@ -8,8 +8,8 @@ import logging
 import time
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from src.domain.interfaces.cache_interfaces import Cache, CacheManager, CacheStatistics
 from src.domain.entities.ticket import Ticket
+from src.domain.interfaces.cache_interfaces import Cache, CacheManager, CacheStatistics
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -97,9 +97,10 @@ class ZendeskCache(Cache):
             ttl: Time-to-live in seconds
         """
         # Import cachetools here to avoid making it a direct dependency of the domain layer
-        import cachetools
         import re
         import threading
+
+        import cachetools
 
         # Create TTL cache with additional attributes
         self._cache = cachetools.TTLCache(maxsize=maxsize, ttl=ttl)

@@ -5,13 +5,12 @@ This module provides a use case for generating reports.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
-
-from src.domain.interfaces.service_interfaces import ReportingService
-from src.domain.exceptions import EntityNotFoundError
+from typing import Any, Dict, List, Optional
 
 from src.application.dtos.report_dto import ReportDTO
+from src.domain.exceptions import EntityNotFoundError
+from src.domain.interfaces.service_interfaces import ReportingService
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -296,8 +295,8 @@ class GenerateReportUseCase:
         # If we only have view names, try to convert them to view IDs
         converted_view_ids = None
         if not view_ids and view_names:
-            from src.infrastructure.service_provider import ServiceProvider
             from src.domain.interfaces.repository_interfaces import ViewRepository
+            from src.infrastructure.service_provider import ServiceProvider
 
             try:
                 # Get the view repository from the service provider
@@ -358,8 +357,8 @@ class GenerateReportUseCase:
 
         # If we only have view names, try to convert them to view IDs
         if not view_ids and view_names:
-            from src.infrastructure.service_provider import ServiceProvider
             from src.domain.interfaces.repository_interfaces import ViewRepository
+            from src.infrastructure.service_provider import ServiceProvider
 
             try:
                 # Get the view repository from the service provider
@@ -418,8 +417,8 @@ class GenerateReportUseCase:
 
         # If we only have view names, try to convert them to view IDs
         if not view_ids and view_names:
-            from src.infrastructure.service_provider import ServiceProvider
             from src.domain.interfaces.repository_interfaces import ViewRepository
+            from src.infrastructure.service_provider import ServiceProvider
 
             try:
                 # Get the view repository from the service provider

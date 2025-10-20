@@ -6,7 +6,7 @@ This module defines interfaces for services that orchestrate business logic.
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from src.domain.entities.ticket import Ticket
 from src.domain.entities.ticket_analysis import TicketAnalysis
