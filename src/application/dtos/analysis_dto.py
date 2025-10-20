@@ -14,7 +14,7 @@ from src.domain.entities.ticket_analysis import TicketAnalysis, SentimentAnalysi
 
 class SentimentAnalysisDTO:
     """Data Transfer Object for SentimentAnalysis value object."""
-    
+
     def __init__(self, polarity: str, urgency_level: int = 1, frustration_level: int = 1,
                 emotions: List[str] = None, business_impact: Dict[str, Any] = None):
         self.polarity = polarity
@@ -26,11 +26,11 @@ class SentimentAnalysisDTO:
             "impact_areas": [],
             "severity": 0
         }
-    
+
     def __hash__(self):
         # Make this object hashable so it can be used as a dictionary key
         return hash(self.polarity)
-    
+
     def __eq__(self, other):
         # For comparison, just check if the polarity is the same
         if isinstance(other, SentimentAnalysisDTO):
@@ -39,19 +39,19 @@ class SentimentAnalysisDTO:
         elif isinstance(other, str):
             return self.polarity == other
         return False
-    
+
     def __str__(self):
         # String representation is the polarity
         return self.polarity
-    
+
     @classmethod
     def from_entity(cls, entity: SentimentAnalysis) -> 'SentimentAnalysisDTO':
         """
         Create a SentimentAnalysisDTO from a SentimentAnalysis entity.
-        
+
         Args:
             entity: SentimentAnalysis entity
-            
+
         Returns:
             SentimentAnalysisDTO instance
         """
@@ -62,11 +62,11 @@ class SentimentAnalysisDTO:
             emotions=entity.emotions.copy() if entity.emotions else [],
             business_impact=entity.business_impact.copy() if entity.business_impact else {"detected": False}
         )
-    
+
     def to_entity(self) -> SentimentAnalysis:
         """
         Convert to a SentimentAnalysis entity.
-        
+
         Returns:
             SentimentAnalysis entity
         """
@@ -77,11 +77,11 @@ class SentimentAnalysisDTO:
             emotions=self.emotions.copy() if self.emotions else [],
             business_impact=self.business_impact.copy() if self.business_impact else {"detected": False}
         )
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert to a dictionary.
-        
+
         Returns:
             Dictionary representation
         """
@@ -97,7 +97,7 @@ class SentimentAnalysisDTO:
 @dataclass
 class AnalysisDTO:
     """Data Transfer Object for TicketAnalysis entity."""
-    
+
     ticket_id: str
     subject: str
     category: str
@@ -112,20 +112,20 @@ class AnalysisDTO:
     error: Optional[str] = None
     error_type: Optional[str] = None
     priority_score: int = 0
-    
+
     @classmethod
     def from_entity(cls, entity: TicketAnalysis) -> 'AnalysisDTO':
         """
         Create an AnalysisDTO from a TicketAnalysis entity.
-        
+
         Args:
             entity: TicketAnalysis entity
-            
+
         Returns:
             AnalysisDTO instance
         """
         sentiment_dto = SentimentAnalysisDTO.from_entity(entity.sentiment)
-        
+
         return cls(
             ticket_id=entity.ticket_id,
             subject=entity.subject,
@@ -142,16 +142,16 @@ class AnalysisDTO:
             error_type=entity.error_type,
             priority_score=entity.priority_score
         )
-    
+
     def to_entity(self) -> TicketAnalysis:
         """
         Convert to a TicketAnalysis entity.
-        
+
         Returns:
             TicketAnalysis entity
         """
         sentiment = self.sentiment.to_entity()
-        
+
         return TicketAnalysis(
             ticket_id=self.ticket_id,
             subject=self.subject,
@@ -167,21 +167,21 @@ class AnalysisDTO:
             error=self.error,
             error_type=self.error_type
         )
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert to a dictionary.
-        
+
         Returns:
             Dictionary representation
         """
         # Convert to dict using dataclasses.asdict
         result = asdict(self)
-        
+
         # Handle SentimentAnalysisDTO
         result['sentiment'] = self.sentiment.to_dict()
-        
+
         # Handle datetime objects
         result['timestamp'] = self.timestamp.isoformat() if self.timestamp else None
-        
+
         return result

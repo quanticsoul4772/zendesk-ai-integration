@@ -19,25 +19,25 @@ class TicketPriority(str, Enum):
     def from_string(cls, priority_str: str) -> 'TicketPriority':
         """
         Create a TicketPriority from a string.
-        
+
         Args:
             priority_str: String representation of the priority
-            
+
         Returns:
             TicketPriority enum value
         """
         if not priority_str:
             return cls.UNKNOWN
-            
+
         try:
             return cls(priority_str.lower())
         except ValueError:
             return cls.UNKNOWN
-    
+
     def to_score(self) -> int:
         """
         Convert priority to a numeric score.
-        
+
         Returns:
             Numeric score (1-10, with 10 being highest priority)
         """
@@ -48,15 +48,15 @@ class TicketPriority(str, Enum):
             self.URGENT: 9,
             self.UNKNOWN: 1
         }[self]
-    
+
     @classmethod
     def from_score(cls, score: int) -> 'TicketPriority':
         """
         Create a TicketPriority from a numeric score.
-        
+
         Args:
             score: Numeric priority score (1-10)
-            
+
         Returns:
             TicketPriority enum value
         """

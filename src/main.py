@@ -32,7 +32,7 @@ from src.presentation.cli.commands.interactive_command import InteractiveCommand
 def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None) -> None:
     """
     Set up logging configuration.
-    
+
     Args:
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_file: Optional path to log file
@@ -41,17 +41,17 @@ def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None) -> No
     numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
         numeric_level = logging.INFO
-    
+
     # Configure logging
     logging_config = {
         "level": numeric_level,
         "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     }
-    
+
     # Add file handler if log file specified
     if log_file:
         logging_config["filename"] = log_file
-    
+
     # Apply configuration
     logging.basicConfig(**logging_config)
 
@@ -59,7 +59,7 @@ def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None) -> No
 def main() -> int:
     """
     Main entry point for the application.
-    
+
     Returns:
         Exit code
     """
@@ -79,20 +79,20 @@ def main() -> int:
         "--config-file",
         help="Path to configuration file"
     )
-    
+
     # Parse arguments without consuming them (so they're available to commands)
     args, _ = parser.parse_known_args()
-    
+
     # Set up logging
     setup_logging(args.log_level, args.log_file)
-    
+
     try:
         # Create service provider (not used directly by CommandHandler)
         service_provider = ServiceProvider(args.config_file)
-        
+
         # Create command handler
         command_handler = CommandHandler()
-        
+
         # Commands are already registered in the CommandHandler's __init__ method
         # So we don't need to register them again here
         # command_classes: List[Type[Command]] = [
@@ -104,10 +104,10 @@ def main() -> int:
         #     InteractiveCommand
         # ]
         # command_handler.register_commands(command_classes)
-        
+
         # Run the command handler
         result = command_handler.handle_command()
-        
+
         # Return exit code (handle_command returns the exit code directly)
         return result
     except KeyboardInterrupt:

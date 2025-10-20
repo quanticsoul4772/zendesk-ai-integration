@@ -22,15 +22,15 @@ from src.application.dtos.report_dto import ReportDTO
 
 __all__ = [
     # Service implementations
-    'TicketAnalysisServiceImpl', 
+    'TicketAnalysisServiceImpl',
     'ReportingServiceImpl',
     'WebhookServiceImpl',
     'SchedulerServiceImpl',
-    
+
     # Use cases
     'AnalyzeTicketUseCase',
     'GenerateReportUseCase',
-    
+
     # DTOs
     'TicketDTO',
     'AnalysisDTO',

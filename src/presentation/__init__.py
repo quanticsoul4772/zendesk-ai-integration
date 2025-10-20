@@ -28,15 +28,15 @@ __all__ = [
     'CommandHandler',
     'Command',
     'ResponseFormatter',
-    
+
     # Webhook components
     'WebhookHandler',
-    
+
     # Reporter implementations
     'SentimentReporterImpl',
     'HardwareReporterImpl',
     'PendingReporterImpl',
-    
+
     # Command classes
     'AnalyzeTicketCommand',
     'GenerateReportCommand',
