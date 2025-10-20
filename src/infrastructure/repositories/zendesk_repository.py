@@ -5,18 +5,17 @@ This module provides an implementation of the TicketRepository and ViewRepositor
 using the Zendesk API.
 """
 
-import os
 import logging
-from typing import Dict, Any, List, Optional, Union, cast
+import os
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Union, cast
 
 from src.domain.entities.ticket import Ticket
-from src.domain.value_objects.ticket_status import TicketStatus
+from src.domain.exceptions import ConnectionError, EntityNotFoundError, QueryError
 from src.domain.interfaces.repository_interfaces import TicketRepository, ViewRepository
-from src.domain.exceptions import EntityNotFoundError, ConnectionError, QueryError
-
-from src.infrastructure.utils.retry import with_retry
+from src.domain.value_objects.ticket_status import TicketStatus
 from src.infrastructure.cache.zendesk_cache_adapter import ZendeskCacheManager
+from src.infrastructure.utils.retry import with_retry
 
 # Set up logging
 logger = logging.getLogger(__name__)

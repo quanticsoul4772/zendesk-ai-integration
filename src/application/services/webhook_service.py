@@ -6,11 +6,17 @@ It is responsible for handling webhook events from Zendesk.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 
-from src.domain.interfaces.repository_interfaces import TicketRepository, AnalysisRepository
-from src.domain.interfaces.service_interfaces import WebhookService, TicketAnalysisService
-from src.domain.exceptions import EntityNotFoundError, AIServiceError
+from src.domain.exceptions import AIServiceError, EntityNotFoundError
+from src.domain.interfaces.repository_interfaces import (
+    AnalysisRepository,
+    TicketRepository,
+)
+from src.domain.interfaces.service_interfaces import (
+    TicketAnalysisService,
+    WebhookService,
+)
 
 # Set up logging
 logger = logging.getLogger(__name__)

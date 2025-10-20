@@ -5,8 +5,8 @@ This module defines the Analysis entity for representing ticket analysis results
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 
 
 @dataclass

@@ -6,11 +6,11 @@ It is responsible for scheduling and managing recurring tasks.
 """
 
 import logging
-import time
-import threading
 import sched
+import threading
+import time
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional
 
 from src.domain.interfaces.service_interfaces import SchedulerService
 

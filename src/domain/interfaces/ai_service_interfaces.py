@@ -5,7 +5,7 @@ This module defines interfaces for AI services used for ticket analysis.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 
 class AIServiceError(Exception):

@@ -4,10 +4,10 @@ Sentiment Reporter Implementation
 This module provides an implementation of the SentimentReporter interface.
 """
 
-import os
 import logging
+import os
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from src.domain.entities.ticket_analysis import TicketAnalysis
 from src.domain.interfaces.reporter_interfaces import SentimentReporter

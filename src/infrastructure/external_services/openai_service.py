@@ -4,14 +4,20 @@ OpenAI Service Adapter
 This module provides an implementation of the AIService interface using the OpenAI API.
 """
 
-import os
-import logging
 import json
-import time
+import logging
+import os
 import random
-from typing import Dict, Any, List, Optional
+import time
+from typing import Any, Dict, List, Optional
 
-from src.domain.interfaces.ai_service_interfaces import AIService, AIServiceError, RateLimitError, TokenLimitError, ContentFilterError
+from src.domain.interfaces.ai_service_interfaces import (
+    AIService,
+    AIServiceError,
+    ContentFilterError,
+    RateLimitError,
+    TokenLimitError,
+)
 from src.infrastructure.utils.retry import with_retry
 
 # Set up logging
@@ -350,12 +356,12 @@ class OpenAIService(AIService):
         try:
             # Import error types from OpenAI only when needed to avoid direct dependencies
             from openai import (
-                APIError,
                 APIConnectionError,
+                APIError,
                 APITimeoutError,
                 BadRequestError,
-                RateLimitError as OpenAIRateLimitError
             )
+            from openai import RateLimitError as OpenAIRateLimitError
 
             # Call the API
             logger.debug(f"Calling OpenAI API with model {self.model}")

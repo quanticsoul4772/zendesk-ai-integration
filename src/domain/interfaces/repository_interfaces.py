@@ -6,7 +6,7 @@ This module defines interfaces for repositories that handle data persistence.
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from src.domain.entities.ticket import Ticket
 from src.domain.entities.ticket_analysis import TicketAnalysis

@@ -5,7 +5,7 @@ This module defines interfaces for reporters that generate reports based on tick
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from src.domain.entities.ticket import Ticket
 from src.domain.entities.ticket_analysis import TicketAnalysis

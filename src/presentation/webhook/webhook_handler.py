@@ -6,7 +6,7 @@ This module defines the WebhookHandler class that processes webhook requests fro
 
 import json
 import logging
-from typing import Dict, Any, Optional, Callable
+from typing import Any, Callable, Dict, Optional
 
 # Set up logging
 logger = logging.getLogger(__name__)

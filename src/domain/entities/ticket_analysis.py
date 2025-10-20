@@ -7,7 +7,7 @@ of analyzing a Zendesk ticket with AI.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 
 @dataclass

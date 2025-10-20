@@ -6,7 +6,7 @@ This module provides formatting for command responses.
 
 import json
 import logging
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 # Set up logging
 logger = logging.getLogger(__name__)

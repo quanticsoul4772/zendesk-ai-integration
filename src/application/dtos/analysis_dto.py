@@ -5,11 +5,11 @@ This module defines the AnalysisDTO (Data Transfer Object) for transferring tick
 between layers of the application.
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
-from src.domain.entities.ticket_analysis import TicketAnalysis, SentimentAnalysis
+from src.domain.entities.ticket_analysis import SentimentAnalysis, TicketAnalysis
 
 
 class SentimentAnalysisDTO:

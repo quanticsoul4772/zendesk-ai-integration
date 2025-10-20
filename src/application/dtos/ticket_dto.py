@@ -5,9 +5,9 @@ This module defines the TicketDTO (Data Transfer Object) for transferring ticket
 between layers of the application.
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from src.domain.entities.ticket import Ticket
 

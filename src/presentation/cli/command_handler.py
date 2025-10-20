@@ -7,20 +7,20 @@ and execution in the CLI interface.
 
 import argparse
 import logging
-import sys
 import os
-from typing import Dict, Any, List, Type, Optional, Callable
+import sys
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from src.presentation.cli.command import Command
-from src.presentation.cli.response_formatter import ResponseFormatter
 
 # Import commands
 from src.presentation.cli.commands.analyze_ticket_command import AnalyzeTicketCommand
 from src.presentation.cli.commands.generate_report_command import GenerateReportCommand
-from src.presentation.cli.commands.list_views_command import ListViewsCommand
 from src.presentation.cli.commands.interactive_command import InteractiveCommand
+from src.presentation.cli.commands.list_views_command import ListViewsCommand
 from src.presentation.cli.commands.schedule_command import ScheduleCommand
 from src.presentation.cli.commands.webhook_command import WebhookCommand
+from src.presentation.cli.response_formatter import ResponseFormatter
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -86,25 +86,43 @@ Examples:
         """Initialize all required services."""
         try:
             # Initialize repositories
-            from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
-            from src.infrastructure.repositories.mongodb_repository import MongoDBRepository
-
-            # Initialize services
-            from src.infrastructure.external_services.claude_service import ClaudeService
-            from src.infrastructure.external_services.openai_service import OpenAIService
-            from src.application.services.ticket_analysis_service import TicketAnalysisServiceImpl
             from src.application.services.reporting_service import ReportingServiceImpl
-            from src.application.services.webhook_service import WebhookServiceImpl
             from src.application.services.scheduler_service import SchedulerServiceImpl
+            from src.application.services.ticket_analysis_service import (
+                TicketAnalysisServiceImpl,
+            )
+            from src.application.services.webhook_service import WebhookServiceImpl
 
             # Initialize use cases
-            from src.application.use_cases.analyze_ticket_use_case import AnalyzeTicketUseCase
-            from src.application.use_cases.generate_report_use_case import GenerateReportUseCase
+            from src.application.use_cases.analyze_ticket_use_case import (
+                AnalyzeTicketUseCase,
+            )
+            from src.application.use_cases.generate_report_use_case import (
+                GenerateReportUseCase,
+            )
+
+            # Initialize services
+            from src.infrastructure.external_services.claude_service import (
+                ClaudeService,
+            )
+            from src.infrastructure.external_services.openai_service import (
+                OpenAIService,
+            )
+            from src.infrastructure.repositories.mongodb_repository import (
+                MongoDBRepository,
+            )
+            from src.infrastructure.repositories.zendesk_repository import (
+                ZendeskRepository,
+            )
+            from src.presentation.reporters.hardware_reporter import (
+                HardwareReporterImpl,
+            )
+            from src.presentation.reporters.pending_reporter import PendingReporterImpl
 
             # Initialize reporters
-            from src.presentation.reporters.sentiment_reporter import SentimentReporterImpl
-            from src.presentation.reporters.hardware_reporter import HardwareReporterImpl
-            from src.presentation.reporters.pending_reporter import PendingReporterImpl
+            from src.presentation.reporters.sentiment_reporter import (
+                SentimentReporterImpl,
+            )
 
             # Create instances and register with dependency container
             ticket_repo = ZendeskRepository()
@@ -135,10 +153,26 @@ Examples:
             generate_report_use_case = GenerateReportUseCase(reporting_service)
 
             # Register all services with the dependency container
-            from src.domain.interfaces.repository_interfaces import TicketRepository, AnalysisRepository, ViewRepository
-            from src.domain.interfaces.ai_service_interfaces import AIService, EnhancedAIService
-            from src.domain.interfaces.service_interfaces import TicketAnalysisService, ReportingService, WebhookService, SchedulerService
-            from src.domain.interfaces.reporter_interfaces import SentimentReporter, HardwareReporter, PendingReporter
+            from src.domain.interfaces.ai_service_interfaces import (
+                AIService,
+                EnhancedAIService,
+            )
+            from src.domain.interfaces.reporter_interfaces import (
+                HardwareReporter,
+                PendingReporter,
+                SentimentReporter,
+            )
+            from src.domain.interfaces.repository_interfaces import (
+                AnalysisRepository,
+                TicketRepository,
+                ViewRepository,
+            )
+            from src.domain.interfaces.service_interfaces import (
+                ReportingService,
+                SchedulerService,
+                TicketAnalysisService,
+                WebhookService,
+            )
 
             # Register repositories and services by interface
             self.dependency_container.register_instance(TicketRepository, ticket_repo)

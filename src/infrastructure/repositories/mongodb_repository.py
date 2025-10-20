@@ -5,16 +5,15 @@ This module provides an implementation of the AnalysisRepository interface
 using MongoDB for persistence.
 """
 
-import os
 import logging
+import os
 import time
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from src.domain.entities.ticket_analysis import TicketAnalysis, SentimentAnalysis
+from src.domain.entities.ticket_analysis import SentimentAnalysis, TicketAnalysis
+from src.domain.exceptions import ConnectionError, PersistenceError, QueryError
 from src.domain.interfaces.repository_interfaces import AnalysisRepository
-from src.domain.exceptions import ConnectionError, QueryError, PersistenceError
-
 from src.infrastructure.utils.retry import with_retry
 
 # Set up logging

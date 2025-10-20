@@ -5,9 +5,9 @@ This module defines the ReportDTO (Data Transfer Object) for transferring report
 between layers of the application.
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 
 @dataclass

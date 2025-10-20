@@ -4,13 +4,13 @@ Webhook Command
 This module defines the WebhookCommand class for managing the webhook server.
 """
 
+import json
 import logging
+import os
+import signal
 import threading
 import time
-import signal
-import os
-import json
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from src.presentation.cli.command import Command
 

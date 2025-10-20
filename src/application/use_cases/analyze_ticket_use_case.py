@@ -5,16 +5,15 @@ This module provides a use case for analyzing a ticket.
 """
 
 import logging
-from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
-from src.domain.interfaces.service_interfaces import TicketAnalysisService
-from src.domain.interfaces.repository_interfaces import TicketRepository, ViewRepository
-from src.domain.exceptions import EntityNotFoundError, AIServiceError
-from src.domain.entities.analysis import Analysis
-
-from src.application.dtos.ticket_dto import TicketDTO
 from src.application.dtos.analysis_dto import AnalysisDTO
+from src.application.dtos.ticket_dto import TicketDTO
+from src.domain.entities.analysis import Analysis
+from src.domain.exceptions import AIServiceError, EntityNotFoundError
+from src.domain.interfaces.repository_interfaces import TicketRepository, ViewRepository
+from src.domain.interfaces.service_interfaces import TicketAnalysisService
 
 # Set up logging
 logger = logging.getLogger(__name__)

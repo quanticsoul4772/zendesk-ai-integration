@@ -8,7 +8,8 @@ import argparse
 import logging
 import os
 import sys
-from typing import Dict, Any, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -23,10 +24,10 @@ from src.presentation.cli.command import Command
 from src.presentation.cli.command_handler import CommandHandler
 from src.presentation.cli.commands.analyze_ticket_command import AnalyzeTicketCommand
 from src.presentation.cli.commands.generate_report_command import GenerateReportCommand
-from src.presentation.cli.commands.list_views_command import ListViewsCommand
-from src.presentation.cli.commands.webhook_command import WebhookCommand
-from src.presentation.cli.commands.schedule_command import ScheduleCommand
 from src.presentation.cli.commands.interactive_command import InteractiveCommand
+from src.presentation.cli.commands.list_views_command import ListViewsCommand
+from src.presentation.cli.commands.schedule_command import ScheduleCommand
+from src.presentation.cli.commands.webhook_command import WebhookCommand
 
 
 def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None) -> None:
