@@ -89,7 +89,7 @@ We've made installation easier with:
 - [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md): Technical terms explained simply
 - [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md): Ready-to-use commands
 
-For complete installation instructions, see the [Installation Guide](INSTALLATION.md).
+For complete installation instructions, see the [Installation Guide](docs/INSTALLATION.md).
 
 ### Prerequisites
 
@@ -129,7 +129,7 @@ The command-line interface provides access to all features:
 python -m src.main [COMMAND] [OPTIONS]
 ```
 
-See [Command Reference](COMMAND_REFERENCE.md) for detailed usage information.
+See [Command Reference](docs/COMMAND_REFERENCE.md) for detailed usage information.
 
 ### Basic Operations
 
@@ -237,13 +237,13 @@ zendesk-ai-integration/
 
 ```bash
 # Run all tests
-python run_tests.py
+python scripts/testing/run_tests.py
 
 # Run specific tests
 python -m unittest tests/unit/test_module.py
 
 # Run tests with enhanced reports
-python run_enhanced_tests.py
+python scripts/testing/run_enhanced_tests.py
 ```
 
 ### Contributing
@@ -253,22 +253,22 @@ python run_enhanced_tests.py
 3. Run tests
 4. Submit a pull request
 
-See [Contributing Guide](CONTRIBUTING.md) for more details.
+See [Contributing Guide](docs/CONTRIBUTING.md) for more details.
 
 ## Documentation
 
 ### User Guides
-- [Installation Guide](INSTALLATION.md): Complete installation instructions
-- [Command Reference](COMMAND_REFERENCE.md): Detailed CLI command documentation
+- [Installation Guide](docs/INSTALLATION.md): Complete installation instructions
+- [Command Reference](docs/COMMAND_REFERENCE.md): Detailed CLI command documentation
 - [Copy-Paste Command Sheet](docs/COPY_PASTE_COMMANDS.md): Ready-to-use commands
 
 ### Feature Documentation
-- [Reporting Features](REPORTING.md): Overview of all reporting capabilities
-- [Enhanced Reports](ENHANCED_REPORTS.md): Details on enhanced reporting features
-- [Multi-View Reporting](MULTI_VIEW_REPORTING.md): Information on multi-view reports
+- [Reporting Features](docs/REPORTING.md): Overview of all reporting capabilities
+- [Enhanced Reports](docs/ENHANCED_REPORTS.md): Details on enhanced reporting features
+- [Multi-View Reporting](docs/MULTI_VIEW_REPORTING.md): Information on multi-view reports
 
 ### Technical Documentation
-- [Architecture Documentation](src/ARCHITECTURE.md): Detailed architecture overview
+- [Architecture Documentation](docs/ARCHITECTURE.md): Detailed architecture overview
 - [Testing Guide](docs/TESTING_GUIDE.md): Testing approach and examples
 - [Simplified Terms Guide](docs/SIMPLIFIED_TERMS.md): Technical terms explained simply
 

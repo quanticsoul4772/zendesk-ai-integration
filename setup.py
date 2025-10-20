@@ -28,10 +28,12 @@ import time
 import json
 
 # Import MongoDB setup module
+import sys
+sys.path.insert(0, 'scripts/setup')
 try:
     from install_mongodb import setup_mongodb_configuration
 except ImportError:
-    print("MongoDB setup module not found. Make sure install_mongodb.py is in the same directory.")
+    print("MongoDB setup module not found. Make sure install_mongodb.py is in scripts/setup directory.")
 
 # Terminal colors for better readability
 class Colors:
@@ -69,10 +71,10 @@ def check_prerequisites():
     """Run the prerequisites check script"""
     print_step(1, "Checking prerequisites")
     
-    prereq_script = Path("check_prerequisites.py")
+    prereq_script = Path("scripts/setup/check_prerequisites.py")
     if not prereq_script.exists():
         print_status("Prerequisites check script not found", "ERROR")
-        print("Please download the check_prerequisites.py script first.")
+        print("Please ensure check_prerequisites.py is in scripts/setup directory.")
         return False
     
     success, output = run_command([sys.executable, str(prereq_script)])
