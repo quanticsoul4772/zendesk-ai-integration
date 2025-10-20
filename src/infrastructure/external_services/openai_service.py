@@ -21,27 +21,27 @@ logger = logging.getLogger(__name__)
 class OpenAIService(AIService):
     """
     Implementation of the AIService interface using the OpenAI API.
-    
+
     This service uses the OpenAI API to analyze ticket content and sentiment.
     """
-    
+
     def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-mini"):
         """
         Initialize the OpenAI service.
-        
+
         Args:
             api_key: OpenAI API key (optional, defaults to environment variable)
             model: OpenAI model to use (default: gpt-4o-mini)
         """
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.model = model
-        
+
         if not self.api_key:
             logger.warning("OpenAI API key not provided - API calls will fail")
-        
+
         # Initialize the client lazily when needed
         self._client = None
-    
+
     @property
     def client(self):
         """Get the OpenAI client, initializing it if necessary."""
@@ -55,20 +55,20 @@ class OpenAIService(AIService):
             except Exception as e:
                 logger.error(f"Error initializing OpenAI client: {str(e)}")
                 raise AIServiceError(f"Error initializing OpenAI client: {str(e)}")
-        
+
         return self._client
-    
+
     @with_retry(max_retries=3, retry_on=[Exception])
     def analyze_content(self, content: str) -> Dict[str, Any]:
         """
         Analyze content to determine sentiment, category, etc.
-        
+
         Args:
             content: The content to analyze
-            
+
         Returns:
             Dictionary with analysis results
-            
+
         Raises:
             AIServiceError: If an error occurs during analysis
         """
@@ -87,13 +87,13 @@ class OpenAIService(AIService):
                 "confidence": 0.0,
                 "error": "Empty content provided"
             }
-        
+
         logger.info(f"Analyzing content with OpenAI (length: {len(content)} chars)")
-        
+
         # Craft the prompt for OpenAI
         prompt = f"""
         Analyze the following customer message from Exxact Corporation (a hardware systems manufacturer) and provide a detailed analysis as JSON with the following structure:
-        
+
         {{
           "category": "[Select ONE category: system, resale_component, hardware_issue, system_component, so_released_to_warehouse, wo_released_to_warehouse, technical_support, rma, software_issue, general_inquiry]",
           "component": "[ONE component type if relevant: gpu, cpu, drive, memory, power_supply, motherboard, cooling, display, network, none]",
@@ -110,7 +110,7 @@ class OpenAIService(AIService):
             }}
           }}
         }}
-        
+
         Categories explanation:
         - system: Issues related to complete computer systems
         - resale_component: Issues with components being resold
@@ -124,22 +124,22 @@ class OpenAIService(AIService):
         - general_inquiry: Information seeking that doesn't fit other categories
 
         Customer message: {content}
-        
+
         Provide only the JSON output with no other text.
         """
-        
+
         try:
             # Call the OpenAI API
             response = self._call_api(prompt)
-            
+
             # Process the response
             result = self._process_response(response)
-            
+
             # Add confidence score
             result["confidence"] = 0.9  # Default high confidence for OpenAI
-            
+
             logger.info(f"Analysis complete: sentiment.polarity={result['sentiment']['polarity']}, category={result['category']}")
-            
+
             return result
         except AIServiceError as e:
             # Re-raise specific AI service errors
@@ -161,18 +161,18 @@ class OpenAIService(AIService):
                 "error": str(e),
                 "error_type": type(e).__name__
             }
-    
+
     @with_retry(max_retries=3, retry_on=[Exception])
     def analyze_sentiment(self, content: str) -> Dict[str, Any]:
         """
         Analyze sentiment of content.
-        
+
         Args:
             content: The content to analyze
-            
+
         Returns:
             Dictionary with sentiment analysis results
-            
+
         Raises:
             AIServiceError: If an error occurs during analysis
         """
@@ -186,13 +186,13 @@ class OpenAIService(AIService):
                 "confidence": 0.0,
                 "error": "Empty content provided"
             }
-        
+
         logger.info(f"Analyzing sentiment with OpenAI (length: {len(content)} chars)")
-        
+
         # Craft the prompt for OpenAI
         prompt = f"""
         Analyze the sentiment of the following customer message and provide a detailed analysis as JSON with the following structure:
-        
+
         {{
           "polarity": "[positive, negative, neutral, or unknown]",
           "urgency_level": [1-5 scale, where 1 is lowest urgency and 5 is highest],
@@ -204,27 +204,27 @@ class OpenAIService(AIService):
             "severity": [0-5 scale, where 0 is no impact and 5 is severe impact]
           }}
         }}
-        
+
         Message: {content}
-        
+
         Provide only the JSON output with no other text.
         """
-        
+
         try:
             # Call the OpenAI API
             response = self._call_api(prompt)
-            
+
             # Process the response
             result_json = self._process_response(response)
-            
+
             # Extract sentiment data
             sentiment = result_json.get("sentiment", result_json)
-            
+
             # Add confidence score
             sentiment["confidence"] = 0.9  # Default high confidence for OpenAI
-            
+
             logger.info(f"Sentiment analysis complete: polarity={sentiment['polarity']}")
-            
+
             return sentiment
         except AIServiceError as e:
             # Re-raise specific AI service errors
@@ -246,18 +246,18 @@ class OpenAIService(AIService):
                 "error": str(e),
                 "error_type": type(e).__name__
             }
-    
+
     @with_retry(max_retries=3, retry_on=[Exception])
     def categorize_ticket(self, content: str) -> Dict[str, Any]:
         """
         Categorize a ticket based on its content.
-        
+
         Args:
             content: The ticket content to categorize
-            
+
         Returns:
             Dictionary with categorization results
-            
+
         Raises:
             AIServiceError: If an error occurs during categorization
         """
@@ -270,20 +270,20 @@ class OpenAIService(AIService):
                 "confidence": 0.0,
                 "error": "Empty content provided"
             }
-        
+
         logger.info(f"Categorizing ticket with OpenAI (length: {len(content)} chars)")
-        
+
         # Craft the prompt for OpenAI
         prompt = f"""
         Categorize the following customer message from Exxact Corporation (a hardware systems manufacturer) and provide a detailed categorization as JSON with the following structure:
-        
+
         {{
           "category": "[Select ONE category: system, resale_component, hardware_issue, system_component, so_released_to_warehouse, wo_released_to_warehouse, technical_support, rma, software_issue, general_inquiry]",
           "component": "[ONE component type if relevant: gpu, cpu, drive, memory, power_supply, motherboard, cooling, display, network, none]",
           "priority": "[high, medium, or low]",
           "rationale": "[Brief explanation of the categorization]"
         }}
-        
+
         Categories explanation:
         - system: Issues related to complete computer systems
         - resale_component: Issues with components being resold
@@ -297,22 +297,22 @@ class OpenAIService(AIService):
         - general_inquiry: Information seeking that doesn't fit other categories
 
         Customer message: {content}
-        
+
         Provide only the JSON output with no other text.
         """
-        
+
         try:
             # Call the OpenAI API
             response = self._call_api(prompt)
-            
+
             # Process the response
             result = self._process_response(response)
-            
+
             # Add confidence score
             result["confidence"] = 0.9  # Default high confidence for OpenAI
-            
+
             logger.info(f"Categorization complete: category={result['category']}, component={result['component']}")
-            
+
             return result
         except AIServiceError as e:
             # Re-raise specific AI service errors
@@ -328,19 +328,19 @@ class OpenAIService(AIService):
                 "error": str(e),
                 "error_type": type(e).__name__
             }
-    
+
     def _call_api(self, prompt: str, temperature: float = 0.0, timeout: float = 30.0) -> str:
         """
         Call the OpenAI API with retry and error handling logic.
-        
+
         Args:
             prompt: The text prompt to send to the API
             temperature: Temperature setting (default: 0.0)
             timeout: Request timeout in seconds (default: 30)
-            
+
         Returns:
             Response text from the API
-            
+
         Raises:
             RateLimitError: If rate limits are exceeded
             TokenLimitError: If token limits are exceeded
@@ -356,7 +356,7 @@ class OpenAIService(AIService):
                 BadRequestError,
                 RateLimitError as OpenAIRateLimitError
             )
-            
+
             # Call the API
             logger.debug(f"Calling OpenAI API with model {self.model}")
             response = self.client.chat.completions.create(
@@ -365,10 +365,10 @@ class OpenAIService(AIService):
                 temperature=temperature,
                 timeout=timeout
             )
-            
+
             # Extract the content from the first choice
             content = response.choices[0].message.content
-            
+
             return content
         except OpenAIRateLimitError as e:
             error_msg = f"OpenAI rate limit exceeded: {str(e)}"
@@ -404,17 +404,17 @@ class OpenAIService(AIService):
             error_msg = f"Unexpected error calling OpenAI: {str(e)}"
             logger.exception(error_msg)
             raise AIServiceError(error_msg)
-    
+
     def _process_response(self, response_text: str) -> Dict[str, Any]:
         """
         Process the response from the OpenAI API.
-        
+
         Args:
             response_text: Text response from the API
-            
+
         Returns:
             Parsed JSON response as a dictionary
-            
+
         Raises:
             AIServiceError: If the response cannot be parsed as JSON
         """

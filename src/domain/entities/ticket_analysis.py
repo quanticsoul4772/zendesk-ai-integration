@@ -40,12 +40,12 @@ class TicketAnalysis:
     raw_result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     error_type: Optional[str] = None
-    
+
     @property
     def priority_score(self) -> int:
         """
         Calculate a priority score based on sentiment and priority.
-        
+
         Returns:
             An integer score from 1-10, with 10 being highest priority
         """
@@ -55,33 +55,33 @@ class TicketAnalysis:
             "medium": 5,
             "low": 3
         }.get(self.priority.lower(), 3)
-        
+
         # Adjust based on sentiment
         sentiment_adjustment = 0
-        
+
         # Adjust based on polarity
         if self.sentiment.polarity == "negative":
             sentiment_adjustment += 1
         elif self.sentiment.polarity == "positive":
             sentiment_adjustment -= 1
-            
+
         # Adjust based on urgency and frustration
         sentiment_adjustment += (self.sentiment.urgency_level - 3) / 2
         sentiment_adjustment += (self.sentiment.frustration_level - 3) / 2
-        
+
         # Adjust based on business impact
         if self.sentiment.business_impact.get("detected", False):
             sentiment_adjustment += self.sentiment.business_impact.get("severity", 0) / 2
-            
+
         # Calculate final score
         score = int(min(10, max(1, base_score + sentiment_adjustment)))
         return score
-        
+
     @property
     def has_business_impact(self) -> bool:
         """
         Check if this ticket has business impact.
-        
+
         Returns:
             Boolean indicating if business impact was detected
         """

@@ -25,18 +25,18 @@ class TicketCategory(str, Enum):
     def from_string(cls, category_str: str) -> 'TicketCategory':
         """
         Create a TicketCategory from a string.
-        
+
         Args:
             category_str: String representation of the category
-            
+
         Returns:
             TicketCategory enum value
         """
         if not category_str:
             return cls.UNCATEGORIZED
-            
+
         normalized = category_str.lower().replace(" ", "_").strip()
-        
+
         try:
             return cls(normalized)
         except ValueError:
@@ -44,14 +44,14 @@ class TicketCategory(str, Enum):
             for category in cls:
                 if normalized in category.value:
                     return category
-                    
+
             # If no match, return uncategorized
             return cls.UNCATEGORIZED
-    
+
     def get_description(self) -> str:
         """
         Get a description of the category.
-        
+
         Returns:
             Human-readable description of the category
         """
@@ -68,13 +68,13 @@ class TicketCategory(str, Enum):
             self.GENERAL_INQUIRY: "Information seeking that doesn't fit other categories",
             self.UNCATEGORIZED: "Ticket that has not been categorized"
         }
-        
+
         return descriptions.get(self, "Unknown category")
-    
+
     def is_hardware_related(self) -> bool:
         """
         Check if the category is hardware-related.
-        
+
         Returns:
             True if hardware-related, False otherwise
         """
@@ -85,22 +85,22 @@ class TicketCategory(str, Enum):
             self.SYSTEM_COMPONENT,
             self.RMA
         ]
-        
+
         return self in hardware_categories
-    
+
     def is_software_related(self) -> bool:
         """
         Check if the category is software-related.
-        
+
         Returns:
             True if software-related, False otherwise
         """
         return self == self.SOFTWARE_ISSUE
-    
+
     def is_order_related(self) -> bool:
         """
         Check if the category is order-related.
-        
+
         Returns:
             True if order-related, False otherwise
         """
@@ -108,5 +108,5 @@ class TicketCategory(str, Enum):
             self.SO_RELEASED_TO_WAREHOUSE,
             self.WO_RELEASED_TO_WAREHOUSE
         ]
-        
+
         return self in order_categories

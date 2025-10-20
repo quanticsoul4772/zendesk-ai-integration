@@ -28,18 +28,18 @@ class HardwareComponent(str, Enum):
     def from_string(cls, component_str: str) -> 'HardwareComponent':
         """
         Create a HardwareComponent from a string.
-        
+
         Args:
             component_str: String representation of the component
-            
+
         Returns:
             HardwareComponent enum value
         """
         if not component_str:
             return cls.NONE
-            
+
         normalized = component_str.lower().replace(" ", "_").strip()
-        
+
         try:
             return cls(normalized)
         except ValueError:
@@ -74,7 +74,7 @@ class HardwareComponent(str, Enum):
     def get_display_name(self) -> str:
         """
         Get a human-readable display name for the component type.
-        
+
         Returns:
             Display name
         """
@@ -94,13 +94,13 @@ class HardwareComponent(str, Enum):
             self.NONE: "None",
             self.UNKNOWN: "Unknown Component"
         }
-        
+
         return display_names.get(self, "Unknown Component")
-    
+
     def is_critical(self) -> bool:
         """
         Check if the component is critical for system operation.
-        
+
         Returns:
             True if the component is critical, False otherwise
         """
@@ -110,5 +110,5 @@ class HardwareComponent(str, Enum):
             self.MEMORY,
             self.POWER_SUPPLY
         ]
-        
+
         return self in critical_components

@@ -30,50 +30,50 @@ class ContentFilterError(AIServiceError):
 
 class AIService(ABC):
     """Interface for AI services."""
-    
+
     @abstractmethod
     def analyze_content(self, content: str) -> Dict[str, Any]:
         """
         Analyze content to determine sentiment, category, etc.
-        
+
         Args:
             content: The content to analyze
-            
+
         Returns:
             Dictionary with analysis results
-            
+
         Raises:
             AIServiceError: If an error occurs during analysis
         """
         pass
-    
+
     @abstractmethod
     def analyze_sentiment(self, content: str) -> Dict[str, Any]:
         """
         Analyze sentiment of content.
-        
+
         Args:
             content: The content to analyze
-            
+
         Returns:
             Dictionary with sentiment analysis results
-            
+
         Raises:
             AIServiceError: If an error occurs during analysis
         """
         pass
-    
+
     @abstractmethod
     def categorize_ticket(self, content: str) -> Dict[str, Any]:
         """
         Categorize a ticket based on its content.
-        
+
         Args:
             content: The ticket content to categorize
-            
+
         Returns:
             Dictionary with categorization results
-            
+
         Raises:
             AIServiceError: If an error occurs during categorization
         """
@@ -82,50 +82,50 @@ class AIService(ABC):
 
 class EnhancedAIService(AIService):
     """Interface for enhanced AI services with additional capabilities."""
-    
+
     @abstractmethod
     def analyze_business_impact(self, content: str) -> Dict[str, Any]:
         """
         Analyze the business impact of the content.
-        
+
         Args:
             content: The content to analyze
-            
+
         Returns:
             Dictionary with business impact analysis results
-            
+
         Raises:
             AIServiceError: If an error occurs during analysis
         """
         pass
-    
+
     @abstractmethod
     def generate_response_suggestion(self, ticket_content: str) -> str:
         """
         Generate a suggested response for a ticket.
-        
+
         Args:
             ticket_content: The ticket content
-            
+
         Returns:
             Suggested response text
-            
+
         Raises:
             AIServiceError: If an error occurs during generation
         """
         pass
-    
+
     @abstractmethod
     def extract_ticket_data(self, content: str) -> Dict[str, Any]:
         """
         Extract structured data from ticket content.
-        
+
         Args:
             content: The ticket content
-            
+
         Returns:
             Dictionary with extracted data
-            
+
         Raises:
             AIServiceError: If an error occurs during extraction
         """
