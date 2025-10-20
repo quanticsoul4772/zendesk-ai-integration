@@ -4,6 +4,9 @@ Mocked implementation of the test_sentiment_analysis module.
 This is a modified version of the original test file that uses explicit mocking
 to ensure consistent test results without requiring real OpenAI API calls.
 """
+# SKIPPED: Uses removed enhanced_sentiment module
+import pytest
+pytestmark = pytest.mark.skip(reason="Uses removed enhanced_sentiment module")
 
 import pytest
 import logging
@@ -11,7 +14,7 @@ import os
 import json
 from unittest.mock import patch, MagicMock
 
-from src.enhanced_sentiment import enhanced_analyze_ticket_content
+# from src.enhanced_sentiment import enhanced_analyze_ticket_content
 import src.ai_service
 
 logger = logging.getLogger(__name__)

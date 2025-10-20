@@ -28,7 +28,7 @@ except ImportError:
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import module to test
-from src.modules.cache_manager import ZendeskCache
+from src.infrastructure.cache.zendesk_cache_adapter import ZendeskCache
 
 
 class TestCachePerformance:
