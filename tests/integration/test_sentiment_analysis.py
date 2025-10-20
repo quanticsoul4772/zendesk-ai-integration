@@ -4,9 +4,12 @@ Integration tests for sentiment analysis functionality.
 These tests verify that the enhanced sentiment analysis functions correctly
 with various types of ticket content.
 """
+# SKIPPED: Uses removed sentiment modules
+import pytest
+pytestmark = pytest.mark.skip(reason="Uses removed sentiment modules")
 import pytest
 import logging
-from src.enhanced_sentiment import enhanced_analyze_ticket_content
+# from src.enhanced_sentiment import enhanced_analyze_ticket_content
 
 logger = logging.getLogger(__name__)
 

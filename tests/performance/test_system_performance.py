@@ -29,7 +29,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # Import modules to test
 from src.modules.batch_processor import BatchProcessor
-from src.modules.cache_manager import ZendeskCache
+from src.infrastructure.cache.zendesk_cache_adapter import ZendeskCache
 from src.application.services.ticket_analysis_service import TicketAnalysisService
 from src.infrastructure.repositories.mongodb_repository import MongoDBRepository
 # from src.infrastructure.compatibility import DBRepository

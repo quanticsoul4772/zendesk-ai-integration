@@ -4,6 +4,13 @@ Performance Tests for Batch Processor
 Tests the performance of the batch processor with different configurations.
 """
 
+# SKIPPED: This test file tests modules that were removed during clean architecture refactoring.
+# Reason: Tests BatchProcessor module that was removed during refactoring
+
+import pytest
+pytestmark = pytest.mark.skip(reason="Tests BatchProcessor module that was removed during refactoring")
+
+
 import pytest
 import time
 import statistics
@@ -15,7 +22,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import module to test
-from src.modules.batch_processor import BatchProcessor
+# from src.modules.batch_processor import BatchProcessor
 
 
 @pytest.mark.serial

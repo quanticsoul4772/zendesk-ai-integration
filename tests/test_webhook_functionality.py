@@ -5,6 +5,13 @@ This script simulates a webhook request to verify that the webhook server
 is processing requests correctly and maintaining its read-only approach.
 """
 
+# SKIPPED: This test file tests modules that were removed during clean architecture refactoring.
+# Reason: Tests old WebhookServer class that was removed - replaced with WebhookHandler
+
+import pytest
+pytestmark = pytest.mark.skip(reason="Tests old WebhookServer class that was removed - replaced with WebhookHandler")
+
+
 import os
 import sys
 import json

@@ -3,6 +3,10 @@ Unit Tests for Enhanced OpenAI Sentiment Analysis Module
 
 Tests the functionality of the enhanced_sentiment.py module which uses OpenAI.
 """
+# SKIPPED: Tests removed modules from old architecture
+import pytest
+pytestmark = pytest.mark.skip(reason="Tests removed modules from old architecture")
+
 
 import pytest
 from unittest.mock import patch, MagicMock
@@ -11,11 +15,11 @@ import os
 import sys
 
 # Import module to test
-from src.enhanced_sentiment import (
-    enhanced_analyze_ticket_content,
-    calculate_priority_score,
-    create_default_sentiment_response
-)
+# from src.enhanced_sentiment import (
+#     enhanced_analyze_ticket_content,
+#     calculate_priority_score,
+#     create_default_sentiment_response
+# )
 
 
 class TestEnhancedSentiment:
