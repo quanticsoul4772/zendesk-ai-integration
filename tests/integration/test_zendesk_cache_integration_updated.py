@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # Import the components to test
 # from src.infrastructure.compatibility import ZendeskClient
-from src.modules.cache_manager import ZendeskCache
+from src.infrastructure.cache.zendesk_cache_adapter import ZendeskCache
 from src.infrastructure.repositories.zendesk_repository import ZendeskRepository
 
 # Mark all tests in this module as serial to prevent parallel execution issues

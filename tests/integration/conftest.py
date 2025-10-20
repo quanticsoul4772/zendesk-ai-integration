@@ -106,11 +106,10 @@ def mock_get_completion_from_openai(prompt, **kwargs):
     result = mock_call_openai_with_retries(prompt)
     return json.dumps(result, indent=2)
 
-# Apply the monkey patching at module load time
-import src.ai_service
-# Replace the real functions with our mocks
-src.ai_service.call_openai_with_retries = mock_call_openai_with_retries
-src.ai_service.get_completion_from_openai = mock_get_completion_from_openai
+# Note: Monkey patching removed as src.ai_service has been refactored to class-based services
+# The old function-based API (call_openai_with_retries, get_completion_from_openai) no longer exists.
+# Tests should mock the new service classes (OpenAIService, ClaudeService) as needed.
+# See src/infrastructure/external_services/ for the new implementations.
 
 @pytest.fixture
 def zendesk_client():
@@ -190,22 +189,23 @@ def ai_analyzer():
     
     return mock_analyzer
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module", autouse=False)
 def patch_openai():
     """
-    Patch OpenAI API functions for all tests in this module.
-    Using scope="module" ensures the patch is applied for all tests.
+    This fixture has been disabled (autouse=False) as the old src.ai_service module no longer exists.
+    The codebase has been refactored to use class-based services (OpenAIService, ClaudeService).
+
+    Individual tests that need to mock AI services should:
+    1. Import the service class: from src.infrastructure.external_services.openai_service import OpenAIService
+    2. Mock the class or its methods as needed
+    3. Use the mock_responses data structure above for consistent test data
+
+    Example:
+        @patch('src.infrastructure.external_services.openai_service.OpenAIService')
+        def test_something(mock_service):
+            mock_instance = mock_service.return_value
+            mock_instance.analyze_content.return_value = mock_responses["high"]
+            ...
     """
-    patches = [
-        patch('src.ai_service.call_openai_with_retries', side_effect=mock_call_openai_with_retries),
-        patch('src.ai_service.get_completion_from_openai', side_effect=mock_get_completion_from_openai)
-    ]
-    
-    for p in patches:
-        p.start()
-        
+    # This fixture is now a no-op placeholder for backward compatibility
     yield
-    
-    # Clean up the patches
-    for p in patches:
-        p.stop()
