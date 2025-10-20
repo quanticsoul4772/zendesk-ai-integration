@@ -1,0 +1,18 @@
+# Core Dependencies
+python-dotenv>=1.0.0
+
+# Zendesk API Client
+zenpy>=2.0.24
+
+# Database
+pymongo>=4.5.0
+
+# AI Services
+openai>=1.0.0
+anthropic>=0.7.0
+
+# Additional utilities (if needed in the future)
+# These are commented out as they may not be explicitly required yet
+# but can be uncommented if needed during setup or runtime
+# requests>=2.31.0
+# flask>=3.0.0  # If webhook server is implemented with Flask
