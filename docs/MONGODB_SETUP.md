@@ -126,9 +126,11 @@ This script will:
 - Test connection string directly
 
 ### Connection String Format
-- Local without authentication: `mongodb://localhost:27017/database_name`
-- Local with authentication: `mongodb://username:password@localhost:27017/database_name?authSource=admin`
-- Atlas: `mongodb+srv://username:password@cluster.xxxxx.mongodb.net/database_name?retryWrites=true&w=majority`
+- Local without authentication: `mongodb://localhost:27017/<database_name>`
+- Local with authentication: `mongodb://<username>:<password>@localhost:27017/<database_name>?authSource=admin`
+- Atlas: `mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database_name>?retryWrites=true&w=majority`
+
+**Note:** Replace `<username>`, `<password>`, `<cluster>`, and `<database_name>` with your actual values.
 
 ## Advanced Configuration
 
