@@ -17,7 +17,7 @@ import random
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import the cache manager
-from src.modules.cache_manager import ZendeskCache, TTLCacheWithInvalidation, CacheStatistics
+from src.infrastructure.cache.zendesk_cache_adapter import ZendeskCache, TTLCacheWithInvalidation, CacheStatistics
 
 class TestCacheInvalidationImproved:
     """Test suite for improved cache invalidation functionality."""

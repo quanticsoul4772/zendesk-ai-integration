@@ -11,9 +11,9 @@ import sys
 import os
 from datetime import datetime, timedelta
 
-# Import the cache manager
+# Import the cache manager from the new location
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from src.modules.cache_manager import ZendeskCache
+from src.infrastructure.cache.zendesk_cache_adapter import ZendeskCache
 
 @pytest.fixture(scope="session")
 def execution_id():
@@ -30,9 +30,9 @@ def isolated_cache_manager():
     Each test gets its own clean instance.
     """
     cache = ZendeskCache()
-    cache.clear_all()  # Start with a clean cache
+    cache.clear()  # Start with a clean cache
     yield cache
-    cache.clear_all()  # Clean up after test
+    cache.clear()  # Clean up after test
 
 @pytest.fixture
 def frozen_time():
@@ -96,8 +96,8 @@ def mock_claude_service():
     """
     Mock the Claude Service for testing.
     """
-    # Use patch to mock the call_claude_with_retries function
-    patcher = patch('src.claude_service.call_claude_with_retries')
+    # Use patch to mock the ClaudeService class
+    patcher = patch('src.infrastructure.external_services.claude_service.ClaudeService')
     mock = patcher.start()
     yield mock
     patcher.stop()
@@ -105,10 +105,10 @@ def mock_claude_service():
 @pytest.fixture
 def mock_enhanced_claude_service():
     """
-    Mock the Claude Enhanced Sentiment service for testing.
+    Mock the Enhanced Claude Service for testing.
     """
-    # Use patch to mock the call_claude_with_retries function
-    patcher = patch('src.claude_enhanced_sentiment.call_claude_with_retries')
+    # Use patch to mock the ClaudeService class (both use the same implementation now)
+    patcher = patch('src.infrastructure.external_services.claude_service.ClaudeService')
     mock = patcher.start()
     yield mock
     patcher.stop()
@@ -173,6 +173,6 @@ def mock_zendesk_client():
     mock_client.views.list.return_value = mock_views
     
     # The key part: mock both Zenpy import and instantiation
-    with patch('src.modules.zendesk_client.Zenpy', create=True) as mock_zenpy_class:
+    with patch('zenpy.Zenpy', create=True) as mock_zenpy_class:
         mock_zenpy_class.return_value = mock_client
         yield mock_client
